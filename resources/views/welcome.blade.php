@@ -7,7 +7,6 @@
     @vite('resources/js/app.jsx')
 </head>
 <body class="antialiased">
-    <div class="bg-blue-500 text-white p-4">If this is blue, Tailwind works</div>
     <div id="app"></div>
 </body>
 </html>
