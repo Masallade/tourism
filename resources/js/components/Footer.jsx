@@ -103,7 +103,7 @@ export default function Footer() {
               <a href="#" className="text-green-100 hover:text-white text-sm transition-colors duration-200">
                 Cookie Policy
               </a>
-              <a href="#" className="text-green-100 hover:text-white text-sm transition-colors duration-200">
+              <a href="/admin/login" className="text-green-100 hover:text-white text-sm transition-colors duration-200">
                 Admin Login
               </a>
             </div>
