@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Home from './components/Home';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import '../css/app.css';
@@ -23,7 +24,7 @@ function App() {
   return (
     <>
       <Header />
-      {/* Other components can go here */}
+      <Home />
       <Footer />
     </>
   );
