@@ -18,8 +18,6 @@ class ServiceProvider extends Model
         'website',
         'email',
         'phone',
-        'lat',
-        'lng',
         'is_approved',
     ];
 

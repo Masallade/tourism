@@ -14,8 +14,6 @@ class Country extends Model
         'slug',
         'description',
         'cover_image',
-        'lat',
-        'lng',
     ];
 
     public function serviceProviders()

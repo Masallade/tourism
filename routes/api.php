@@ -13,8 +13,6 @@ Route::post('/countries', function (\Illuminate\Http\Request $request) {
         'name' => 'required|string|max:255',
         'slug' => 'required|string|max:255|unique:countries',
         'description' => 'nullable|string',
-        'lat' => 'nullable|numeric',
-        'lng' => 'nullable|numeric',
     ]);
     
     $country = \App\Models\Country::create($request->all());
@@ -25,8 +23,6 @@ Route::put('/countries/{country}', function (\App\Models\Country $country, \Illu
         'name' => 'required|string|max:255',
         'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
         'description' => 'nullable|string',
-        'lat' => 'nullable|numeric',
-        'lng' => 'nullable|numeric',
     ]);
     
     $country->update($request->all());
@@ -67,17 +63,19 @@ Route::get('/service-providers', function () {
     return \App\Models\ServiceProvider::with(['country', 'themes'])->get();
 });
 Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
+    $request->merge([
+        'email' => $request->email ? strtolower($request->email) : null,
+    ]);
+
     $request->validate([
         'country_id' => 'required|exists:countries,id',
         'name' => 'required|string|max:255',
         'type' => 'required|in:accommodation,restaurant,tour_operator,volunteering,activity',
         'description' => 'nullable|string',
-        'price_range' => 'nullable|string|max:255',
+        'price_range' => 'required|in:$,$$,$$$,$$$$',
         'website' => 'nullable|url',
-        'email' => 'nullable|email',
+        'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/'],
         'phone' => 'nullable|string',
-        'lat' => 'nullable|numeric',
-        'lng' => 'nullable|numeric',
         'is_approved' => 'boolean',
         'themes' => 'array',
     ]);
@@ -91,17 +89,19 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
     return response()->json($serviceProvider->load(['country', 'themes']), 201);
 });
 Route::put('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider, \Illuminate\Http\Request $request) {
+    $request->merge([
+        'email' => $request->email ? strtolower($request->email) : null,
+    ]);
+
     $request->validate([
         'country_id' => 'required|exists:countries,id',
         'name' => 'required|string|max:255',
         'type' => 'required|in:accommodation,restaurant,tour_operator,volunteering,activity',
         'description' => 'nullable|string',
-        'price_range' => 'nullable|string|max:255',
+        'price_range' => 'required|in:$,$$,$$$,$$$$',
         'website' => 'nullable|url',
-        'email' => 'nullable|email',
+        'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/'],
         'phone' => 'nullable|string',
-        'lat' => 'nullable|numeric',
-        'lng' => 'nullable|numeric',
         'is_approved' => 'boolean',
         'themes' => 'array',
     ]);

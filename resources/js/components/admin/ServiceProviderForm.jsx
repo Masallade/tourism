@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 
 const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
+        country_id: '',
         name: '',
         type: '',
-        country_id: '',
         description: '',
         price_range: '',
         website: '',
         email: '',
         phone: '',
-        lat: '',
-        lng: '',
         is_approved: false,
-        themes: []
+        themes: [],
     });
     const [countries, setCountries] = useState([]);
     const [themes, setThemes] = useState([]);
@@ -26,18 +24,16 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         
         if (provider) {
             setFormData({
+                country_id: provider.country_id || '',
                 name: provider.name || '',
                 type: provider.type || '',
-                country_id: provider.country_id || '',
                 description: provider.description || '',
                 price_range: provider.price_range || '',
                 website: provider.website || '',
-                email: provider.email || '',
+                email: (provider.email || '').toLowerCase(),
                 phone: provider.phone || '',
-                lat: provider.lat || '',
-                lng: provider.lng || '',
                 is_approved: provider.is_approved || false,
-                themes: provider.themes?.map(t => t.id) || []
+                themes: provider.themes?.map(t => t.id) || [],
             });
         }
     }, [provider]);
@@ -64,12 +60,18 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let fieldValue = type === 'checkbox' ? checked : value;
+
+        // Normalize email to lowercase as user types
+        if (name === 'email') {
+            fieldValue = fieldValue.toLowerCase();
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: fieldValue
         }));
 
-        // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -87,37 +89,25 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         }));
     };
 
+    const validateEmail = (email) => {
+        if (!email) return true;
+        const pattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/; // lowercase enforced
+        return pattern.test(email);
+    };
+
+    const allowedPriceRanges = ['$', '$$', '$$$', '$$$$'];
+
     const validateForm = () => {
         const newErrors = {};
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'Service provider name is required';
+        if (!formData.country_id) newErrors.country_id = 'Country is required';
+        if (!formData.name.trim()) newErrors.name = 'Name is required';
+        if (!formData.type.trim()) newErrors.type = 'Type is required';
+        if (!formData.price_range || !allowedPriceRanges.includes(formData.price_range)) {
+            newErrors.price_range = 'Select a valid price range';
         }
-
-        if (!formData.type) {
-            newErrors.type = 'Type is required';
+        if (formData.email && !validateEmail(formData.email)) {
+            newErrors.email = 'Enter a valid email (lowercase only)';
         }
-
-        if (!formData.country_id) {
-            newErrors.country_id = 'Country is required';
-        }
-
-        if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-
-        if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
-            newErrors.website = 'Please enter a valid URL starting with http:// or https://';
-        }
-
-        if (formData.lat && isNaN(Number(formData.lat))) {
-            newErrors.lat = 'Latitude must be a valid number';
-        }
-
-        if (formData.lng && isNaN(Number(formData.lng))) {
-            newErrors.lng = 'Longitude must be a valid number';
-        }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -246,16 +236,25 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Price Range
+                                Price Range <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 name="price_range"
                                 value={formData.price_range}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="e.g., $50-200, Budget, Luxury"
-                            />
+                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                                    errors.price_range ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                            >
+                                <option value="">Select price range</option>
+                                <option value="$">$ (Budget)</option>
+                                <option value="$$">$$ (Moderate)</option>
+                                <option value="$$$">$$$ (Premium)</option>
+                                <option value="$$$$">$$$$ (Luxury)</option>
+                            </select>
+                            {errors.price_range && (
+                                <p className="text-red-500 text-sm mt-1">{errors.price_range}</p>
+                            )}
                         </div>
 
                         <div>
@@ -308,46 +307,6 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                                 placeholder="+1234567890"
                             />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Latitude
-                            </label>
-                            <input
-                                type="number"
-                                name="lat"
-                                value={formData.lat}
-                                onChange={handleInputChange}
-                                step="any"
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.lat ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="40.7128"
-                            />
-                            {errors.lat && (
-                                <p className="text-red-500 text-sm mt-1">{errors.lat}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Longitude
-                            </label>
-                            <input
-                                type="number"
-                                name="lng"
-                                value={formData.lng}
-                                onChange={handleInputChange}
-                                step="any"
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.lng ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="-74.0060"
-                            />
-                            {errors.lng && (
-                                <p className="text-red-500 text-sm mt-1">{errors.lng}</p>
-                            )}
                         </div>
 
                         <div className="md:col-span-2">

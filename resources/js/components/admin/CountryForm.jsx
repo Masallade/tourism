@@ -4,9 +4,7 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
-        description: '',
-        lat: '',
-        lng: ''
+        description: ''
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,9 +14,7 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             setFormData({
                 name: country.name || '',
                 slug: country.slug || '',
-                description: country.description || '',
-                lat: country.lat || '',
-                lng: country.lng || ''
+                description: country.description || ''
             });
         }
     }, [country]);
@@ -61,14 +57,6 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
 
         if (!formData.slug.trim()) {
             newErrors.slug = 'Slug is required';
-        }
-
-        if (formData.lat && isNaN(Number(formData.lat))) {
-            newErrors.lat = 'Latitude must be a valid number';
-        }
-
-        if (formData.lng && isNaN(Number(formData.lng))) {
-            newErrors.lng = 'Longitude must be a valid number';
         }
 
         setErrors(newErrors);
@@ -180,46 +168,6 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                                 placeholder="Enter country description"
                             />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Latitude
-                            </label>
-                            <input
-                                type="number"
-                                name="lat"
-                                value={formData.lat}
-                                onChange={handleInputChange}
-                                step="any"
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.lat ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="40.7128"
-                            />
-                            {errors.lat && (
-                                <p className="text-red-500 text-sm mt-1">{errors.lat}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Longitude
-                            </label>
-                            <input
-                                type="number"
-                                name="lng"
-                                value={formData.lng}
-                                onChange={handleInputChange}
-                                step="any"
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.lng ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="-74.0060"
-                            />
-                            {errors.lng && (
-                                <p className="text-red-500 text-sm mt-1">{errors.lng}</p>
-                            )}
                         </div>
                     </div>
 
