@@ -14,3 +14,9 @@ Route::get('/admin/login', function () {
 Route::get('/admin', function () {
     return view('welcome');
 });
+
+// Admin Service Provider CRUD
+use App\Http\Controllers\Admin\ServiceProviderController;
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::resource('service-providers', ServiceProviderController::class);
+});

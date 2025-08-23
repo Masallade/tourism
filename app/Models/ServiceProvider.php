@@ -11,25 +11,33 @@ class ServiceProvider extends Model
 
     protected $fillable = [
         'country_id',
+        'service_type_id',
         'name',
-        'type',
         'description',
         'price_range',
         'website',
         'email',
         'phone',
         'is_approved',
+        'image',
+        'documents',
     ];
 
     protected $casts = [
         'is_approved' => 'boolean',
         'lat' => 'decimal:7',
         'lng' => 'decimal:7',
+        'documents' => 'array',
     ];
 
     public function country()
     {
         return $this->belongsTo(Country::class);
+    }
+
+    public function serviceType()
+    {
+        return $this->belongsTo(ServiceType::class);
     }
 
     public function themes()

@@ -4,7 +4,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         country_id: '',
         name: '',
-        type: '',
+        service_type_id: '',
         description: '',
         price_range: '',
         website: '',
@@ -13,6 +13,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         is_approved: false,
         themes: [],
     });
+    const [serviceTypes, setServiceTypes] = useState([]);
+    const [image, setImage] = useState(null);
+    const [documents, setDocuments] = useState([]);
     const [countries, setCountries] = useState([]);
     const [themes, setThemes] = useState([]);
     const [errors, setErrors] = useState({});
@@ -21,12 +24,12 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     useEffect(() => {
         fetchCountries();
         fetchThemes();
-        
+        fetchServiceTypes();
         if (provider) {
             setFormData({
                 country_id: provider.country_id || '',
                 name: provider.name || '',
-                type: provider.type || '',
+                service_type_id: provider.service_type_id || '',
                 description: provider.description || '',
                 price_range: provider.price_range || '',
                 website: provider.website || '',
@@ -35,6 +38,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                 is_approved: provider.is_approved || false,
                 themes: provider.themes?.map(t => t.id) || [],
             });
+            setImage(null); // You may want to show existing image preview here
+            setDocuments([]); // You may want to show existing documents here
         }
     }, [provider]);
 
@@ -58,13 +63,31 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         }
     };
 
+    const fetchServiceTypes = async () => {
+        try {
+            const response = await fetch('/api/service-types');
+            const data = await response.json();
+            setServiceTypes(data);
+        } catch (error) {
+            console.error('Error fetching service types:', error);
+        }
+    };
+
     const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, type, checked, files } = e.target;
         let fieldValue = type === 'checkbox' ? checked : value;
 
-        // Normalize email to lowercase as user types
         if (name === 'email') {
             fieldValue = fieldValue.toLowerCase();
+        }
+
+        if (name === 'image') {
+            setImage(files[0]);
+            return;
+        }
+        if (name === 'documents') {
+            setDocuments(Array.from(files));
+            return;
         }
 
         setFormData(prev => ({
@@ -101,7 +124,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         const newErrors = {};
         if (!formData.country_id) newErrors.country_id = 'Country is required';
         if (!formData.name.trim()) newErrors.name = 'Name is required';
-        if (!formData.type.trim()) newErrors.type = 'Type is required';
+        if (!formData.service_type_id) newErrors.service_type_id = 'Service type is required';
         if (!formData.price_range || !allowedPriceRanges.includes(formData.price_range)) {
             newErrors.price_range = 'Select a valid price range';
         }
@@ -114,31 +137,36 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         if (!validateForm()) {
             return;
         }
-
         setIsSubmitting(true);
-
         try {
             const url = provider ? `/api/service-providers/${provider.id}` : '/api/service-providers';
             const method = provider ? 'PUT' : 'POST';
-
+            const form = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                if (key === 'themes') {
+                    value.forEach((themeId) => form.append('themes[]', themeId));
+                } else {
+                    form.append(key, value);
+                }
+            });
+            if (image) {
+                form.append('image', image);
+            }
+            if (documents.length > 0) {
+                documents.forEach((doc) => form.append('documents[]', doc));
+            }
             const response = await fetch(url, {
                 method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
+                body: form
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 setErrors(errorData.errors || {});
                 return;
             }
-
             onSuccess();
         } catch (error) {
             console.error('Error saving service provider:', error);
@@ -165,7 +193,40 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
+                    {/* Image Picker */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
+                        <input
+                            type="file"
+                            name="image"
+                            accept="image/jpeg,image/png,image/jpg"
+                            onChange={handleInputChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                        />
+                        {image && (
+                            <div className="mt-2">
+                                <span className="text-xs text-gray-500">Selected: {image.name}</span>
+                            </div>
+                        )}
+                    </div>
+                    {/* Document Uploader */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Documents (PDF, JPG, PNG)</label>
+                        <input
+                            type="file"
+                            name="documents"
+                            accept="application/pdf,image/jpeg,image/png,image/jpg"
+                            multiple
+                            onChange={handleInputChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                        />
+                        {documents.length > 0 && (
+                            <div className="mt-2">
+                                <span className="text-xs text-gray-500">Selected: {documents.map(doc => doc.name).join(', ')}</span>
+                            </div>
+                        )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -188,25 +249,23 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Type <span className="text-red-500">*</span>
+                                Service Type <span className="text-red-500">*</span>
                             </label>
                             <select
-                                name="type"
-                                value={formData.type}
+                                name="service_type_id"
+                                value={formData.service_type_id}
                                 onChange={handleInputChange}
                                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.type ? 'border-red-500' : 'border-gray-300'
+                                    errors.service_type_id ? 'border-red-500' : 'border-gray-300'
                                 }`}
                             >
-                                <option value="">Select type</option>
-                                <option value="accommodation">Accommodation</option>
-                                <option value="restaurant">Restaurant</option>
-                                <option value="tour_operator">Tour Operator</option>
-                                <option value="volunteering">Volunteering</option>
-                                <option value="activity">Activity</option>
+                                <option value="">Select service type</option>
+                                {serviceTypes.map(type => (
+                                    <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
                             </select>
-                            {errors.type && (
-                                <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                            {errors.service_type_id && (
+                                <p className="text-red-500 text-sm mt-1">{errors.service_type_id}</p>
                             )}
                         </div>
 

@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('service_providers', function (Blueprint $table) {
-                // $table->dropColumn(['lat', 'lng']); // Commented out to prevent migration error if columns do not exist
+            $table->string('image')->nullable()->after('phone');
+            $table->json('documents')->nullable()->after('image');
         });
     }
 
@@ -22,8 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('service_providers', function (Blueprint $table) {
-            $table->decimal('lat', 10, 7)->nullable();
-            $table->decimal('lng', 10, 7)->nullable();
+            $table->dropColumn(['image', 'documents']);
         });
     }
 };

@@ -2,6 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+// Service Types
+Route::get('/service-types', function () {
+    return \App\Models\ServiceType::all();
+});
 
 // API Routes for React Admin
 // Countries
@@ -63,30 +67,57 @@ Route::get('/service-providers', function () {
     return \App\Models\ServiceProvider::with(['country', 'themes'])->get();
 });
 Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
-    $request->merge([
-        'email' => $request->email ? strtolower($request->email) : null,
-    ]);
+    try {
+        $request->merge([
+            'email' => $request->email ? strtolower($request->email) : null,
+        ]);
 
-    $request->validate([
-        'country_id' => 'required|exists:countries,id',
-        'name' => 'required|string|max:255',
-        'type' => 'required|in:accommodation,restaurant,tour_operator,volunteering,activity',
-        'description' => 'nullable|string',
-        'price_range' => 'required|in:$,$$,$$$,$$$$',
-        'website' => 'nullable|url',
-        'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/'],
-        'phone' => 'nullable|string',
-        'is_approved' => 'boolean',
-        'themes' => 'array',
-    ]);
-    
-    $serviceProvider = \App\Models\ServiceProvider::create($request->except('themes'));
-    
-    if ($request->has('themes')) {
-        $serviceProvider->themes()->attach($request->themes);
+        $validated = $request->validate([
+            'country_id' => 'required|exists:countries,id',
+            'service_type_id' => 'required|exists:service_types,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price_range' => 'required|in:$,$$,$$$,$$$$',
+            'website' => 'nullable|url',
+            'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/'],
+            'phone' => 'nullable|string',
+            'is_approved' => 'boolean',
+            'themes' => 'array',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+        ]);
+
+        $data = $request->except(['themes', 'image', 'documents']);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+            $data['image'] = $imagePath;
+        }
+
+        // Handle documents upload
+        $documentPaths = [];
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $doc) {
+                $documentPaths[] = $doc->store('uploads/service_provider_documents', 'public');
+            }
+            $data['documents'] = $documentPaths;
+        }
+
+        $serviceProvider = \App\Models\ServiceProvider::create($data);
+
+        if ($request->has('themes')) {
+            $serviceProvider->themes()->attach($request->themes);
+        }
+
+        return response()->json($serviceProvider->load(['country', 'themes']), 201);
+    } catch (\Exception $e) {
+        \Log::error('ServiceProvider create error: ' . $e->getMessage());
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 422);
     }
-    
-    return response()->json($serviceProvider->load(['country', 'themes']), 201);
 });
 Route::put('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider, \Illuminate\Http\Request $request) {
     $request->merge([
@@ -95,8 +126,8 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
 
     $request->validate([
         'country_id' => 'required|exists:countries,id',
+        'service_type_id' => 'required|exists:service_types,id',
         'name' => 'required|string|max:255',
-        'type' => 'required|in:accommodation,restaurant,tour_operator,volunteering,activity',
         'description' => 'nullable|string',
         'price_range' => 'required|in:$,$$,$$$,$$$$',
         'website' => 'nullable|url',
@@ -104,14 +135,33 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
         'phone' => 'nullable|string',
         'is_approved' => 'boolean',
         'themes' => 'array',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
     ]);
-    
-    $serviceProvider->update($request->except('themes'));
-    
+
+    $data = $request->except(['themes', 'image', 'documents']);
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
+    }
+
+    // Handle documents upload
+    $documentPaths = [];
+    if ($request->hasFile('documents')) {
+        foreach ($request->file('documents') as $doc) {
+            $documentPaths[] = $doc->store('uploads/service_provider_documents', 'public');
+        }
+        $data['documents'] = $documentPaths;
+    }
+
+    $serviceProvider->update($data);
+
     if ($request->has('themes')) {
         $serviceProvider->themes()->sync($request->themes);
     }
-    
+
     return response()->json($serviceProvider->load(['country', 'themes']));
 });
 Route::delete('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider) {
