@@ -7,6 +7,9 @@ use App\Models\ServiceProvider;
 use App\Models\ServiceType;
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ServiceProviderStatusMail;
 
 class ServiceProviderController extends Controller
 {
@@ -27,7 +30,6 @@ class ServiceProviderController extends Controller
     {
         $validated = $request->validate([
             'country_id' => 'required|exists:countries,id',
-            'service_type_id' => 'required|exists:service_types,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price_range' => 'nullable|string',
@@ -35,6 +37,10 @@ class ServiceProviderController extends Controller
             'email' => 'nullable|email',
         ]);
         $serviceProvider = ServiceProvider::create($validated);
+        // Attach multiple service types
+        if ($request->has('service_type_ids')) {
+            $serviceProvider->serviceTypes()->sync($request->input('service_type_ids'));
+        }
         return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider added successfully!');
     }
 
@@ -49,7 +55,6 @@ class ServiceProviderController extends Controller
     {
         $validated = $request->validate([
             'country_id' => 'required|exists:countries,id',
-            'service_type_id' => 'required|exists:service_types,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price_range' => 'nullable|string',
@@ -57,6 +62,10 @@ class ServiceProviderController extends Controller
             'email' => 'nullable|email',
         ]);
         $serviceProvider->update($validated);
+        // Sync multiple service types
+        if ($request->has('service_type_ids')) {
+            $serviceProvider->serviceTypes()->sync($request->input('service_type_ids'));
+        }
         return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider updated successfully!');
     }
 
@@ -64,5 +73,28 @@ class ServiceProviderController extends Controller
     {
         $serviceProvider->delete();
         return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider deleted successfully!');
+    }
+
+    // Approve a service provider (admin action)
+    public function approve(ServiceProvider $serviceProvider)
+    {
+        // Generate random 8-character password (letters + numbers)
+        $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+        $serviceProvider->password = Hash::make($password);
+        $serviceProvider->is_approved = true;
+        $serviceProvider->save();
+        // Send approval email with password
+        Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('approved', $password));
+        return response()->json(['message' => 'Service provider approved and email sent.']);
+    }
+
+    // Reject a service provider (admin action)
+    public function reject(ServiceProvider $serviceProvider)
+    {
+        $serviceProvider->is_approved = false;
+        $serviceProvider->save();
+        // Send rejection email
+        Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('rejected'));
+        return response()->json(['message' => 'Service provider rejected and email sent.']);
     }
 }

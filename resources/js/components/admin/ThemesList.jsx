@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ClipLoader } from 'react-spinners';
 import ThemeForm from './ThemeForm';
 
 const ThemesList = () => {
@@ -59,10 +60,8 @@ const ThemesList = () => {
 
     if (loading) {
         return (
-            <div className="p-6">
-                <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-700/40">
+                <ClipLoader color="#10b981" size={60} speedMultiplier={0.9} />
             </div>
         );
     }

@@ -9,9 +9,21 @@ class ServiceProvider extends Model
 {
     use HasFactory;
 
+    // ...existing code...
+
+    public function services()
+    {
+        return $this->hasMany(Service::class, 'provider_id');
+    }
+
+    // Alias for serviceTypes (for controller usage)
+    public function getServiceTypesAttribute()
+    {
+        return $this->serviceTypes()->get();
+    }
+
     protected $fillable = [
         'country_id',
-        'service_type_id',
         'name',
         'description',
         'price_range',
@@ -21,6 +33,11 @@ class ServiceProvider extends Model
         'is_approved',
         'image',
         'documents',
+        'password',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected $casts = [
@@ -35,9 +52,9 @@ class ServiceProvider extends Model
         return $this->belongsTo(Country::class);
     }
 
-    public function serviceType()
+    public function serviceTypes()
     {
-        return $this->belongsTo(ServiceType::class);
+        return $this->belongsToMany(ServiceType::class, 'service_provider_service_type');
     }
 
     public function themes()

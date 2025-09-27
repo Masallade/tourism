@@ -8,22 +8,30 @@ import AdminDashboard from './components/AdminDashboard';
 import '../css/app.css';
 import './bootstrap';
 
+import ServiceProviderDashboard from './components/ServiceProviderDashboard';
+
 function App() {
   // Check if we're on an admin route
   const path = window.location.pathname;
-  
+  const [provider, setProvider] = React.useState(null);
+
   if (path === '/admin/login') {
     return <AdminLogin />;
   }
-  
+
   if (path === '/admin') {
     return <AdminDashboard />;
   }
-  
+
+  // If provider is logged in, show dashboard only
+  if (provider) {
+    return <ServiceProviderDashboard provider={provider} />;
+  }
+
   // Main app for non-admin routes
   return (
     <>
-      <Header />
+      <Header setProvider={setProvider} />
       <Home />
       <Footer />
     </>

@@ -6,6 +6,8 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
         slug: '',
         description: ''
     });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,6 +50,28 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
         }
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        // Validate type
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            setErrors(prev => ({ ...prev, image: 'Only JPG, PNG, WEBP images allowed.' }));
+            return;
+        }
+        // Validate size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB.' }));
+            return;
+        }
+        setImageFile(file);
+        setErrors(prev => ({ ...prev, image: '' }));
+        // Preview
+        const reader = new FileReader();
+        reader.onloadend = () => setImagePreview(reader.result);
+        reader.readAsDataURL(file);
+    };
+
     const validateForm = () => {
         const newErrors = {};
 
@@ -59,6 +83,16 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             newErrors.slug = 'Slug is required';
         }
 
+        // Image validation
+        if (imageFile) {
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+            if (!validTypes.includes(imageFile.type)) {
+                newErrors.image = 'Only JPG, PNG, WEBP images allowed.';
+            }
+            if (imageFile.size > 2 * 1024 * 1024) {
+                newErrors.image = 'Image size must be less than 2MB.';
+            }
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -75,13 +109,15 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
         try {
             const url = country ? `/api/countries/${country.id}` : '/api/countries';
             const method = country ? 'PUT' : 'POST';
+            const form = new FormData();
+            form.append('name', formData.name);
+            form.append('slug', formData.slug);
+            form.append('description', formData.description);
+            if (imageFile) form.append('image', imageFile);
 
             const response = await fetch(url, {
                 method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
+                body: form
             });
 
             if (!response.ok) {
@@ -116,7 +152,7 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -169,6 +205,22 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                                 placeholder="Enter country description"
                             />
                         </div>
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Country Image</label>
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={handleImageChange}
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        {errors.image && (
+                            <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+                        )}
+                        {imagePreview && (
+                            <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded shadow" />
+                        )}
                     </div>
 
                     {errors.general && (

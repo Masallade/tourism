@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ClipLoader } from 'react-spinners';
 import ServiceProviderForm from './ServiceProviderForm';
 
 const ServiceProvidersList = () => {
@@ -51,19 +52,21 @@ const ServiceProvidersList = () => {
 
     const handleToggleApproval = async (provider) => {
         try {
-            const response = await fetch(`/api/service-providers/${provider.id}/toggle-approval`, {
+            const endpoint = provider.is_approved
+                ? `/api/service-providers/${provider.id}/reject`
+                : `/api/service-providers/${provider.id}/approve`;
+            const response = await fetch(endpoint, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 }
             });
-
             if (response.ok) {
-                setSuccessMessage('Approval status updated successfully');
+                setSuccessMessage(provider.is_approved ? 'Service Provider rejected and email sent.' : 'Service Provider approved and email sent.');
                 fetchServiceProviders();
             }
         } catch (error) {
-            console.error('Error toggling approval:', error);
+            console.error('Error updating approval status:', error);
         }
     };
 
@@ -96,10 +99,8 @@ const ServiceProvidersList = () => {
 
     if (loading) {
         return (
-            <div className="p-6">
-                <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-700/40">
+                <ClipLoader color="#10b981" size={60} speedMultiplier={0.9} />
             </div>
         );
     }
@@ -169,9 +170,17 @@ const ServiceProvidersList = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(provider.type)}`}>
-                                                    {provider.type ? provider.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}
-                                                </span>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {provider.serviceTypes && provider.serviceTypes.length > 0 ? (
+                                                        provider.serviceTypes.map((stype) => (
+                                                            <span key={stype.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                                                {stype.id}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">N/A</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900">{provider.country?.name}</div>
@@ -270,6 +279,7 @@ const ServiceProvidersList = () => {
                             provider={editingProvider}
                             onClose={handleFormClose}
                             onSuccess={handleFormSuccess}
+                            showApproveCheckbox={true}
                         />
                     )}
                 </>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ClipLoader } from 'react-spinners';
 import CountryForm from './CountryForm';
 
 const CountriesList = () => {
@@ -59,13 +60,8 @@ const CountriesList = () => {
 
     if (loading) {
         return (
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-                <div className="flex items-center justify-center h-64">
-                    <div className="flex flex-col items-center space-y-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600"></div>
-                        <p className="text-gray-600 font-medium">Loading countries...</p>
-                    </div>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-700/40">
+                <ClipLoader color="#10b981" size={60} speedMultiplier={0.9} />
             </div>
         );
     }

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
+// Add showApproveCheckbox prop
+const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false }) => {
     const [formData, setFormData] = useState({
         country_id: '',
         name: '',
-        service_type_id: '',
+    service_type_ids: [],
         description: '',
         price_range: '',
         website: '',
@@ -19,6 +20,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     const [countries, setCountries] = useState([]);
     const [themes, setThemes] = useState([]);
     const [errors, setErrors] = useState({});
+    const [summaryError, setSummaryError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -29,7 +31,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
             setFormData({
                 country_id: provider.country_id || '',
                 name: provider.name || '',
-                service_type_id: provider.service_type_id || '',
+                service_type_ids: provider.serviceTypes ? provider.serviceTypes.map(st => st.id) : [],
                 description: provider.description || '',
                 price_range: provider.price_range || '',
                 website: provider.website || '',
@@ -74,7 +76,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     };
 
     const handleInputChange = (e) => {
-        const { name, value, type, checked, files } = e.target;
+        const { name, value, type, checked, files, multiple, options } = e.target;
         let fieldValue = type === 'checkbox' ? checked : value;
 
         if (name === 'email') {
@@ -88,6 +90,11 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         if (name === 'documents') {
             setDocuments(Array.from(files));
             return;
+        }
+
+        // Handle multi-select for service_type_ids
+        if (name === 'service_type_ids' && multiple) {
+            fieldValue = Array.from(options).filter(opt => opt.selected).map(opt => opt.value);
         }
 
         setFormData(prev => ({
@@ -112,24 +119,93 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
         }));
     };
 
+
+    // Validation helpers
     const validateEmail = (email) => {
         if (!email) return true;
         const pattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/; // lowercase enforced
         return pattern.test(email);
     };
-
+    const validateURL = (url) => {
+        if (!url) return true;
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
+    };
+    const validatePhone = (phone) => {
+        if (!phone) return true;
+        // Only digits allowed, min 7, max 15
+        const pattern = /^\d{7,15}$/;
+        return pattern.test(phone);
+    };
     const allowedPriceRanges = ['$', '$$', '$$$', '$$$$'];
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const allowedDocTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.country_id) newErrors.country_id = 'Country is required';
-        if (!formData.name.trim()) newErrors.name = 'Name is required';
-        if (!formData.service_type_id) newErrors.service_type_id = 'Service type is required';
+        // Name
+        if (!formData.name.trim()) {
+            newErrors.name = 'Name is required';
+        } else if (formData.name.length < 3) {
+            newErrors.name = 'Name must be at least 3 characters';
+        } else if (formData.name.length > 100) {
+            newErrors.name = 'Name must be less than 100 characters';
+        } else if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
+            newErrors.name = 'Name can only contain letters and spaces';
+        }
+        // Service Type
+        if (!formData.service_type_ids || formData.service_type_ids.length === 0) {
+            newErrors.service_type_ids = 'At least one service type is required';
+        }
+        // Country
+        if (!formData.country_id) {
+            newErrors.country_id = 'Country is required';
+        }
+        // Price Range
         if (!formData.price_range || !allowedPriceRanges.includes(formData.price_range)) {
             newErrors.price_range = 'Select a valid price range';
         }
-        if (formData.email && !validateEmail(formData.email)) {
+        // Website (required and must be valid)
+        if (!formData.website.trim()) {
+            newErrors.website = 'Website is required';
+        } else if (!validateURL(formData.website)) {
+            newErrors.website = 'Enter a valid website URL (https://...)';
+        }
+        // Email (required and must be valid)
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!validateEmail(formData.email)) {
             newErrors.email = 'Enter a valid email (lowercase only)';
+        }
+        // Phone (required and must be valid)
+        if (!formData.phone.trim()) {
+            newErrors.phone = 'Phone number is required';
+        } else if (!validatePhone(formData.phone)) {
+            newErrors.phone = 'Enter a valid phone number';
+        }
+        // Description
+        if (!formData.description.trim()) {
+            newErrors.description = 'Description is required';
+        } else if (formData.description.length < 10) {
+            newErrors.description = 'Description must be at least 10 characters';
+        } else if (formData.description.length > 1000) {
+            newErrors.description = 'Description must be less than 1000 characters';
+        }
+        // Image (required for new, optional for edit)
+        if (!provider && !image) {
+            newErrors.image = 'Profile image is required';
+        } else if (image && !allowedImageTypes.includes(image.type)) {
+            newErrors.image = 'Image must be JPG or PNG';
+        }
+        // Documents (at least one required, all must be valid type)
+        if (documents.length === 0) {
+            newErrors.documents = 'At least one document is required';
+        } else if (documents.some(doc => !allowedDocTypes.includes(doc.type))) {
+            newErrors.documents = 'Documents must be PDF, JPG, or PNG';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -137,7 +213,13 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSummaryError(''); // Always clear summary error on submit
         if (!validateForm()) {
+            return;
+        }
+        // Ensure service_type_id is not empty string
+        if (!formData.service_type_ids || formData.service_type_ids.length === 0) {
+            setErrors(prev => ({ ...prev, service_type_ids: 'At least one service type is required' }));
             return;
         }
         setIsSubmitting(true);
@@ -148,6 +230,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
             Object.entries(formData).forEach(([key, value]) => {
                 if (key === 'themes') {
                     value.forEach((themeId) => form.append('themes[]', themeId));
+                } else if (key === 'service_type_ids') {
+                    value.forEach((typeId) => form.append('service_type_ids[]', typeId));
+                } else if (key === 'is_approved') {
+                    if (showApproveCheckbox) {
+                        form.append('is_approved', value ? 1 : 0);
+                    } else {
+                        form.append('is_approved', 0);
+                    }
                 } else {
                     form.append(key, value);
                 }
@@ -165,6 +255,22 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
             if (!response.ok) {
                 const errorData = await response.json();
                 setErrors(errorData.errors || {});
+                // Show all unique field errors in summary if present
+                if (errorData.errors) {
+                    let summary = [];
+                    if (errorData.errors.email && errorData.errors.email[0].includes('already registered')) {
+                        summary.push('Email is already registered.');
+                    }
+                    if (errorData.errors.phone && errorData.errors.phone[0].includes('already registered')) {
+                        summary.push('Phone number is already registered.');
+                    }
+                    if (errorData.errors.website && errorData.errors.website[0].includes('already registered')) {
+                        summary.push('Website is already registered.');
+                    }
+                    setSummaryError(summary.join(' '));
+                } else {
+                    setSummaryError('');
+                }
                 return;
             }
             onSuccess();
@@ -177,59 +283,73 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
+    <div className="fixed inset-0 bg-gradient-to-br from-green-100 via-white to-blue-100 bg-opacity-80 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+            <div className="relative mx-auto p-0 w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[95vh] overflow-y-auto border-0">
+                <div className="flex justify-between items-center px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-t-2xl">
+                    <h3 className="text-2xl font-bold text-green-700 tracking-tight">
                         {provider ? 'Edit Service Provider' : 'Add New Service Provider'}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-green-600 transition-colors duration-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                        title="Close"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} encType="multipart/form-data">
+                <form onSubmit={handleSubmit} encType="multipart/form-data" className="px-8 py-6 space-y-6">
+                    {summaryError && (
+                        <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg shadow-sm text-center font-semibold">
+                            {summaryError}
+                        </div>
+                    )}
                     {/* Image Picker */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
-                        <input
-                            type="file"
-                            name="image"
-                            accept="image/jpeg,image/png,image/jpg"
-                            onChange={handleInputChange}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                        />
-                        {image && (
-                            <div className="mt-2">
-                                <span className="text-xs text-gray-500">Selected: {image.name}</span>
-                            </div>
-                        )}
+                    <div className="mb-4 flex flex-col md:flex-row gap-6 items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-gray-100 shadow-sm">
+                        <div className="flex-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">Profile Image</label>
+                            <input
+                                type="file"
+                                name="image"
+                                accept="image/jpeg,image/png,image/jpg"
+                                onChange={handleInputChange}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 transition"
+                            />
+                            {image && (
+                                <div className="mt-2">
+                                    <span className="text-xs text-gray-500">Selected: {image.name}</span>
+                                </div>
+                            )}
+                            {errors.image && (
+                                <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">Documents (PDF, JPG, PNG)</label>
+                            <input
+                                type="file"
+                                name="documents"
+                                accept="application/pdf,image/jpeg,image/png,image/jpg"
+                                multiple
+                                onChange={handleInputChange}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition"
+                            />
+                            {documents.length > 0 && (
+                                <div className="mt-2">
+                                    <span className="text-xs text-gray-500">Selected: {documents.map(doc => doc.name).join(', ')}</span>
+                                </div>
+                            )}
+                            {errors.documents && (
+                                <p className="text-red-500 text-sm mt-1">{errors.documents}</p>
+                            )}
+                        </div>
                     </div>
-                    {/* Document Uploader */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Documents (PDF, JPG, PNG)</label>
-                        <input
-                            type="file"
-                            name="documents"
-                            accept="application/pdf,image/jpeg,image/png,image/jpg"
-                            multiple
-                            onChange={handleInputChange}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                        />
-                        {documents.length > 0 && (
-                            <div className="mt-2">
-                                <span className="text-xs text-gray-500">Selected: {documents.map(doc => doc.name).join(', ')}</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Service Provider Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -237,8 +357,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.name ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${
+                                    errors.name ? 'border-red-400' : 'border-green-200'
                                 }`}
                                 placeholder="Enter service provider name"
                             />
@@ -248,37 +368,44 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Service Type <span className="text-red-500">*</span>
                             </label>
                             <select
-                                name="service_type_id"
-                                value={formData.service_type_id}
-                                onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.service_type_id ? 'border-red-500' : 'border-gray-300'
+                                name="service_type_ids"
+                                multiple
+                                value={formData.service_type_ids}
+                                onChange={e => {
+                                    const options = Array.from(e.target.selectedOptions, option => option.value);
+                                    setFormData(prev => ({ ...prev, service_type_ids: options }));
+                                    if (errors.service_type_ids) setErrors(prev => ({ ...prev, service_type_ids: '' }));
+                                }}
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${
+                                    errors.service_type_ids ? 'border-red-400' : 'border-blue-200'
                                 }`}
+                                size={Math.max(4, Math.min(8, serviceTypes.length))}
+                                style={{ minHeight: '120px' }}
                             >
-                                <option value="">Select service type</option>
                                 {serviceTypes.map(type => (
                                     <option key={type.id} value={type.id}>{type.name}</option>
                                 ))}
                             </select>
-                            {errors.service_type_id && (
-                                <p className="text-red-500 text-sm mt-1">{errors.service_type_id}</p>
+                            <p className="text-xs text-blue-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
+                            {errors.service_type_ids && (
+                                <p className="text-red-500 text-sm mt-1">{errors.service_type_ids}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Country <span className="text-red-500">*</span>
                             </label>
                             <select
                                 name="country_id"
                                 value={formData.country_id}
                                 onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.country_id ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${
+                                    errors.country_id ? 'border-red-400' : 'border-green-200'
                                 }`}
                             >
                                 <option value="">Select country</option>
@@ -294,15 +421,15 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Price Range <span className="text-red-500">*</span>
                             </label>
                             <select
                                 name="price_range"
                                 value={formData.price_range}
                                 onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.price_range ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${
+                                    errors.price_range ? 'border-red-400' : 'border-green-200'
                                 }`}
                             >
                                 <option value="">Select price range</option>
@@ -317,7 +444,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Website
                             </label>
                             <input
@@ -325,8 +452,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                                 name="website"
                                 value={formData.website}
                                 onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.website ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${
+                                    errors.website ? 'border-red-400' : 'border-blue-200'
                                 }`}
                                 placeholder="https://example.com"
                             />
@@ -336,7 +463,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Email
                             </label>
                             <input
@@ -344,8 +471,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                                    errors.email ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${
+                                    errors.email ? 'border-red-400' : 'border-blue-200'
                                 }`}
                                 placeholder="contact@example.com"
                             />
@@ -355,21 +482,29 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Phone
                             </label>
                             <input
                                 type="tel"
                                 name="phone"
                                 value={formData.phone}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="+1234567890"
+                                onChange={e => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setFormData(prev => ({ ...prev, phone: val }));
+                                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                                }}
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${errors.phone ? 'border-red-400' : 'border-blue-200'}`}
+                                placeholder="Enter phone number (digits only)"
+                                maxLength={15}
                             />
+                            {errors.phone && (
+                                <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                            )}
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Description
                             </label>
                             <textarea
@@ -377,62 +512,67 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
                                 value={formData.description}
                                 onChange={handleInputChange}
                                 rows="3"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${errors.description ? 'border-red-400' : 'border-green-200'}`}
                                 placeholder="Enter service provider description"
                             />
+                            {errors.description && (
+                                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                            )}
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Themes
                             </label>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 {themes.map((theme) => (
-                                    <label key={theme.id} className="flex items-center">
+                                    <label key={theme.id} className="flex items-center bg-green-50 rounded-lg px-2 py-1 shadow-sm hover:bg-green-100 transition cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={formData.themes.includes(theme.id)}
                                             onChange={() => handleThemeChange(theme.id)}
-                                            className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                                            className="rounded border-green-300 text-green-600 focus:ring-green-500"
                                         />
-                                        <span className="ml-2 text-sm text-gray-700">{theme.name}</span>
+                                        <span className="ml-2 text-sm text-green-700 font-medium">{theme.name}</span>
                                     </label>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    name="is_approved"
-                                    checked={formData.is_approved}
-                                    onChange={handleInputChange}
-                                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                                />
-                                <span className="ml-2 text-sm font-medium text-gray-700">Approve this service provider</span>
-                            </label>
-                        </div>
+                        {showApproveCheckbox && (
+                            <div className="md:col-span-2 mt-2">
+                                <label className="flex items-center bg-blue-50 rounded-lg px-3 py-2 shadow-sm">
+                                    <input
+                                        type="checkbox"
+                                        name="is_approved"
+                                        checked={formData.is_approved}
+                                        onChange={handleInputChange}
+                                        className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm font-semibold text-blue-700">Approve this service provider</span>
+                                </label>
+                            </div>
+                        )}
                     </div>
 
                     {errors.general && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                        <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg shadow-sm">
                             {errors.general}
                         </div>
                     )}
 
-                    <div className="flex justify-end mt-6 space-x-3">
+                    <div className="flex justify-end mt-8 space-x-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                            className="px-6 py-2 text-base font-semibold text-green-700 bg-green-100 border-2 border-green-300 rounded-lg hover:bg-green-200 hover:text-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                            className="px-6 py-2 text-base font-semibold text-white bg-gradient-to-r from-green-500 to-blue-500 border-0 rounded-lg shadow-md hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-60 transition"
                         >
                             {isSubmitting ? 'Saving...' : (provider ? 'Update Service Provider' : 'Create Service Provider')}
                         </button>
@@ -443,4 +583,4 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess }) => {
     );
 };
 
-export default ServiceProviderForm; 
+export default ServiceProviderForm;
