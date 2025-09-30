@@ -12,6 +12,7 @@ class Service extends Model
     protected $fillable = [
         'provider_id',
         'service_type_id',
+        'theme_id',
         'country_id',
         'name',
         'description',
@@ -31,5 +32,10 @@ class Service extends Model
     public function country()
     {
         return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function theme()
+    {
+        return $this->belongsTo(Theme::class, 'theme_id');
     }
 }

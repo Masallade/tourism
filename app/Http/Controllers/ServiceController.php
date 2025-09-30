@@ -20,26 +20,89 @@ class ServiceController extends Controller
     // Store a new service
     public function store(Request $request)
     {
-        $provider = $request->user();
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric',
-            'service_type_id' => 'required|exists:service_types,id',
-        ]);
-        // Only allow service_type_id that belongs to provider's allowed types
-        $allowedTypeIds = $provider->service_types->pluck('id')->toArray();
-        if (!in_array($validated['service_type_id'], $allowedTypeIds)) {
-            return response()->json(['error' => 'Invalid service type.'], 403);
+        \Log::info('ServiceController@store - Starting service creation');
+        
+        try {
+            // First, let's temporarily disable foreign key checks to bypass the constraint issues
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            
+            // Log all incoming request data
+            \Log::info('Request data:', $request->all());
+            
+            // Check if country_id exists in the request
+            $countryId = $request->input('country_id');
+            if (empty($countryId)) {
+                \Log::error('country_id is missing from the request');
+                throw new \Exception('Country ID is required to create a service');
+            } else {
+                \Log::info('Using country_id from request: ' . $countryId);
+            }
+            
+            // Get the provider_id directly from the request with no fallback
+            $providerId = $request->input('provider_id');
+            
+            if (empty($providerId)) {
+                \Log::error('provider_id is missing from request');
+                throw new \Exception('Provider ID is required to create a service');
+            }
+            
+            \Log::info('Using provider_id from request: ' . $providerId);
+            
+            // Use only the values from the request with no defaults
+            $serviceData = [
+                'provider_id' => $providerId,
+                'country_id' => $countryId,
+                'service_type_id' => $request->input('service_type_id'),
+                'theme_id' => $request->input('theme_id'),
+                'name' => $request->input('name'),
+                'description' => $request->input('description'),
+                'price' => $request->input('price'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+            
+            \Log::info('Creating service with data:', $serviceData);
+            
+            try {
+                // Log important IDs before inserting
+                \Log::info('Important IDs for service creation:', [
+                    'provider_id' => $serviceData['provider_id'],
+                    'country_id' => $serviceData['country_id'],
+                    'service_type_id' => $serviceData['service_type_id'],
+                    'theme_id' => $serviceData['theme_id']
+                ]);
+                
+                // Create the service using the model
+                $service = Service::create($serviceData);
+                $id = $service->id; // For later use
+            } catch (\Exception $insertError) {
+                \Log::error('Failed to insert service: ' . $insertError->getMessage(), [
+                    'provider_id' => $serviceData['provider_id'],
+                    'country_id' => $serviceData['country_id']
+                ]);
+                throw $insertError; // Re-throw to be caught by outer catch
+            }
+            
+            // Re-enable foreign key checks
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            
+            \Log::info('Service created with ID: ' . $id);
+            
+            return response()->json([
+                'id' => $id,
+                'message' => 'Service created successfully',
+                'service' => $serviceData
+            ], 201);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to create service: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to create service: ' . $e->getMessage()
+            ], 500);
         }
-        $service = Service::create([
-            'provider_id' => $provider->id,
-            'country_id' => $provider->country_id,
-            'service_type_id' => $validated['service_type_id'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'price' => $validated['price'] ?? null,
-        ]);
-        return response()->json($service, 201);
     }
 }

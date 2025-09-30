@@ -2,19 +2,45 @@
 
 // Get all services for a country
 Route::get('/country/{countryId}/services', function ($countryId) {
-    return \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    \Log::info("Fetching services for country ID: {$countryId}");
+    
+    $services = \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
         ->where('country_id', $countryId)
         ->get();
+    
+    \Log::info("Found {$services->count()} services for country ID: {$countryId}");
+    
+    return $services;
 });
 
 // Get all services for a theme
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    $providerIds = \DB::table('provider_theme')
-        ->where('theme_id', $themeId)
-        ->pluck('service_provider_id');
     return \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
-        ->whereIn('provider_id', $providerIds)
+        ->where('theme_id', $themeId)
         ->get();
+});
+
+// Get a single country by ID with provider count
+Route::get('/countries/{id}', function ($id) {
+    $country = \App\Models\Country::withCount('serviceProviders')
+        ->findOrFail($id);
+    
+    // Log the fields to understand what data we have
+    \Log::info('Country data for ID '.$id, [
+        'id' => $country->id,
+        'name' => $country->name,
+        'image_url' => $country->image_url,
+        'has_image_url' => !empty($country->image_url),
+        'cover_image' => $country->cover_image,
+    ]);
+    
+    return $country;
+});
+
+// Get a single theme by ID with provider count
+Route::get('/themes/{id}', function ($id) {
+    return \App\Models\Theme::withCount('serviceProviders')
+        ->findOrFail($id);
 });
 
 // Get all services for a service type in a country
@@ -36,7 +62,8 @@ Route::get('/theme/{themeId}/service-type/{typeId}/services', function ($themeId
         ->get();
 });
 
-// Service management for providers
+
+// Service management for providers (no auth for local testing)
 use App\Http\Controllers\ServiceController;
 Route::get('/provider/services', [ServiceController::class, 'index']);
 Route::post('/provider/services', [ServiceController::class, 'store']);
@@ -81,7 +108,18 @@ use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\ThemeController;
 
 Route::get('/countries', function () {
-    return \App\Models\Country::withCount('serviceProviders')->get();
+    $countries = \App\Models\Country::withCount('serviceProviders')->get();
+    
+    // Log the first country's data to verify image_url is present
+    if ($countries->isNotEmpty()) {
+        \Log::info('First country data from list endpoint', [
+            'id' => $countries[0]->id,
+            'name' => $countries[0]->name,
+            'image_url' => $countries[0]->image_url,
+        ]);
+    }
+    
+    return $countries;
 });
 Route::post('/countries', [CountryController::class, 'store']);
 Route::put('/countries/{country}', [CountryController::class, 'update']);
