@@ -8,6 +8,7 @@ import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import CountryDetail from './components/CountryDetail';
 import ThemeDetail from './components/ThemeDetail';
+import ServiceDetail from './components/ServiceDetail';
 import '../css/app.css';
 import './bootstrap';
 
@@ -54,6 +55,12 @@ function App() {
         <Route path="/theme/:id" element={
           <Layout>
             <ThemeDetail />
+          </Layout>
+        } />
+        
+        <Route path="/service/:serviceId" element={
+          <Layout>
+            <ServiceDetail />
           </Layout>
         } />
         

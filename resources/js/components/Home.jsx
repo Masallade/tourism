@@ -1,3 +1,30 @@
+  // Map theme names to direct network image URLs
+  const themeImages = {
+    adventure: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    cultural: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
+    culture: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
+    nature: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80',
+    wellness: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
+    family: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1200&q=80',
+    luxury: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+    wildlife: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
+    'wildlife': 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
+    'wild life': 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
+    mountain: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
+    desert: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+    city: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80',
+    food: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
+  'foodculinary': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
+    'food&culinary': 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=1200&q=80',
+  photography: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+    volunteering: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+    historical: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
+    jango: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    'testtheme': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    romantic: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+    // Add more theme-image pairs as needed
+  };
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { Link } from 'react-router-dom';
@@ -5,6 +32,30 @@ import { Link } from 'react-router-dom';
 
 export default function Home() {
   const [countries, setCountries] = useState([]);
+  // Map country names to direct network image URLs (flag or landmark)
+  const countryFlagImages = {
+    Pakistan: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Flag_of_Pakistan.svg',
+    Turkey: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg',
+    Egypt: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Egypt.svg',
+    Brazil: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg',
+    France: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg',
+    Germany: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg',
+    Italy: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Flag_of_Italy.svg',
+    Spain: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg',
+    China: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg',
+    India: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_India.svg',
+    UnitedArabEmirates: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg',
+    SaudiArabia: 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg',
+    UnitedStates: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
+    UnitedKingdom: 'https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg',
+    Australia: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Flag_of_Australia.svg',
+    Canada: 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg',
+    Thailand: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Flag_of_Thailand.svg',
+    Japan: 'https://upload.wikimedia.org/wikipedia/en/9/9e/Flag_of_Japan.svg',
+    Kenya: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Flag_of_Kenya.svg',
+    USA: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
+    // Add more as needed
+  };
   const [serviceTypes, setServiceTypes] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +136,23 @@ export default function Home() {
             transform: scale(1);
           }
         }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+        
+        /* Gradient mask for horizontal scrolling containers */
+        .mask-gradient-x {
+          mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+        }
       `}</style>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* Hero Section - Enhanced */}
@@ -112,7 +180,7 @@ export default function Home() {
         ></div>
 
         {/* Hero Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative" style={{zIndex: 1}}>
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative" style={{zIndex: 1}}>
           <div className="text-center">
             <div className="mb-4 inline-block">
               <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
@@ -351,7 +419,7 @@ export default function Home() {
       </svg>
     </div>
 
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative">
       <div className="text-center mb-12">
         <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">DISCOVER THE WORLD</span>
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
@@ -366,94 +434,136 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Countries Cards Container */}
+      {/* Countries Cards Container with Horizontal Slider */}
       <div className="relative bg-white/30 backdrop-blur-sm rounded-xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {loading ? (
-            <div className="flex justify-center items-center w-full min-h-[300px] col-span-3">
-              <ClipLoader color="#22c55e" size={60} speedMultiplier={0.9} />
-            </div>
-          ) : countries.length > 0 ? (
-            // Countries cards
-            (searchMode
-              ? countries.filter(country =>
-                  submittedTerm.trim() === '' ||
-                  country.name.toLowerCase() === submittedTerm.toLowerCase() ||
-                  (country.description && country.description.toLowerCase() === submittedTerm.toLowerCase())
-                )
-              : countries.filter(country =>
-                  searchTerm.trim() === '' ||
-                  country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (country.description && country.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                )
-            ).map((country, idx) => (
-              <Link 
-                to={`/country/${country.id}`} 
-                key={country.id}
-                className="bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 cursor-pointer group animate-fade-in overflow-hidden"
-                style={{
-                  animation: 'fadeInScale 0.5s',
-                  animationDelay: `${idx * 0.05}s`,
-                  animationFillMode: 'both',
-                  textDecoration: 'none',
-                  borderTop: '5px solid #10B981'
-                }}
-              >
-                <div className="relative overflow-hidden h-56">
-                  {country.image_url ? (
-                    <img 
-                      src={country.image_url}
-                      alt={country.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center group-hover:from-green-600 group-hover:to-blue-600 transition-colors duration-300">
-                      <span className="text-white text-5xl font-bold">{country.name.charAt(0)}</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 group-hover:to-black/70 transition-all duration-300"></div>
-                  <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                    Eco-Friendly
-                  </div>
-                </div>
-                <div className="p-6 relative">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors duration-300 flex items-center">
-                    {country.name}
-                    <svg className="w-5 h-5 ml-2 text-green-500 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                  </h3>
-                  {country.description && (
-                    <p className="text-gray-600 line-clamp-2">
-                      {country.description}
-                    </p>
-                  )}
-                  <div className="flex items-center mt-4 text-sm text-gray-500">
-                    <span className="flex items-center mr-4">
-                      <svg className="w-4 h-4 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>
-                      Top Rated
-                    </span>
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                      Year-round
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            // No countries message
-            <div className="text-center py-12 col-span-3 bg-white bg-opacity-80 backdrop-blur-sm rounded-xl shadow-lg">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
-                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div className="relative">
+          {/* Left arrow button */}
+          <button 
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 z-10 bg-gradient-to-r from-white to-white/80 backdrop-blur-sm rounded-full p-3.5 shadow-xl hover:shadow-2xl border border-green-100 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+            onClick={() => {
+              document.getElementById('countriesSlider').scrollBy({ left: -300, behavior: 'smooth' });
+            }}
+            aria-label="Scroll left"
+          >
+            <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          
+          {/* Slider container */}
+          <div 
+            id="countriesSlider"
+            className="flex overflow-x-auto pb-8 pt-4 px-2 -mx-2 space-x-8 scrollbar-hide scroll-smooth mask-gradient-x"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {loading ? (
+              <div className="flex justify-center items-center w-full min-h-[300px]">
+                <ClipLoader color="#22c55e" size={60} speedMultiplier={0.9} />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Countries Available</h3>
-              <p className="text-gray-500 max-w-md mx-auto">Countries will appear here once they are added to the system. Check back soon for exciting destinations!</p>
-            </div>
-          )}
+            ) : countries.length > 0 ? (
+              // Countries cards
+              (searchMode
+                ? countries.filter(country =>
+                    submittedTerm.trim() === '' ||
+                    country.name.toLowerCase() === submittedTerm.toLowerCase() ||
+                    (country.description && country.description.toLowerCase() === submittedTerm.toLowerCase())
+                  )
+                : countries.filter(country =>
+                    searchTerm.trim() === '' ||
+                    country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (country.description && country.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                  )
+              ).map((country, idx) => (
+                <Link 
+                  to={`/country/${country.id}`} 
+                  key={country.id}
+                  className="flex-shrink-0 w-[300px] bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 hover:scale-[1.02] transition-all duration-500 cursor-pointer group animate-fade-in overflow-hidden"
+                  style={{
+                    animation: 'fadeInScale 0.5s',
+                    animationDelay: `${idx * 0.05}s`,
+                    animationFillMode: 'both',
+                    textDecoration: 'none',
+                    borderTop: '5px solid #10B981'
+                  }}
+                >
+                  <div className="relative overflow-hidden h-56">
+                    {countryFlagImages[country.name.replace(/\s/g, '')] ? (
+                      <img 
+                        src={countryFlagImages[country.name.replace(/\s/g, '')]}
+                        alt={country.name + ' flag'}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        loading="lazy"
+                      />
+                    ) : country.image_url ? (
+                      <img 
+                        src={country.image_url}
+                        alt={country.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center group-hover:from-green-600 group-hover:to-blue-600 transition-colors duration-300">
+                        <span className="text-white text-5xl font-bold">{country.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 group-hover:to-black/70 transition-all duration-300"></div>
+                    <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                      Eco-Friendly
+                    </div>
+                  </div>
+                  <div className="p-6 relative">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors duration-300 flex items-center">
+                      {country.name}
+                      <svg className="w-5 h-5 ml-2 text-green-500 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </h3>
+                    {country.description && (
+                      <p className="text-gray-600 line-clamp-2">
+                        {country.description}
+                      </p>
+                    )}
+                    <div className="flex items-center mt-4 text-sm text-gray-500">
+                      <span className="flex items-center mr-4">
+                        <svg className="w-4 h-4 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>
+                        Top Rated
+                      </span>
+                      <span className="flex items-center">
+                        <svg className="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Year-round
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              // No countries message
+              <div className="text-center py-12 w-full bg-white bg-opacity-80 backdrop-blur-sm rounded-xl shadow-lg">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Countries Available</h3>
+                <p className="text-gray-500 max-w-md mx-auto">Countries will appear here once they are added to the system. Check back soon for exciting destinations!</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Right arrow button */}
+          <button 
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 z-10 bg-gradient-to-l from-white to-white/80 backdrop-blur-sm rounded-full p-3.5 shadow-xl hover:shadow-2xl border border-green-100 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+            onClick={() => {
+              document.getElementById('countriesSlider').scrollBy({ left: 300, behavior: 'smooth' });
+            }}
+            aria-label="Scroll right"
+          >
+            <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
         </div>
 
+
+
         {countries.length > 0 && (
-          <div className="text-center mt-12">
+          <div className="text-center mt-8">
             <button className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto">
               <span>View All Countries</span>
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
@@ -484,7 +594,7 @@ export default function Home() {
           </svg>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative z-10">
           <div className="text-center mb-16">
             <span className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">FIND YOUR PASSION</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
@@ -499,84 +609,123 @@ export default function Home() {
             </p>
           </div>
           
-          {/* Themes Cards - Enhanced Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {themes.length > 0 ? (
-              (searchMode
-                ? themes.filter(theme =>
-                    submittedTerm.trim() === '' ||
-                    theme.name.toLowerCase() === submittedTerm.toLowerCase() ||
-                    (theme.description && theme.description.toLowerCase() === submittedTerm.toLowerCase())
-                  )
-                : themes.filter(theme =>
-                    searchTerm.trim() === '' ||
-                    theme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (theme.description && theme.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                  )
-              ).map((theme, idx) => (
-                <Link
-                  to={`/theme/${theme.id}`}
-                  key={theme.id}
-                  className="group"
-                  style={{
-                    animation: 'fadeInScale 0.5s',
-                    animationDelay: `${idx * 0.05}s`,
-                    animationFillMode: 'both',
-                    textDecoration: 'none'
-                  }}
-                >
-                  <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-500 hover:scale-[1.02] hover:shadow-xl">
-                    {/* Card background with gradient overlay */}
-                    {theme.image_url ? (
-                      <img 
-                        src={theme.image_url} 
-                        alt={theme.name} 
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-green-400"></div>
-                    )}
-                    
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/70 group-hover:via-black/30 group-hover:to-black/80 transition-all duration-300"></div>
-                    
-                    {/* Content */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-start">
-                      <div className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full mb-3 font-medium">Sustainable</div>
-                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-300 transition-colors">{theme.name}</h3>
-                      {theme.description && (
-                        <p className="text-white/80 text-sm line-clamp-2 mb-4 group-hover:text-white transition-colors">
-                          {theme.description}
-                        </p>
-                      )}
-                      <span className="flex items-center text-white/90 text-sm font-medium">
-                        <span>Explore theme</span>
-                        <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                        </svg>
-                      </span>
+          {/* Themes Cards - Horizontal Slider */}
+          <div className="relative">
+            {/* Left arrow button */}
+            <button 
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 z-10 bg-gradient-to-r from-white to-white/80 backdrop-blur-sm rounded-full p-3.5 shadow-xl hover:shadow-2xl border border-blue-100 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+              onClick={() => {
+                document.getElementById('themesSlider').scrollBy({ left: -350, behavior: 'smooth' });
+              }}
+              aria-label="Scroll left"
+            >
+              <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            
+            {/* Themes Slider Container */}
+            <div 
+              id="themesSlider"
+              className="flex overflow-x-auto pb-8 pt-4 px-2 -mx-2 space-x-8 scrollbar-hide scroll-smooth mask-gradient-x"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {themes.length > 0 ? (
+                (searchMode
+                  ? themes.filter(theme =>
+                      submittedTerm.trim() === '' ||
+                      theme.name.toLowerCase() === submittedTerm.toLowerCase() ||
+                      (theme.description && theme.description.toLowerCase() === submittedTerm.toLowerCase())
+                    )
+                  : themes.filter(theme =>
+                      searchTerm.trim() === '' ||
+                      theme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (theme.description && theme.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                    )
+                ).map((theme, idx) => (
+                  <Link
+                    to={`/theme/${theme.id}`}
+                    key={theme.id}
+                    className="group flex-shrink-0 w-[350px]"
+                    style={{
+                      animation: 'fadeInScale 0.5s',
+                      animationDelay: `${idx * 0.05}s`,
+                      animationFillMode: 'both',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl border border-transparent hover:border-white/20">
+                      {/* Card background with gradient overlay */}
+                      {(() => {
+                        const normalized = theme.name?.toLowerCase().replace(/\s|&/g, '');
+                        const imgUrl = themeImages[normalized];
+                        return imgUrl ? (
+                          <img 
+                            src={imgUrl}
+                            alt={theme.name}
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-green-400"></div>
+                        );
+                      })()}
+                      
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/70 group-hover:via-black/30 group-hover:to-black/80 transition-all duration-300"></div>
+                      
+                      {/* Content */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-start">
+                        <div className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full mb-3 font-medium">Sustainable</div>
+                        <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-300 transition-colors">{theme.name}</h3>
+                        {theme.description && (
+                          <p className="text-white/80 text-sm line-clamp-2 mb-4 group-hover:text-white transition-colors">
+                            {theme.description}
+                          </p>
+                        )}
+                        <span className="flex items-center text-white/90 text-sm font-medium">
+                          <span>Explore theme</span>
+                          <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                          </svg>
+                        </span>
+                      </div>
+                      
+                      {/* Top right tag */}
+                      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-medium">
+                        <span>{idx % 3 === 0 ? 'Popular' : idx % 2 === 0 ? 'New' : 'Featured'}</span>
+                      </div>
                     </div>
-                    
-                    {/* Top right tag */}
-                    <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-medium">
-                      <span>{idx % 3 === 0 ? 'Popular' : idx % 2 === 0 ? 'New' : 'Featured'}</span>
-                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="text-center py-16 w-full bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/40">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100/80 rounded-full mb-6">
+                    <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
                   </div>
-                </Link>
-              ))
-            ) : (
-              <div className="text-center py-16 col-span-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/40">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100/80 rounded-full mb-6">
-                  <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                  </svg>
+                  <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Themes Available</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">Our team is curating amazing eco-friendly themes for your next adventure. Check back soon!</p>
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Themes Available</h3>
-                <p className="text-gray-500 max-w-md mx-auto">Our team is curating amazing eco-friendly themes for your next adventure. Check back soon!</p>
-              </div>
-            )}
+              )}
+            </div>
+            
+            {/* Right arrow button */}
+            <button 
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 z-10 bg-gradient-to-l from-white to-white/80 backdrop-blur-sm rounded-full p-3.5 shadow-xl hover:shadow-2xl border border-blue-100 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+              onClick={() => {
+                document.getElementById('themesSlider').scrollBy({ left: 350, behavior: 'smooth' });
+              }}
+              aria-label="Scroll right"
+            >
+              <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
           </div>
+          
+
           
           {themes.length > 0 && (
             <div className="text-center mt-16">
@@ -597,7 +746,7 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-br from-green-50 to-green-100 rounded-full opacity-70 blur-3xl -translate-y-1/2 translate-x-1/4"></div>
         <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full opacity-70 blur-3xl translate-y-1/3 -translate-x-1/4"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative">
           <div className="text-center mb-16">
             <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">WHY CHOOSE US</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
@@ -802,7 +951,7 @@ export default function Home() {
         <div className="absolute top-0 left-0 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
         <div className="absolute bottom-0 right-0 w-60 h-60 bg-white opacity-10 rounded-full blur-3xl"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative z-10">
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready for Your Next Adventure?</h2>
             <p className="text-xl text-white/80 max-w-2xl mx-auto mb-10">

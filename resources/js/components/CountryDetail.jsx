@@ -2,6 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ServiceCard from './ServiceCard';
 
+// Same mapping as Home.jsx
+const countryFlagImages = {
+  Pakistan: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Flag_of_Pakistan.svg',
+  Turkey: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg',
+  Egypt: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Egypt.svg',
+  Brazil: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg',
+  France: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg',
+  Germany: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg',
+  Italy: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Flag_of_Italy.svg',
+  Spain: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg',
+  China: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg',
+  India: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_India.svg',
+  UnitedArabEmirates: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg',
+  SaudiArabia: 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg',
+  UnitedStates: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
+  UnitedKingdom: 'https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg',
+  Australia: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Flag_of_Australia.svg',
+  Canada: 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg',
+  Thailand: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Flag_of_Thailand.svg',
+  Japan: 'https://upload.wikimedia.org/wikipedia/en/9/9e/Flag_of_Japan.svg',
+  Kenya: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Flag_of_Kenya.svg',
+  USA: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
+  // Add more as needed
+};
+
 const CountryDetail = () => {
   const { id } = useParams();
   const [country, setCountry] = useState(null);
@@ -16,7 +41,6 @@ const CountryDetail = () => {
       setLoading(true);
       try {
         // Fetch country details
-        console.log(`Fetching country with ID: ${id}`);
         const countryRes = await fetch(`/api/countries/${id}`);
         
         if (!countryRes.ok) {
@@ -28,24 +52,14 @@ const CountryDetail = () => {
         }
         
         const countryData = await countryRes.json();
-        console.log('Country data fetched:', countryData);
         
         if (!countryData || !countryData.id) {
           throw new Error('Invalid country data returned from server');
         }
         
-        // Log the country data to check available fields
-        console.log('Country data fields:', {
-          id: countryData.id,
-          name: countryData.name,
-          image_url: countryData.image_url,
-          cover_image: countryData.cover_image
-        });
-        
         setCountry(countryData);
 
         // Fetch services for this country
-        console.log(`Fetching services for country ID: ${id}`);
         const servicesRes = await fetch(`/api/country/${id}/services`);
         
         if (!servicesRes.ok) {
@@ -57,10 +71,8 @@ const CountryDetail = () => {
           try {
             const servicesData = await servicesRes.json();
             if (Array.isArray(servicesData)) {
-              console.log(`Found ${servicesData.length} services for country ID: ${id}`);
               setServices(servicesData);
             } else {
-              console.error('Services data is not an array:', servicesData);
               setServices([]);
             }
           } catch (jsonError) {
@@ -76,15 +88,12 @@ const CountryDetail = () => {
           // Extract unique service types from the fetched services
           if (servicesRes.ok) {
             servicesData = await servicesRes.json();
-            console.log('Services data received:', servicesData);
           } else {
-            console.error('Failed to fetch services for country');
             servicesData = []; // Empty array as fallback
           }
           
           // Get unique service types from the services
           const types = [...new Set(servicesData.filter(service => service.serviceType).map(service => service.serviceType.id))];
-          console.log('Unique service types found:', types);
           
           // Fetch service type details
           const typesRes = await fetch('/api/service-types');
@@ -116,14 +125,9 @@ const CountryDetail = () => {
   // Filter services by selected type
   const filteredServices = selectedType === 'all' 
     ? services 
-    : services.filter(service => {
-        console.log(`Filtering service ${service.id}, type: ${service.service_type_id}, selected: ${selectedType}`);
-        return service.service_type_id === parseInt(selectedType);
-      });
+    : services.filter(service => service.service_type_id === parseInt(selectedType));
   
-  // Log services data for debugging
-  console.log('All services:', services);
-  console.log('Filtered services:', filteredServices);
+  // Apply services filter based on selected type
 
   if (loading) {
     return (
@@ -173,23 +177,17 @@ const CountryDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Country Image */}
-      {console.log('Setting background image with:', {
-        image_url: country.image_url,
-        cover_image: country.cover_image,
-        final_url: country.image_url 
-          ? country.image_url
-          : country.cover_image 
-            ? `/storage/${country.cover_image}` 
-            : `https://source.unsplash.com/1200x600/?${country.name},landscape`
-      })}
       <div 
         className="h-80 bg-cover bg-center relative"
         style={{
-          backgroundImage: country.image_url 
-            ? `url(${country.image_url})` 
-            : country.cover_image 
-              ? `url(/storage/${country.cover_image})` 
-              : `url(https://source.unsplash.com/1200x600/?${country.name},landscape)`
+          backgroundImage:
+            countryFlagImages[country.name.replace(/\s/g, '')]
+              ? `url(${countryFlagImages[country.name.replace(/\s/g, '')]})`
+              : country.image_url
+                ? `url(${country.image_url})`
+                : country.cover_image
+                  ? `url(/storage/${country.cover_image})`
+                  : `url(https://source.unsplash.com/1200x600/?${country.name},landscape)`
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70">
@@ -237,21 +235,6 @@ const CountryDetail = () => {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Debug Section - Only visible during development */}
-        <div className="mb-4 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-bold mb-2">Debug Information:</h3>
-          <p>Country ID: {country.id}</p>
-          <p>Total Services: {services.length}</p>
-          <p>Filtered Services: {filteredServices.length}</p>
-          <p>Selected Type: {selectedType}</p>
-          <details>
-            <summary className="cursor-pointer text-blue-600">Show Service Data</summary>
-            <pre className="bg-gray-800 text-green-400 p-4 rounded mt-2 overflow-auto max-h-64 text-xs">
-              {JSON.stringify(services, null, 2)}
-            </pre>
-          </details>
         </div>
 
         {/* Services Grid */}

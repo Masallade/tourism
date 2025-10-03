@@ -1,4 +1,9 @@
 <?php
+use App\Http\Controllers\ServiceProviderPasswordController;
+
+// Service Provider Change Password API
+Route::post('/service-provider/change-password', [ServiceProviderPasswordController::class, 'change']);
+// Service Provider password change
 
 // Get all services for a country
 Route::get('/country/{countryId}/services', function ($countryId) {
@@ -39,8 +44,7 @@ Route::get('/countries/{id}', function ($id) {
 
 // Get a single theme by ID with provider count
 Route::get('/themes/{id}', function ($id) {
-    return \App\Models\Theme::withCount('serviceProviders')
-        ->findOrFail($id);
+    return \App\Models\Theme::withCount('serviceProviders')->findOrFail($id);
 });
 
 // Get all services for a service type in a country
@@ -67,6 +71,13 @@ Route::get('/theme/{themeId}/service-type/{typeId}/services', function ($themeId
 use App\Http\Controllers\ServiceController;
 Route::get('/provider/services', [ServiceController::class, 'index']);
 Route::post('/provider/services', [ServiceController::class, 'store']);
+
+// Service detail endpoint
+Route::get('/services/{id}', function($id) {
+    $service = \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+        ->findOrFail($id);
+    return $service;
+});
 
 use Illuminate\Support\Facades\Hash;
 // Service Provider Login

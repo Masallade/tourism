@@ -12,8 +12,15 @@ class ServiceController extends Controller
     // List all services for a provider
     public function index(Request $request)
     {
-        $providerId = $request->user()->id;
-        $services = Service::where('provider_id', $providerId)->with('serviceType', 'country')->get();
+        // Use provider_id from request (input or query param), fallback to auth if available
+        $providerId = $request->input('provider_id') ?? $request->query('provider_id');
+        if (!$providerId && $request->user()) {
+            $providerId = $request->user()->id;
+        }
+        if (!$providerId) {
+            return response()->json(['error' => 'provider_id is required'], 400);
+        }
+        $services = Service::where('provider_id', $providerId)->with('serviceType', 'country', 'theme')->get();
         return response()->json($services);
     }
 
@@ -48,7 +55,30 @@ class ServiceController extends Controller
             
             \Log::info('Using provider_id from request: ' . $providerId);
             
-            // Use only the values from the request with no defaults
+            // Handle main image upload if present
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $imagePath = $file->storeAs('uploads/services', $filename, 'public');
+            }
+            
+            // Handle second image upload
+            $imagePath2 = null;
+            if ($request->hasFile('image_2')) {
+                $file = $request->file('image_2');
+                $filename = time() . '_' . uniqid() . '_2.' . $file->getClientOriginalExtension();
+                $imagePath2 = $file->storeAs('uploads/services', $filename, 'public');
+            }
+            
+            // Handle third image upload
+            $imagePath3 = null;
+            if ($request->hasFile('image_3')) {
+                $file = $request->file('image_3');
+                $filename = time() . '_' . uniqid() . '_3.' . $file->getClientOriginalExtension();
+                $imagePath3 = $file->storeAs('uploads/services', $filename, 'public');
+            }
+
             $serviceData = [
                 'provider_id' => $providerId,
                 'country_id' => $countryId,
@@ -57,6 +87,16 @@ class ServiceController extends Controller
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'price' => $request->input('price'),
+                'image' => $imagePath,
+                'image_2' => $imagePath2,
+                'image_3' => $imagePath3,
+                'min_age' => $request->input('min_age'),
+                'max_age' => $request->input('max_age'),
+                'duration' => $request->input('duration'),
+                'overview' => $request->input('overview'),
+                'details' => $request->input('details'),
+                'lat' => $request->input('lat'),
+                'lng' => $request->input('lng'),
                 'created_at' => now(),
                 'updated_at' => now()
             ];

@@ -17,6 +17,21 @@ class Service extends Model
         'name',
         'description',
         'price',
+        'image',
+        'image_2',
+        'image_3',
+        'min_age',
+        'max_age',
+        'duration',
+        'overview',
+        'details',
+        'lat',
+        'lng',
+    ];
+
+    protected $casts = [
+        'lat' => 'decimal:7',
+        'lng' => 'decimal:7',
     ];
 
     public function provider()

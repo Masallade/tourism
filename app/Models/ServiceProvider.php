@@ -34,6 +34,8 @@ class ServiceProvider extends Model
         'image',
         'documents',
         'password',
+        'lat',
+        'lng',
     ];
 
     protected $hidden = [

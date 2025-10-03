@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ServiceCard from './ServiceCard';
 
+// Mapping of theme names to representative images (network URLs)
+const themeImages = {
+  Adventure: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+  Culture: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
+  Nature: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80',
+  Wellness: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
+  Family: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1200&q=80',
+  Luxury: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
+  // Add more theme-image pairs as needed
+};
+
 const ThemeDetail = () => {
   const { id } = useParams();
   const [theme, setTheme] = useState(null);
@@ -114,9 +125,12 @@ const ThemeDetail = () => {
       <div 
         className="h-80 bg-cover bg-center relative"
         style={{
-          backgroundImage: theme.image 
-            ? `url(/storage/${theme.image})` 
-            : `url(https://source.unsplash.com/1200x600/?${theme.name},travel)`
+          backgroundImage:
+            themeImages[theme.name?.replace(/\s/g, '')] 
+              ? `url(${themeImages[theme.name?.replace(/\s/g, '')]})`
+              : theme.image
+                ? `url(/storage/${theme.image})`
+                : `url(https://source.unsplash.com/1200x600/?${theme.name},travel)`
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/50 to-purple-900/80">

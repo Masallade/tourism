@@ -1,5 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, onClose, loading }) => {
   const [name, setName] = useState('');
@@ -9,16 +20,78 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   const [themeId, setThemeId] = useState(themes[0]?.id || '');
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [image2, setImage2] = useState(null);
+  const [image2Preview, setImage2Preview] = useState(null);
+  const [image3, setImage3] = useState(null);
+  const [image3Preview, setImage3Preview] = useState(null);
+  const [minAge, setMinAge] = useState('1');
+  const [maxAge, setMaxAge] = useState('70');
+  const [duration, setDuration] = useState('');
+  const [overview, setOverview] = useState('');
+  const [details, setDetails] = useState('');
   const [error, setError] = useState('');
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
+  const [position, setPosition] = useState([25.276987, 55.296249]); // Default: Dubai
 
-  // Handle image upload and preview
-  const handleImageChange = (e) => {
+  useEffect(() => {
+    if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+      setPosition([parseFloat(lat), parseFloat(lng)]);
+    }
+  }, [lat, lng]);
+
+  // Map marker drag handler
+  const DraggableMarker = () => {
+    const markerRef = useRef(null);
+    const eventHandlers = {
+      dragend() {
+        const marker = markerRef.current;
+        if (marker != null) {
+          const { lat: newLat, lng: newLng } = marker.getLatLng();
+          setLat(newLat.toFixed(7));
+          setLng(newLng.toFixed(7));
+        }
+      }
+    };
+    return (
+      <Marker
+        draggable={true}
+        eventHandlers={eventHandlers}
+        position={position}
+        ref={markerRef}
+      />
+    );
+  };
+
+  // Map click handler
+  const MapClickHandler = () => {
+    useMapEvents({
+      click(e) {
+        const { lat: newLat, lng: newLng } = e.latlng;
+        setLat(newLat.toFixed(7));
+        setLng(newLng.toFixed(7));
+        setPosition([newLat, newLng]);
+      },
+    });
+    return null;
+  };
+
+  // Handle image upload and preview for all images
+  const handleImageChange = (e, imageNum) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        if (imageNum === 1) {
+          setImage(file);
+          setImagePreview(reader.result);
+        } else if (imageNum === 2) {
+          setImage2(file);
+          setImage2Preview(reader.result);
+        } else if (imageNum === 3) {
+          setImage3(file);
+          setImage3Preview(reader.result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -30,17 +103,26 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
       setError('Service name is required.');
       return;
     }
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', description || '');
-    formData.append('price', price || '');
-    formData.append('service_type_id', serviceTypeId);
-    formData.append('theme_id', themeId);
-    formData.append('country_id', country?.id);
-    formData.append('provider_id', provider?.id)
-    // All other fields will be handled on the backend
-    if (image) formData.append('image', image);
-    onSubmit(formData);
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('description', description || '');
+  formData.append('overview', overview || '');
+  formData.append('details', details || '');
+  formData.append('price', price || '');
+  formData.append('min_age', minAge || '');
+  formData.append('max_age', maxAge || '');
+  formData.append('duration', duration || '');
+  formData.append('service_type_id', serviceTypeId);
+  formData.append('theme_id', themeId);
+  formData.append('country_id', country?.id);
+  formData.append('provider_id', provider?.id);
+  formData.append('lat', lat);
+  formData.append('lng', lng);
+  // Append images if they exist
+  if (image) formData.append('image', image);
+  if (image2) formData.append('image_2', image2);
+  if (image3) formData.append('image_3', image3);
+  onSubmit(formData);
   };
 
   return (
@@ -135,6 +217,17 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
         )}
       </div>
       
+      {/* Overview Field */}
+      <div>
+        <label className="block text-gray-700 font-medium mb-2">Overview</label>
+        <textarea 
+          className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors min-h-[100px]" 
+          placeholder="Provide a brief overview of your service..."
+          value={overview} 
+          onChange={e => setOverview(e.target.value)}
+        />
+      </div>
+      
       {/* Description Field */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Description</label>
@@ -146,66 +239,251 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
         />
       </div>
       
-      {/* Price Field */}
+      {/* Details Field */}
       <div>
-        <label className="block text-gray-700 font-medium mb-2">Price</label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-            <span className="text-gray-500">$</span>
+        <label className="block text-gray-700 font-medium mb-2">Details</label>
+        <textarea 
+          className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors min-h-[100px]" 
+          placeholder="Provide detailed information about your service..."
+          value={details} 
+          onChange={e => setDetails(e.target.value)}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Age Range Fields */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Age Range</label>
+          <div className="flex gap-2 items-center">
+            <input 
+              type="number" 
+              className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors" 
+              placeholder="Min Age"
+              value={minAge} 
+              onChange={e => setMinAge(e.target.value)} 
+              min="0" 
+              max="100" 
+            />
+            <span className="text-gray-500">to</span>
+            <input 
+              type="number" 
+              className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors" 
+              placeholder="Max Age"
+              value={maxAge} 
+              onChange={e => setMaxAge(e.target.value)} 
+              min="0" 
+              max="100" 
+            />
           </div>
+        </div>
+        
+        {/* Duration Field */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Duration</label>
           <input 
-            type="number" 
-            className="w-full pl-8 px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors" 
-            placeholder="0.00"
-            value={price} 
-            onChange={e => setPrice(e.target.value)} 
-            min="0" 
-            step="0.01" 
+            type="text" 
+            className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors" 
+            placeholder="e.g., 2h, 3 days, 8h"
+            value={duration} 
+            onChange={e => setDuration(e.target.value)} 
           />
+        </div>
+        
+        {/* Price Field */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Price</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <span className="text-gray-500">$</span>
+            </div>
+            <input 
+              type="number" 
+              className="w-full pl-8 px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors" 
+              placeholder="0.00"
+              value={price} 
+              onChange={e => setPrice(e.target.value)} 
+              min="0" 
+              step="0.01" 
+            />
+          </div>
         </div>
       </div>
       
-      {/* Image Upload Field */}
+      {/* Location Picker */}
       <div>
-        <label className="block text-gray-700 font-medium mb-2">Service Image</label>
-        <div className="flex items-center justify-center w-full">
-          <label className="flex flex-col items-center justify-center w-full border-2 border-gray-200 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-            {imagePreview ? (
-              <div className="relative w-full p-1">
-                <img 
-                  src={imagePreview} 
-                  alt="Image preview" 
-                  className="h-56 w-full object-cover rounded-md"
-                />
-                <button 
-                  type="button" 
-                  className="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                  onClick={() => {
-                    setImage(null);
-                    setImagePreview(null);
-                  }}
-                >
-                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6">
-                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="mt-2 text-sm text-gray-500">Click to upload or drag and drop</p>
-                <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
-              </div>
-            )}
-            <input 
-              type="file" 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleImageChange} 
+        <label className="block text-gray-700 font-medium mb-2">Service Location (Pick on map)</label>
+        <div className="w-full h-64 border-2 border-blue-200 rounded-lg mb-3 overflow-hidden">
+          {typeof window !== 'undefined' && (
+            <MapContainer 
+              center={position} 
+              zoom={13} 
+              scrollWheelZoom={true}
+              style={{ height: '100%', width: '100%' }}
+              className="z-0"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <DraggableMarker />
+              <MapClickHandler />
+            </MapContainer>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Latitude</label>
+            <input
+              type="text"
+              value={lat}
+              onChange={e => setLat(e.target.value)}
+              className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900"
+              placeholder="Latitude"
             />
-          </label>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Longitude</label>
+            <input
+              type="text"
+              value={lng}
+              onChange={e => setLng(e.target.value)}
+              className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900"
+              placeholder="Longitude"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Image Upload Fields */}
+      <label className="block text-gray-700 font-medium mb-2">Service Images (Upload up to 3)</label>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Image 1 Upload Field */}
+        <div>
+          <div className="flex items-center justify-center w-full">
+            <label className="flex flex-col items-center justify-center w-full h-56 border-2 border-gray-200 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              {imagePreview ? (
+                <div className="relative w-full h-full p-1">
+                  <img 
+                    src={imagePreview} 
+                    alt="Image 1 preview" 
+                    className="h-full w-full object-cover rounded-md"
+                  />
+                  <button 
+                    type="button" 
+                    className="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                    onClick={() => {
+                      setImage(null);
+                      setImagePreview(null);
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">Main Image</p>
+                  <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              )}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 1)} 
+              />
+            </label>
+          </div>
+        </div>
+        
+        {/* Image 2 Upload Field */}
+        <div>
+          <div className="flex items-center justify-center w-full">
+            <label className="flex flex-col items-center justify-center w-full h-56 border-2 border-gray-200 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              {image2Preview ? (
+                <div className="relative w-full h-full p-1">
+                  <img 
+                    src={image2Preview} 
+                    alt="Image 2 preview" 
+                    className="h-full w-full object-cover rounded-md"
+                  />
+                  <button 
+                    type="button" 
+                    className="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                    onClick={() => {
+                      setImage2(null);
+                      setImage2Preview(null);
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">Second Image</p>
+                  <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              )}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 2)} 
+              />
+            </label>
+          </div>
+        </div>
+        
+        {/* Image 3 Upload Field */}
+        <div>
+          <div className="flex items-center justify-center w-full">
+            <label className="flex flex-col items-center justify-center w-full h-56 border-2 border-gray-200 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              {image3Preview ? (
+                <div className="relative w-full h-full p-1">
+                  <img 
+                    src={image3Preview} 
+                    alt="Image 3 preview" 
+                    className="h-full w-full object-cover rounded-md"
+                  />
+                  <button 
+                    type="button" 
+                    className="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                    onClick={() => {
+                      setImage3(null);
+                      setImage3Preview(null);
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">Third Image</p>
+                  <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              )}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 3)} 
+              />
+            </label>
+          </div>
         </div>
       </div>
       

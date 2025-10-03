@@ -1,10 +1,22 @@
-
-
 import React, { useState, useEffect } from 'react';
 import ServiceForm from './ServiceForm';
+import StaticMap from './StaticMap';
 
 const ServiceProviderDashboard = ({ provider }) => {
   const [showForm, setShowForm] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  });
+  const [passwordError, setPasswordError] = useState('');
   const [serviceTypes, setServiceTypes] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +71,7 @@ const ServiceProviderDashboard = ({ provider }) => {
         // Fetch provider's services if available
         if (provider?.id) {
           try {
-            const servicesRes = await fetch(`/api/provider/${provider.id}/services`);
+            const servicesRes = await fetch(`/api/provider/services?provider_id=${provider.id}`);
             if (servicesRes.ok) {
               const servicesData = await servicesRes.json();
               setServices(servicesData);
@@ -76,8 +88,66 @@ const ServiceProviderDashboard = ({ provider }) => {
   }, [provider]);
 
 
+
   const handleAddService = () => setShowForm(true);
   const handleCloseForm = () => setShowForm(false);
+
+  // Change Password Handlers
+  const handleOpenChangePassword = () => {
+    setShowChangePassword(true);
+    setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError('');
+  };
+  const handleCloseChangePassword = () => {
+    setShowChangePassword(false);
+    setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError('');
+  };
+  const handlePasswordInputChange = (e) => {
+    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
+  };
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All fields are required.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    setChangePasswordLoading(true);
+    try {
+      const res = await fetch('/api/service-provider/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider_id: provider?.id,
+          old_password: passwordForm.oldPassword,
+          new_password: passwordForm.newPassword,
+          new_password_confirmation: passwordForm.confirmPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setPasswordError(data.error || 'Failed to change password.');
+        setChangePasswordLoading(false);
+        return;
+      }
+      setShowChangePassword(false);
+      alert('Password changed successfully!');
+    } catch (err) {
+      setPasswordError('An error occurred. Please try again.');
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
 
   const handleSubmit = async (formData) => {
     setLoading(true);
@@ -170,6 +240,107 @@ const ServiceProviderDashboard = ({ provider }) => {
                     </svg>
                     Edit Details
                   </button>
+                  <button
+                    className="px-5 py-2 bg-yellow-500 text-white rounded-md font-medium hover:bg-yellow-600 transition flex items-center gap-2 shadow-sm"
+                    onClick={handleOpenChangePassword}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 15v2"></path>
+                      <path d="M9 21h6"></path>
+                      <path d="M19 13A7 7 0 1 0 5 13"></path>
+                      <path d="M12 9v4"></path>
+                    </svg>
+                    Change Password
+                  </button>
+        {/* Change Password Modal */}
+        {showChangePassword && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+                <h3 className="text-xl font-bold text-gray-800">Change Password</h3>
+                <button
+                  onClick={handleCloseChangePassword}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleChangePasswordSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">Old Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword.old ? 'text' : 'password'}
+                      name="oldPassword"
+                      value={passwordForm.oldPassword}
+                      onChange={handlePasswordInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 pr-10"
+                      required
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('old')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none">
+                      {showPassword.old ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.67 1.613-1.176 2.318M15.362 17.362A9.953 9.953 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.638-4.362M17.657 16.657L13.414 12.414M6.343 7.343L10.586 11.586" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword.new ? 'text' : 'password'}
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 pr-10"
+                      required
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('new')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none">
+                      {showPassword.new ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.67 1.613-1.176 2.318M15.362 17.362A9.953 9.953 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.638-4.362M17.657 16.657L13.414 12.414M6.343 7.343L10.586 11.586" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">Confirm New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword.confirm ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 pr-10"
+                      required
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('confirm')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none">
+                      {showPassword.confirm ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.67 1.613-1.176 2.318M15.362 17.362A9.953 9.953 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.638-4.362M17.657 16.657L13.414 12.414M6.343 7.343L10.586 11.586" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {passwordError && <div className="text-red-500 text-sm">{passwordError}</div>}
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-yellow-500 text-white rounded-md font-semibold hover:bg-yellow-600 transition disabled:opacity-60"
+                  disabled={changePasswordLoading}
+                >
+                  {changePasswordLoading ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
                 </div>
               </div>
             </div>
@@ -193,31 +364,65 @@ const ServiceProviderDashboard = ({ provider }) => {
 
             <div className="bg-white rounded-xl p-8 shadow-sm">
               {services && services.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {services.map(service => (
-                    <div key={service.id} className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition">
-                      <h3 className="font-medium text-lg text-gray-800">{service.name}</h3>
-                      <p className="text-gray-500 text-sm mt-1">{service.description || 'No description provided'}</p>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="text-green-600 font-medium">${service.price || '0.00'}</span>
-                        <div className="flex gap-2">
-                          <button className="p-1 text-blue-500 hover:text-blue-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                          </button>
-                          <button className="p-1 text-red-500 hover:text-red-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        </div>
+                serviceTypes.map(type => {
+                  const filtered = services.filter(s => s.service_type_id === type.id);
+                  if (!filtered.length) return null;
+                  return (
+                    <div key={type.id} className="mb-8">
+                      <h3 className="text-lg font-bold text-blue-700 mb-4">{type.name}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filtered.map(service => (
+                          <div key={service.id} className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition bg-blue-50">
+                            <div className="flex items-center gap-4 mb-2">
+                              {service.image ? (
+                                <img src={`/storage/${service.image}`} alt={service.name} className="w-16 h-16 object-cover rounded-md border" />
+                              ) : (
+                                <div className="w-16 h-16 bg-gradient-to-br from-green-200 to-blue-200 flex items-center justify-center rounded-md text-2xl font-bold text-gray-400">{service.name.charAt(0)}</div>
+                              )}
+                              <div>
+                                <h4 className="font-semibold text-gray-800">{service.name}</h4>
+                                <div className="text-xs text-gray-500">{service.theme?.name || 'No Theme'}</div>
+                              </div>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-2">{service.description || 'No description provided'}</p>
+                            {/* Lat/Lng display and map */}
+                            {(service.lat || service.lng) && (
+                              <>
+                                <div className="text-xs text-blue-700 mb-2">
+                                  <span className="font-semibold">Location:</span>
+                                  {service.lat && (
+                                    <span> Lat: {parseFloat(service.lat).toFixed(6)}</span>
+                                  )}
+                                  {service.lng && (
+                                    <span> | Lng: {parseFloat(service.lng).toFixed(6)}</span>
+                                  )}
+                                </div>
+                                <StaticMap lat={service.lat} lng={service.lng} height={120} zoom={13} />
+                              </>
+                            )}
+                            <div className="flex items-center justify-between mt-3">
+                              <span className="text-green-700 font-bold">${service.price || '0.00'}</span>
+                              <div className="flex gap-2">
+                                <button className="p-1 text-blue-500 hover:text-blue-700">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                  </svg>
+                                </button>
+                                <button className="p-1 text-red-500 hover:text-red-700">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })
               ) : (
                 <div className="text-center py-10">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">

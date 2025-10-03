@@ -1,11 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
+
+// Marker component with position tracking
+const DraggableMarker = ({ position }) => {
+    const markerRef = useRef(null);
+    const { updateLocationData } = React.useContext(LocationContext);
+
+    const eventHandlers = {
+        dragend() {
+            const marker = markerRef.current;
+            if (marker != null) {
+                const { lat, lng } = marker.getLatLng();
+                updateLocationData(lat, lng);
+            }
+        }
+    };
+
+    return (
+        <Marker
+            draggable={true}
+            eventHandlers={eventHandlers}
+            position={position}
+            ref={markerRef}
+        />
+    );
+};
+
+// Component to update map center when position changes
+const MapCenterAdjuster = ({ position }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+        if (position) {
+            map.setView(position, map.getZoom());
+        }
+    }, [position, map]);
+    
+    return null;
+};
+
+// Create context for sharing location update function
+const LocationContext = React.createContext({});
+
+// Map click handler component
+const MapClickHandler = () => {
+    const { updateLocationData } = React.useContext(LocationContext);
+    
+    useMapEvents({
+        click(e) {
+            const { lat, lng } = e.latlng;
+            updateLocationData(lat, lng);
+        },
+    });
+    return null;
+};
 
 // Add showApproveCheckbox prop
 const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false }) => {
     const [formData, setFormData] = useState({
         country_id: '',
         name: '',
-    service_type_ids: [],
+        service_type_ids: [],
         description: '',
         price_range: '',
         website: '',
@@ -13,7 +78,29 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         phone: '',
         is_approved: false,
         themes: [],
+        lat: '',
+        lng: '',
     });
+    
+    const [position, setPosition] = useState([25.276987, 55.296249]); // Default position (Dubai)
+    
+    // Function to update both position and form data
+    const updateLocationData = (lat, lng) => {
+        setPosition([lat, lng]);
+        setFormData(prev => ({
+            ...prev,
+            lat: lat.toFixed(7),
+            lng: lng.toFixed(7)
+        }));
+        
+        // Clear location error if it exists
+        if (errors.location) {
+            setErrors(prev => ({
+                ...prev,
+                location: ''
+            }));
+        }
+    };
     const [serviceTypes, setServiceTypes] = useState([]);
     const [image, setImage] = useState(null);
     const [documents, setDocuments] = useState([]);
@@ -23,11 +110,21 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     const [summaryError, setSummaryError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // We handle form data updates directly in updateLocationData
+    
+    // We don't need this effect anymore as we handle position updates in updateLocationData and handleInputChange
+
     useEffect(() => {
         fetchCountries();
         fetchThemes();
         fetchServiceTypes();
+        
         if (provider) {
+            // Update position if provider has coordinates
+            if (provider.lat && provider.lng) {
+                setPosition([parseFloat(provider.lat), parseFloat(provider.lng)]);
+            }
+            
             setFormData({
                 country_id: provider.country_id || '',
                 name: provider.name || '',
@@ -39,6 +136,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 phone: provider.phone || '',
                 is_approved: provider.is_approved || false,
                 themes: provider.themes?.map(t => t.id) || [],
+                lat: provider.lat || '',
+                lng: provider.lng || '',
             });
             setImage(null); // You may want to show existing image preview here
             setDocuments([]); // You may want to show existing documents here
@@ -95,6 +194,34 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         // Handle multi-select for service_type_ids
         if (name === 'service_type_ids' && multiple) {
             fieldValue = Array.from(options).filter(opt => opt.selected).map(opt => opt.value);
+        }
+        
+        // Handle lat/lng changes
+        if (name === 'lat' || name === 'lng') {
+            // Only update if it's a valid number or empty
+            if (fieldValue === '' || !isNaN(parseFloat(fieldValue))) {
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: fieldValue
+                }));
+                
+                // Update position state if both lat and lng are valid
+                const lat = name === 'lat' ? parseFloat(fieldValue) : parseFloat(formData.lat);
+                const lng = name === 'lng' ? parseFloat(fieldValue) : parseFloat(formData.lng);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    setPosition([lat, lng]);
+                }
+                
+                // Clear location error if it exists
+                if (errors.location) {
+                    setErrors(prev => ({
+                        ...prev,
+                        location: ''
+                    }));
+                }
+            }
+            return;
         }
 
         setFormData(prev => ({
@@ -164,6 +291,10 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         // Country
         if (!formData.country_id) {
             newErrors.country_id = 'Country is required';
+        }
+        // Location
+        if (!formData.lat || !formData.lng) {
+            newErrors.location = 'Please select a location on the map';
         }
         // Price Range
         if (!formData.price_range || !allowedPriceRanges.includes(formData.price_range)) {
@@ -517,6 +648,66 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             />
                             {errors.description && (
                                 <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                            )}
+                        </div>
+                        
+                        <div className="md:col-span-2 mb-6">
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                                Location - Drag the pin or click on map to set location <span className="text-red-500">*</span>
+                            </label>
+                            
+                            <div className="w-full h-64 md:h-96 border-2 border-blue-200 rounded-lg mb-3 overflow-hidden">
+                                {typeof window !== 'undefined' && (
+                                    <LocationContext.Provider value={{ updateLocationData }}>
+                                        <MapContainer 
+                                            center={position} 
+                                            zoom={13} 
+                                            scrollWheelZoom={true}
+                                            style={{ height: '100%', width: '100%' }}
+                                            className="z-0"
+                                        >
+                                            <TileLayer
+                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                            />
+                                            <DraggableMarker position={position} />
+                                            <MapClickHandler />
+                                            <MapCenterAdjuster position={position} />
+                                        </MapContainer>
+                                    </LocationContext.Provider>
+                                )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Latitude</label>
+                                    <input
+                                        type="text"
+                                        name="lat"
+                                        value={formData.lat}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 ${
+                                            errors.location ? 'border-red-400' : 'border-blue-200'
+                                        }`}
+                                        placeholder="Latitude"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Longitude</label>
+                                    <input
+                                        type="text"
+                                        name="lng"
+                                        value={formData.lng}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 ${
+                                            errors.location ? 'border-red-400' : 'border-blue-200'
+                                        }`}
+                                        placeholder="Longitude"
+                                    />
+                                </div>
+                            </div>
+                            {errors.location && (
+                                <p className="text-red-500 text-sm mt-1">{errors.location}</p>
                             )}
                         </div>
 
