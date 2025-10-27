@@ -1,9 +1,17 @@
 <?php
 use App\Http\Controllers\ServiceProviderPasswordController;
+use Illuminate\Support\Facades\Storage;
 
 // Service Provider Change Password API
 Route::post('/service-provider/change-password', [ServiceProviderPasswordController::class, 'change']);
 // Service Provider password change
+
+// Get all users (for admin dashboard)
+Route::get('/users', function () {
+    return \App\Models\User::select('id', 'name', 'email', 'role', 'created_at')
+        ->orderBy('created_at', 'desc')
+        ->get();
+});
 
 // Get all services for a country
 Route::get('/country/{countryId}/services', function ($countryId) {
@@ -69,8 +77,11 @@ Route::get('/theme/{themeId}/service-type/{typeId}/services', function ($themeId
 
 // Service management for providers (no auth for local testing)
 use App\Http\Controllers\ServiceController;
+Route::get('/services/all', [ServiceController::class, 'all']); // Get all services from all providers
 Route::get('/provider/services', [ServiceController::class, 'index']);
 Route::post('/provider/services', [ServiceController::class, 'store']);
+Route::put('/provider/services/{id}', [ServiceController::class, 'update']);
+Route::delete('/provider/services/{id}', [ServiceController::class, 'destroy']);
 
 // Service detail endpoint
 Route::get('/services/{id}', function($id) {
@@ -117,6 +128,7 @@ Route::get('/provider/{providerId}/service-types', function ($providerId) {
 // Countries
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\ThemeController;
+use App\Http\Middleware\AdminAuth;
 
 Route::get('/countries', function () {
     $countries = \App\Models\Country::withCount('serviceProviders')->get();
@@ -132,23 +144,47 @@ Route::get('/countries', function () {
     
     return $countries;
 });
-Route::post('/countries', [CountryController::class, 'store']);
-Route::put('/countries/{country}', [CountryController::class, 'update']);
+
+// Get country by ID
+Route::get('/countries/{id}', function ($id) {
+    $country = \App\Models\Country::withCount('serviceProviders')->findOrFail($id);
+    return $country;
+});
+
+// Get country by slug
+Route::get('/countries/slug/{slug}', function ($slug) {
+    $country = \App\Models\Country::withCount('serviceProviders')->where('slug', $slug)->firstOrFail();
+    return $country;
+});
+Route::post('/countries', [CountryController::class, 'store'])->middleware('admin.auth');
+Route::put('/countries/{country}', [CountryController::class, 'update'])->middleware('admin.auth');
 Route::delete('/countries/{country}', function (\App\Models\Country $country) {
     $country->delete();
     return response()->json(['message' => 'Country deleted successfully']);
-});
+})->middleware('admin.auth');
 
 // Themes
 Route::get('/themes', function () {
     return \App\Models\Theme::withCount('serviceProviders')->get();
 });
-Route::post('/themes', [ThemeController::class, 'store']);
-Route::put('/themes/{theme}', [ThemeController::class, 'update']);
+
+// Get theme by ID
+Route::get('/themes/{id}', function ($id) {
+    $theme = \App\Models\Theme::withCount('serviceProviders')->findOrFail($id);
+    return $theme;
+});
+
+// Get theme by slug
+Route::get('/themes/slug/{slug}', function ($slug) {
+    $theme = \App\Models\Theme::withCount('serviceProviders')->where('slug', $slug)->firstOrFail();
+    return $theme;
+});
+Route::post('/themes', [ThemeController::class, 'store'])->middleware('admin.auth');
+Route::put('/themes/{theme}', [ThemeController::class, 'update'])->middleware('admin.auth');
 Route::delete('/themes/{theme}', function (\App\Models\Theme $theme) {
     $theme->delete();
     return response()->json(['message' => 'Theme deleted successfully']);
-});
+})->middleware('admin.auth');
 
 // Service Providers
 Route::get('/service-providers', function () {
@@ -184,8 +220,8 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
 
         $data = $request->except(['themes', 'image', 'documents', 'service_type_ids']);
 
-        // Always set status to pending for user submissions
-        $data['status'] = 'pending';
+        // Always set is_approved to false for user submissions (pending approval)
+        $data['is_approved'] = false;
 
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -304,3 +340,34 @@ use App\Http\Controllers\Admin\ServiceProviderController;
 
 Route::patch('/service-providers/{serviceProvider}/approve', [ServiceProviderController::class, 'approve']);
 Route::patch('/service-providers/{serviceProvider}/reject', [ServiceProviderController::class, 'reject']);
+
+// Document download route
+Route::get('/documents/{filename}', function ($filename) {
+    $path = 'uploads/service_provider_documents/' . $filename;
+    
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404, 'Document not found');
+    }
+    
+    return Storage::disk('public')->download($path);
+})->where('filename', '.*');
+
+// Document view route
+Route::get('/documents/view/{filename}', function ($filename) {
+    $path = 'uploads/service_provider_documents/' . $filename;
+    
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404, 'Document not found');
+    }
+    
+    $file = Storage::disk('public')->get($path);
+    $mimeType = Storage::disk('public')->mimeType($path);
+    
+    return response($file, 200)
+        ->header('Content-Type', $mimeType)
+        ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+})->where('filename', '.*');
+
+// AI Assistant
+use App\Http\Controllers\AIAssistantController;
+Route::post('/ai-chat', [AIAssistantController::class, 'chat']);

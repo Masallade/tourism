@@ -24,6 +24,15 @@ class ServiceController extends Controller
         return response()->json($services);
     }
 
+    // List all services from all providers (for public trips page)
+    public function all(Request $request)
+    {
+        $services = Service::with(['serviceType', 'country', 'theme', 'provider'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return response()->json($services);
+    }
+
     // Store a new service
     public function store(Request $request)
     {
@@ -142,6 +151,112 @@ class ServiceController extends Controller
             
             return response()->json([
                 'error' => 'Failed to create service: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Update an existing service
+    public function update(Request $request, $id)
+    {
+        \Log::info('ServiceController@update - Starting service update for ID: ' . $id);
+        
+        try {
+            $service = Service::findOrFail($id);
+            
+            // Log all incoming request data
+            \Log::info('Update request data:', $request->all());
+            
+            // Handle main image upload if present
+            if ($request->hasFile('image')) {
+                // Delete old image if exists
+                if ($service->image && \Storage::disk('public')->exists($service->image)) {
+                    \Storage::disk('public')->delete($service->image);
+                }
+                $file = $request->file('image');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $service->image = $file->storeAs('uploads/services', $filename, 'public');
+            }
+            
+            // Handle second image upload
+            if ($request->hasFile('image_2')) {
+                if ($service->image_2 && \Storage::disk('public')->exists($service->image_2)) {
+                    \Storage::disk('public')->delete($service->image_2);
+                }
+                $file = $request->file('image_2');
+                $filename = time() . '_' . uniqid() . '_2.' . $file->getClientOriginalExtension();
+                $service->image_2 = $file->storeAs('uploads/services', $filename, 'public');
+            }
+            
+            // Handle third image upload
+            if ($request->hasFile('image_3')) {
+                if ($service->image_3 && \Storage::disk('public')->exists($service->image_3)) {
+                    \Storage::disk('public')->delete($service->image_3);
+                }
+                $file = $request->file('image_3');
+                $filename = time() . '_' . uniqid() . '_3.' . $file->getClientOriginalExtension();
+                $service->image_3 = $file->storeAs('uploads/services', $filename, 'public');
+            }
+
+            // Update service data
+            $service->update([
+                'service_type_id' => $request->input('service_type_id', $service->service_type_id),
+                'theme_id' => $request->input('theme_id', $service->theme_id),
+                'name' => $request->input('name', $service->name),
+                'description' => $request->input('description', $service->description),
+                'price' => $request->input('price', $service->price),
+                'min_age' => $request->input('min_age', $service->min_age),
+                'max_age' => $request->input('max_age', $service->max_age),
+                'duration' => $request->input('duration', $service->duration),
+                'overview' => $request->input('overview', $service->overview),
+                'details' => $request->input('details', $service->details),
+                'lat' => $request->input('lat', $service->lat),
+                'lng' => $request->input('lng', $service->lng),
+            ]);
+            
+            \Log::info('Service updated successfully: ' . $id);
+            
+            return response()->json([
+                'message' => 'Service updated successfully',
+                'service' => $service->load('serviceType', 'country', 'theme')
+            ], 200);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update service: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to update service: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Delete a service
+    public function destroy($id)
+    {
+        try {
+            $service = Service::findOrFail($id);
+            
+            // Delete images if they exist
+            if ($service->image && \Storage::disk('public')->exists($service->image)) {
+                \Storage::disk('public')->delete($service->image);
+            }
+            if ($service->image_2 && \Storage::disk('public')->exists($service->image_2)) {
+                \Storage::disk('public')->delete($service->image_2);
+            }
+            if ($service->image_3 && \Storage::disk('public')->exists($service->image_3)) {
+                \Storage::disk('public')->delete($service->image_3);
+            }
+            
+            $service->delete();
+            
+            return response()->json([
+                'message' => 'Service deleted successfully'
+            ], 200);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete service: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to delete service: ' . $e->getMessage()
             ], 500);
         }
     }

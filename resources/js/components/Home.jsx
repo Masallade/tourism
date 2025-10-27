@@ -1,68 +1,15 @@
-  // Map theme names to direct network image URLs
-  const themeImages = {
-    adventure: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-    beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    cultural: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
-    culture: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
-    nature: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80',
-    wellness: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
-    family: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1200&q=80',
-    luxury: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-    wildlife: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
-    'wildlife': 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
-    'wild life': 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1200&q=80',
-    mountain: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-    desert: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-    city: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80',
-    food: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
-  'foodculinary': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
-    'food&culinary': 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=1200&q=80',
-  photography: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-    volunteering: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-    historical: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
-    jango: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-    'testtheme': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    romantic: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-    // Add more theme-image pairs as needed
-  };
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { Link } from 'react-router-dom';
+import ProvidersMap from './ProvidersMap';
 
 
 export default function Home() {
   const [countries, setCountries] = useState([]);
-  // Map country names to direct network image URLs (flag or landmark)
-  const countryFlagImages = {
-    Pakistan: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Flag_of_Pakistan.svg',
-    Turkey: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg',
-    Egypt: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Egypt.svg',
-    Brazil: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg',
-    France: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg',
-    Germany: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg',
-    Italy: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Flag_of_Italy.svg',
-    Spain: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg',
-    China: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg',
-    India: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_India.svg',
-    UnitedArabEmirates: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg',
-    SaudiArabia: 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg',
-    UnitedStates: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
-    UnitedKingdom: 'https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg',
-    Australia: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Flag_of_Australia.svg',
-    Canada: 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg',
-    Thailand: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Flag_of_Thailand.svg',
-    Japan: 'https://upload.wikimedia.org/wikipedia/en/9/9e/Flag_of_Japan.svg',
-    Kenya: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Flag_of_Kenya.svg',
-    USA: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
-    // Add more as needed
-  };
   const [serviceTypes, setServiceTypes] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [submittedTerm, setSubmittedTerm] = useState('');
-  const [searchMode, setSearchMode] = useState(false); // true = exact match mode
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
@@ -193,57 +140,6 @@ export default function Home() {
             <p className="text-xl md:text-2xl mb-8 opacity-95 max-w-3xl mx-auto text-white/90 drop-shadow">
               Explore the world's most beautiful countries and plan your next adventure with our eco-conscious travel guides
             </p>
-            {/* Search Bar - Enhanced */}
-            <form
-              className="flex flex-col md:flex-row gap-4 justify-center items-center mb-8 mt-8 max-w-4xl mx-auto"
-              onSubmit={e => {
-                e.preventDefault();
-                setSubmittedTerm(searchTerm);
-                setSearchMode(true);
-                setTimeout(() => {
-                  const el = document.getElementById('search-results-anchor');
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }, 100);
-              }}
-            >
-              <div className="relative w-full md:w-3/4">
-                <span className="absolute left-5 top-1/2 transform -translate-y-1/2 text-green-500">
-                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </span>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={e => {
-                    setSearchTerm(e.target.value);
-                    setSearchMode(false);
-                  }}
-                  placeholder="Where would you like to explore?"
-                  className="w-full pl-14 pr-4 py-5 rounded-full text-gray-800 focus:outline-none focus:ring-4 focus:ring-green-300/40 shadow-xl border border-white/40 bg-white/90 backdrop-blur-sm transition-all duration-300"
-                  autoFocus
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      setSubmittedTerm(searchTerm);
-                      setSearchMode(true);
-                      setTimeout(() => {
-                        const el = document.getElementById('search-results-anchor');
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }, 100);
-                    }
-                  }}
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-5 rounded-full font-semibold hover:from-green-600 hover:to-blue-600 transition shadow-xl text-lg flex items-center"
-              >
-                <span>Search</span>
-                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-              </button>
-            </form>
             
             {/* Action Buttons */}
             <div className="flex flex-wrap justify-center gap-4 mt-8">
@@ -292,6 +188,30 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Interactive Map Section */}
+      <section className="py-20 bg-gradient-to-b from-white via-green-50/30 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">
+              EXPLORE OUR NETWORK
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+              <span className="relative inline-block">
+                Discover Service Providers Worldwide
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
+              </span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Explore our network of verified eco-friendly service providers across the globe. 
+              Click on any marker to learn more about sustainable travel opportunities in that location.
+            </p>
+          </div>
+
+          {/* Map Component */}
+          <ProvidersMap />
         </div>
       </section>
 
@@ -407,8 +327,6 @@ export default function Home() {
         </div>
       </section>
 
-  {/* Anchor for search scroll animation */}
-  <div id="search-results-anchor"></div>
   
   {/* Countries Section - Enhanced with curved separator */}
   <section id="countries" className="py-16 relative">
@@ -462,20 +380,9 @@ export default function Home() {
               </div>
             ) : countries.length > 0 ? (
               // Countries cards
-              (searchMode
-                ? countries.filter(country =>
-                    submittedTerm.trim() === '' ||
-                    country.name.toLowerCase() === submittedTerm.toLowerCase() ||
-                    (country.description && country.description.toLowerCase() === submittedTerm.toLowerCase())
-                  )
-                : countries.filter(country =>
-                    searchTerm.trim() === '' ||
-                    country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (country.description && country.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                  )
-              ).map((country, idx) => (
+              countries.map((country, idx) => (
                 <Link 
-                  to={`/country/${country.id}`} 
+                  to={`/country/${country.slug || country.id}`} 
                   key={country.id}
                   className="flex-shrink-0 w-[300px] bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 hover:scale-[1.02] transition-all duration-500 cursor-pointer group animate-fade-in overflow-hidden"
                   style={{
@@ -487,14 +394,7 @@ export default function Home() {
                   }}
                 >
                   <div className="relative overflow-hidden h-56">
-                    {countryFlagImages[country.name.replace(/\s/g, '')] ? (
-                      <img 
-                        src={countryFlagImages[country.name.replace(/\s/g, '')]}
-                        alt={country.name + ' flag'}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        loading="lazy"
-                      />
-                    ) : country.image_url ? (
+                    {country.image_url ? (
                       <img 
                         src={country.image_url}
                         alt={country.name}
@@ -562,14 +462,6 @@ export default function Home() {
 
 
 
-        {countries.length > 0 && (
-          <div className="text-center mt-8">
-            <button className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto">
-              <span>View All Countries</span>
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-            </button>
-          </div>
-        )}
       </div>
     </div>
     
@@ -631,20 +523,9 @@ export default function Home() {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {themes.length > 0 ? (
-                (searchMode
-                  ? themes.filter(theme =>
-                      submittedTerm.trim() === '' ||
-                      theme.name.toLowerCase() === submittedTerm.toLowerCase() ||
-                      (theme.description && theme.description.toLowerCase() === submittedTerm.toLowerCase())
-                    )
-                  : themes.filter(theme =>
-                      searchTerm.trim() === '' ||
-                      theme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      (theme.description && theme.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                    )
-                ).map((theme, idx) => (
+                themes.map((theme, idx) => (
                   <Link
-                    to={`/theme/${theme.id}`}
+                    to={`/theme/${theme.slug || theme.id}`}
                     key={theme.id}
                     className="group flex-shrink-0 w-[350px]"
                     style={{
@@ -656,20 +537,16 @@ export default function Home() {
                   >
                     <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg transform transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl border border-transparent hover:border-white/20">
                       {/* Card background with gradient overlay */}
-                      {(() => {
-                        const normalized = theme.name?.toLowerCase().replace(/\s|&/g, '');
-                        const imgUrl = themeImages[normalized];
-                        return imgUrl ? (
+                      {theme.image_url ? (
                           <img 
-                            src={imgUrl}
+                          src={theme.image_url}
                             alt={theme.name}
                             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                             loading="lazy"
                           />
                         ) : (
                           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-green-400"></div>
-                        );
-                      })()}
+                      )}
                       
                       {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/70 group-hover:via-black/30 group-hover:to-black/80 transition-all duration-300"></div>
@@ -727,16 +604,6 @@ export default function Home() {
           
 
           
-          {themes.length > 0 && (
-            <div className="text-center mt-16">
-              <button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white font-medium px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto">
-                <span>Explore All Themes</span>
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                </svg>
-              </button>
-            </div>
-          )}
         </div>
       </section>
 
@@ -751,13 +618,13 @@ export default function Home() {
             <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">WHY CHOOSE US</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               <span className="relative inline-block">
-                Why Choose EcoTravel?
+                Why Choose Unison Tour?
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
               We're committed to sustainable tourism that benefits local communities while providing 
-              unforgettable experiences for our travelers. Discover the EcoTravel difference.
+              unforgettable experiences for our travelers. Discover the Unison Tour difference.
             </p>
           </div>
 
@@ -829,7 +696,7 @@ export default function Home() {
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                 </svg>
                 <p className="text-xl text-gray-700 italic mb-4">
-                  "EcoTravel provided us with the perfect balance of adventure and sustainability. Our guide was knowledgeable and passionate, showing us hidden gems while teaching us about conservation efforts. It was the most meaningful travel experience we've ever had!"
+                  "Unison Tour provided us with the perfect balance of adventure and sustainability. Our guide was knowledgeable and passionate, showing us hidden gems while teaching us about conservation efforts. It was the most meaningful travel experience we've ever had!"
                 </p>
                 <div>
                   <h4 className="font-semibold text-gray-900">Sarah Johnson</h4>
@@ -840,7 +707,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
+
       {/* Testimonials Section */}
       <section className="py-16 bg-gradient-to-br from-green-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -937,7 +804,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-600 mb-3">
-                "From the moment we arrived, it was clear that EcoTravel values sustainability. We enjoyed amazing food, cultural experiences, and made a positive impact on the places we visited."
+                "From the moment we arrived, it was clear that Unison Tour values sustainability. We enjoyed amazing food, cultural experiences, and made a positive impact on the places we visited."
               </p>
               <p className="text-sm text-gray-500">Traveled to Costa Rica, June 2025</p>
             </div>
@@ -992,7 +859,7 @@ export default function Home() {
             <div>
               <div className="flex items-center mb-4">
                 <span className="text-green-300 text-3xl">🌿</span>
-                <h3 className="text-2xl font-bold ml-2">EcoTravel</h3>
+                <h3 className="text-2xl font-bold ml-2">Unison Tour</h3>
               </div>
               <p className="mb-5 text-green-50">Discover sustainable travel experiences that connect you with nature while preserving our planet for future generations.</p>
               <div className="flex space-x-4">
@@ -1092,7 +959,7 @@ export default function Home() {
           
           {/* Footer Bottom - Copyright and Admin Login */}
           <div className="border-t border-green-500 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-sm mb-4 sm:mb-0">© 2025 EcoTravel. All rights reserved.</p>
+            <p className="text-sm mb-4 sm:mb-0">© 2025 Unison Tour. All rights reserved.</p>
             <div className="flex space-x-6 text-sm">
               <a href="#" className="hover:text-green-200 transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-green-200 transition-colors">Terms of Service</a>

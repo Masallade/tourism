@@ -22,6 +22,9 @@ const ServiceProviderDashboard = ({ provider }) => {
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState(null);
   const [services, setServices] = useState([]);
+  const [showProfileView, setShowProfileView] = useState(false);
+  const [showEditDetails, setShowEditDetails] = useState(false);
+  const [editingService, setEditingService] = useState(null);
 
   useEffect(() => {
     // Fetch allowed service types, country, and all themes for this provider
@@ -89,8 +92,42 @@ const ServiceProviderDashboard = ({ provider }) => {
 
 
 
-  const handleAddService = () => setShowForm(true);
-  const handleCloseForm = () => setShowForm(false);
+  const handleAddService = () => {
+    setEditingService(null);
+    setShowForm(true);
+  };
+  
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setShowForm(true);
+  };
+  
+  const handleDeleteService = async (serviceId) => {
+    if (!confirm('Are you sure you want to delete this service?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/provider/services/${serviceId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setServices(prev => prev.filter(s => s.id !== serviceId));
+        alert('Service deleted successfully!');
+      } else {
+        alert('Failed to delete service');
+      }
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('An error occurred while deleting the service');
+    }
+  };
+  
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingService(null);
+  };
 
   // Change Password Handlers
   const handleOpenChangePassword = () => {
@@ -149,54 +186,62 @@ const ServiceProviderDashboard = ({ provider }) => {
     }
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, serviceId = null) => {
     setLoading(true);
     try {
-      console.log('Submitting service data...');
+      console.log(serviceId ? 'Updating service...' : 'Creating service...');
       
-      // Log the form data to verify country_id is included
+      // Log the form data to verify
       const formDataEntries = {};
       for (let [key, value] of formData.entries()) {
         formDataEntries[key] = value;
       }
       console.log('Form data being sent:', formDataEntries);
       
-      // Log submitted data without any fallbacks
-      console.log('Submitting form data without fallbacks');
-      
-      // No automatic fallbacks - using only what was provided in the form
+      // Determine URL and method
+      const url = serviceId ? `/api/provider/services/${serviceId}` : '/api/provider/services';
+      const method = serviceId ? 'POST' : 'POST'; // POST with _method=PUT for updates
       
       // Try to get token from localStorage or sessionStorage
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const res = await fetch('/api/provider/services', {
-        method: 'POST',
+      const res = await fetch(url, {
+        method: method,
         body: formData,
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
       
       const responseData = await res.json();
-      console.log('Service creation response:', responseData);
+      console.log('Service response:', responseData);
       
       if (!res.ok) {
-        // Try to show backend error if available
-        let msg = 'Failed to add service';
+        let msg = serviceId ? 'Failed to update service' : 'Failed to add service';
         if (responseData && responseData.error) {
           msg = responseData.error;
         }
-        console.error('Service creation failed:', msg);
+        console.error('Service operation failed:', msg);
         alert(msg);
         return;
       }
       
-      // Add the new service to the services array
-      if (responseData && responseData.service) {
-        setServices(prev => [...prev, responseData.service]);
+      // Update services list
+      if (serviceId) {
+        // Update existing service
+        setServices(prev => prev.map(s => 
+          s.id === serviceId ? { ...responseData.service, id: serviceId } : s
+        ));
+        alert('Service updated successfully!');
+      } else {
+        // Add new service
+        if (responseData && responseData.service) {
+          setServices(prev => [...prev, { ...responseData.service, id: responseData.id }]);
+        }
+        alert('Service added successfully!');
       }
       
       setShowForm(false);
-      alert('Service added successfully!');
+      setEditingService(null);
     } catch (error) {
-      console.error('Service creation exception:', error);
+      console.error('Service operation exception:', error);
       alert('An error occurred: ' + error.message);
     } finally {
       setLoading(false);
@@ -226,14 +271,20 @@ const ServiceProviderDashboard = ({ provider }) => {
               </div>
               <div className="flex-1 md:ml-4 flex flex-col justify-center">
                 <div className="flex gap-3 mt-2 justify-center md:justify-start">
-                  <button className="px-5 py-2 bg-green-500 text-white rounded-md font-medium hover:bg-green-600 transition flex items-center gap-2 shadow-sm">
+                  <button 
+                    onClick={() => setShowProfileView(true)}
+                    className="px-5 py-2 bg-green-500 text-white rounded-md font-medium hover:bg-green-600 transition flex items-center gap-2 shadow-sm"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                       <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                     View Profile
                   </button>
-                  <button className="px-5 py-2 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition flex items-center gap-2 shadow-sm">
+                  <button 
+                    onClick={() => setShowEditDetails(true)}
+                    className="px-5 py-2 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition flex items-center gap-2 shadow-sm"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -403,13 +454,21 @@ const ServiceProviderDashboard = ({ provider }) => {
                             <div className="flex items-center justify-between mt-3">
                               <span className="text-green-700 font-bold">${service.price || '0.00'}</span>
                               <div className="flex gap-2">
-                                <button className="p-1 text-blue-500 hover:text-blue-700">
+                                <button 
+                                  onClick={() => handleEditService(service)}
+                                  className="p-1 text-blue-500 hover:text-blue-700 transition"
+                                  title="Edit Service"
+                                >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                   </svg>
                                 </button>
-                                <button className="p-1 text-red-500 hover:text-red-700">
+                                <button 
+                                  onClick={() => handleDeleteService(service.id)}
+                                  className="p-1 text-red-500 hover:text-red-700 transition"
+                                  title="Delete Service"
+                                >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -454,7 +513,9 @@ const ServiceProviderDashboard = ({ provider }) => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
-                <h3 className="text-xl font-bold text-gray-800">Add New Service</h3>
+                <h3 className="text-xl font-bold text-gray-800">
+                  {editingService ? 'Edit Service' : 'Add New Service'}
+                </h3>
                 <button 
                   onClick={handleCloseForm}
                   className="text-gray-400 hover:text-gray-600 transition"
@@ -478,18 +539,182 @@ const ServiceProviderDashboard = ({ provider }) => {
                 </div>
               ) : (
                 <>
-                  {console.log('Provider being passed to ServiceForm:', provider)}
                   <ServiceForm
                     serviceTypes={serviceTypes}
                     themes={themes}
                     country={country}
                     provider={provider}
+                    service={editingService}
                     onSubmit={handleSubmit}
                     onClose={handleCloseForm}
                     loading={loading}
                   />
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* View Profile Modal */}
+        {showProfileView && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+                <h3 className="text-2xl font-bold text-gray-800">Service Provider Profile</h3>
+                <button
+                  onClick={() => setShowProfileView(false)}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Profile Image */}
+                {provider?.image && (
+                  <div className="flex justify-center mb-6">
+                    <img 
+                      src={`/storage/${provider.image}`} 
+                      alt={provider.name} 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-green-100 shadow-lg"
+                    />
+                  </div>
+                )}
+
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-green-700 block mb-1">Name</label>
+                    <p className="text-gray-800 font-medium">{provider?.name}</p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-blue-700 block mb-1">Email</label>
+                    <p className="text-gray-800">{provider?.email}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-green-700 block mb-1">Phone</label>
+                    <p className="text-gray-800">{provider?.phone || 'N/A'}</p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-blue-700 block mb-1">Website</label>
+                    <a href={provider?.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {provider?.website || 'N/A'}
+                    </a>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-green-700 block mb-1">Country</label>
+                    <p className="text-gray-800">{country?.name || provider?.country?.name || 'N/A'}</p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-blue-700 block mb-1">Price Range</label>
+                    <p className="text-gray-800 text-lg">{provider?.price_range || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Service Types */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <label className="text-sm font-semibold text-blue-700 block mb-2">Service Types</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(provider?.service_types || provider?.serviceTypes || []).map((type) => (
+                      <span key={type.id} className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-medium">
+                        {type.name}
+                      </span>
+                    ))}
+                    {!(provider?.service_types || provider?.serviceTypes)?.length && (
+                      <span className="text-gray-500">No service types assigned</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Themes */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <label className="text-sm font-semibold text-green-700 block mb-2">Themes</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(provider?.themes || []).map((theme) => (
+                      <span key={theme.id} className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
+                        {theme.name}
+                      </span>
+                    ))}
+                    {!provider?.themes?.length && (
+                      <span className="text-gray-500">No themes assigned</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="text-sm font-semibold text-gray-700 block mb-2">Description</label>
+                  <p className="text-gray-700 whitespace-pre-wrap">{provider?.description || 'No description provided'}</p>
+                </div>
+
+                {/* Location */}
+                {(provider?.lat && provider?.lng) && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <label className="text-sm font-semibold text-green-700 block mb-2">Location</label>
+                    <div className="text-gray-700 mb-3">
+                      <span className="font-medium">Latitude:</span> {provider.lat}, <span className="font-medium">Longitude:</span> {provider.lng}
+                    </div>
+                    <StaticMap lat={provider.lat} lng={provider.lng} height={200} zoom={13} />
+                  </div>
+                )}
+
+                {/* Status */}
+                <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-700">Approval Status</label>
+                  <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+                    provider?.is_approved 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {provider?.is_approved ? 'Approved' : 'Pending'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Details Modal */}
+        {showEditDetails && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+                <h3 className="text-2xl font-bold text-gray-800">Edit Provider Details</h3>
+                <button
+                  onClick={() => setShowEditDetails(false)}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="text-center py-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">Edit Profile Feature</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  The edit profile feature allows you to update your provider information. This feature is currently being set up and will be available soon.
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  For now, please contact the administrator to update your profile information.
+                </p>
+                <button
+                  onClick={() => setShowEditDetails(false)}
+                  className="px-6 py-2.5 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

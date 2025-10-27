@@ -2,30 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ServiceCard from './ServiceCard';
 
-// Same mapping as Home.jsx
-const countryFlagImages = {
-  Pakistan: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Flag_of_Pakistan.svg',
-  Turkey: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg',
-  Egypt: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Egypt.svg',
-  Brazil: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg',
-  France: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg',
-  Germany: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg',
-  Italy: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Flag_of_Italy.svg',
-  Spain: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg',
-  China: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg',
-  India: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_India.svg',
-  UnitedArabEmirates: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg',
-  SaudiArabia: 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg',
-  UnitedStates: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
-  UnitedKingdom: 'https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg',
-  Australia: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Flag_of_Australia.svg',
-  Canada: 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg',
-  Thailand: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Flag_of_Thailand.svg',
-  Japan: 'https://upload.wikimedia.org/wikipedia/en/9/9e/Flag_of_Japan.svg',
-  Kenya: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Flag_of_Kenya.svg',
-  USA: 'https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg',
-  // Add more as needed
-};
 
 const CountryDetail = () => {
   const { id } = useParams();
@@ -40,8 +16,12 @@ const CountryDetail = () => {
     const fetchCountryAndServices = async () => {
       setLoading(true);
       try {
+        // Check if id is a number (ID) or string (slug)
+        const isNumeric = /^\d+$/.test(id);
+        const endpoint = isNumeric ? `/api/countries/${id}` : `/api/countries/slug/${id}`;
+        
         // Fetch country details
-        const countryRes = await fetch(`/api/countries/${id}`);
+        const countryRes = await fetch(endpoint);
         
         if (!countryRes.ok) {
           // Handle 404 or other errors specifically
@@ -180,14 +160,11 @@ const CountryDetail = () => {
       <div 
         className="h-80 bg-cover bg-center relative"
         style={{
-          backgroundImage:
-            countryFlagImages[country.name.replace(/\s/g, '')]
-              ? `url(${countryFlagImages[country.name.replace(/\s/g, '')]})`
-              : country.image_url
-                ? `url(${country.image_url})`
-                : country.cover_image
-                  ? `url(/storage/${country.cover_image})`
-                  : `url(https://source.unsplash.com/1200x600/?${country.name},landscape)`
+          backgroundImage: country.image_url
+            ? `url(${country.image_url})`
+            : country.cover_image
+              ? `url(/storage/${country.cover_image})`
+              : `url(https://source.unsplash.com/1200x600/?${country.name},landscape)`
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70">

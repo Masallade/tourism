@@ -22,7 +22,7 @@
                     <td>{{ $provider->id }}</td>
                     <td>{{ $provider->name }}</td>
                     <td>{{ $provider->country->name ?? '-' }}</td>
-                    <td>{{ $provider->serviceType->name ?? '-' }}</td>
+                    <td>{{ $provider->serviceType->pluck('name')->implode(', ') ?: '-' }}</td>
                     <td>{{ $provider->email }}</td>
                     <td>
                         <a href="{{ route('admin.service-providers.edit', $provider) }}" class="btn btn-sm btn-warning">Edit</a>

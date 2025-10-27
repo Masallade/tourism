@@ -12,27 +12,30 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, onClose, loading }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [serviceTypeId, setServiceTypeId] = useState(serviceTypes[0]?.id || '');
-  const [themeId, setThemeId] = useState(themes[0]?.id || '');
+const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, onClose, loading, service = null }) => {
+  const [name, setName] = useState(service?.name || '');
+  const [description, setDescription] = useState(service?.description || '');
+  const [price, setPrice] = useState(service?.price || '');
+  const [serviceTypeId, setServiceTypeId] = useState(service?.service_type_id || serviceTypes[0]?.id || '');
+  const [themeId, setThemeId] = useState(service?.theme_id || themes[0]?.id || '');
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreview, setImagePreview] = useState(service?.image ? `/storage/${service.image}` : null);
   const [image2, setImage2] = useState(null);
-  const [image2Preview, setImage2Preview] = useState(null);
+  const [image2Preview, setImage2Preview] = useState(service?.image_2 ? `/storage/${service.image_2}` : null);
   const [image3, setImage3] = useState(null);
-  const [image3Preview, setImage3Preview] = useState(null);
-  const [minAge, setMinAge] = useState('1');
-  const [maxAge, setMaxAge] = useState('70');
-  const [duration, setDuration] = useState('');
-  const [overview, setOverview] = useState('');
-  const [details, setDetails] = useState('');
+  const [image3Preview, setImage3Preview] = useState(service?.image_3 ? `/storage/${service.image_3}` : null);
+  const [minAge, setMinAge] = useState(service?.min_age || '1');
+  const [maxAge, setMaxAge] = useState(service?.max_age || '70');
+  const [duration, setDuration] = useState(service?.duration || '');
+  const [overview, setOverview] = useState(service?.overview || '');
+  const [details, setDetails] = useState(service?.details || '');
   const [error, setError] = useState('');
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [position, setPosition] = useState([25.276987, 55.296249]); // Default: Dubai
+  const [lat, setLat] = useState(service?.lat || '');
+  const [lng, setLng] = useState(service?.lng || '');
+  const [position, setPosition] = useState([
+    service?.lat ? parseFloat(service.lat) : 25.276987,
+    service?.lng ? parseFloat(service.lng) : 55.296249
+  ]);
 
   useEffect(() => {
     if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
@@ -122,7 +125,11 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   if (image) formData.append('image', image);
   if (image2) formData.append('image_2', image2);
   if (image3) formData.append('image_3', image3);
-  onSubmit(formData);
+  // Pass service ID if editing
+  if (service) {
+    formData.append('_method', 'PUT'); // Laravel method spoofing for FormData
+  }
+  onSubmit(formData, service?.id);
   };
 
   return (
@@ -322,8 +329,8 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
               className="z-0"
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               />
               <DraggableMarker />
               <MapClickHandler />
@@ -515,7 +522,7 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
               <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
-              Add Service
+              {service ? 'Update Service' : 'Add Service'}
             </div>
           )}
         </button>

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ClipLoader } from 'react-spinners';
 import ServiceProviderDashboard from './ServiceProviderDashboard';
 
-const ServiceProviderLogin = ({ onLogin }) => {
+const ServiceProviderLogin = ({ onLogin, onBack = null }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -83,6 +83,18 @@ const ServiceProviderLogin = ({ onLogin }) => {
             >
                 {loading ? <ClipLoader color="#fff" size={22} speedMultiplier={0.9} /> : 'Login'}
             </button>
+            {onBack && (
+                <button
+                    type="button"
+                    onClick={onBack}
+                    className="w-full py-2 px-4 text-blue-700 bg-blue-100 border-2 border-blue-300 rounded-lg font-semibold hover:bg-blue-200 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition flex items-center justify-center gap-2"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Go Back
+                </button>
+            )}
         </form>
     );
 };

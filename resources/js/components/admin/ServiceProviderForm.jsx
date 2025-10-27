@@ -65,8 +65,8 @@ const MapClickHandler = () => {
     return null;
 };
 
-// Add showApproveCheckbox prop
-const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false }) => {
+// Add showApproveCheckbox prop and onBack prop
+const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false, onBack = null }) => {
     const [formData, setFormData] = useState({
         country_id: '',
         name: '',
@@ -81,6 +81,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         lat: '',
         lng: '',
     });
+
     
     const [position, setPosition] = useState([25.276987, 55.296249]); // Default position (Dubai)
     
@@ -125,17 +126,21 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 setPosition([parseFloat(provider.lat), parseFloat(provider.lng)]);
             }
             
+            // Use snake_case (service_types) because that's how Laravel returns it
+            const serviceTypesData = provider.service_types || provider.serviceTypes || [];
+            const serviceTypeIds = serviceTypesData.map(st => Number(st.id));
+            
             setFormData({
                 country_id: provider.country_id || '',
                 name: provider.name || '',
-                service_type_ids: provider.serviceTypes ? provider.serviceTypes.map(st => st.id) : [],
+                service_type_ids: serviceTypeIds,
                 description: provider.description || '',
                 price_range: provider.price_range || '',
                 website: provider.website || '',
                 email: (provider.email || '').toLowerCase(),
                 phone: provider.phone || '',
                 is_approved: provider.is_approved || false,
-                themes: provider.themes?.map(t => t.id) || [],
+                themes: provider.themes?.map(t => Number(t.id)) || [],
                 lat: provider.lat || '',
                 lng: provider.lng || '',
             });
@@ -246,6 +251,23 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         }));
     };
 
+    const handleServiceTypeChange = (serviceTypeId) => {
+        setFormData(prev => ({
+            ...prev,
+            service_type_ids: prev.service_type_ids.includes(serviceTypeId)
+                ? prev.service_type_ids.filter(id => id !== serviceTypeId)
+                : [...prev.service_type_ids, serviceTypeId]
+        }));
+        
+        // Clear error if exists
+        if (errors.service_type_ids) {
+            setErrors(prev => ({
+                ...prev,
+                service_type_ids: ''
+            }));
+        }
+    };
+
 
     // Validation helpers
     const validateEmail = (email) => {
@@ -339,6 +361,17 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             newErrors.documents = 'Documents must be PDF, JPG, or PNG';
         }
         setErrors(newErrors);
+        
+        // Scroll to first error if validation fails
+        if (Object.keys(newErrors).length > 0) {
+            const firstErrorField = Object.keys(newErrors)[0];
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                errorElement.focus();
+            }
+        }
+        
         return Object.keys(newErrors).length === 0;
     };
 
@@ -386,6 +419,17 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             if (!response.ok) {
                 const errorData = await response.json();
                 setErrors(errorData.errors || {});
+                
+                // Scroll to first error field
+                if (errorData.errors) {
+                    const firstErrorField = Object.keys(errorData.errors)[0];
+                    const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+                    if (errorElement) {
+                        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        errorElement.focus();
+                    }
+                }
+                
                 // Show all unique field errors in summary if present
                 if (errorData.errors) {
                     let summary = [];
@@ -479,7 +523,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Service Provider Name <span className="text-red-500">*</span>
                             </label>
@@ -498,30 +542,29 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             )}
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-green-700 mb-2">
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Service Type <span className="text-red-500">*</span>
                             </label>
-                            <select
-                                name="service_type_ids"
-                                multiple
-                                value={formData.service_type_ids}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions, option => option.value);
-                                    setFormData(prev => ({ ...prev, service_type_ids: options }));
-                                    if (errors.service_type_ids) setErrors(prev => ({ ...prev, service_type_ids: '' }));
-                                }}
-                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${
-                                    errors.service_type_ids ? 'border-red-400' : 'border-blue-200'
-                                }`}
-                                size={Math.max(4, Math.min(8, serviceTypes.length))}
-                                style={{ minHeight: '120px' }}
-                            >
-                                {serviceTypes.map(type => (
-                                    <option key={type.id} value={type.id}>{type.name}</option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-blue-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
+                            <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 rounded-lg border-2 ${
+                                errors.service_type_ids ? 'border-red-400 bg-red-50' : 'border-blue-200 bg-blue-50'
+                            }`}>
+                                {serviceTypes.map((type) => {
+                                    const typeId = Number(type.id);
+                                    const isChecked = formData.service_type_ids.includes(typeId);
+                                    return (
+                                        <label key={type.id} className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm hover:bg-blue-100 transition cursor-pointer border border-blue-200">
+                                            <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() => handleServiceTypeChange(typeId)}
+                                                className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="ml-2 text-sm text-blue-900 font-medium">{type.name}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                             {errors.service_type_ids && (
                                 <p className="text-red-500 text-sm mt-1">{errors.service_type_ids}</p>
                             )}
@@ -667,8 +710,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             className="z-0"
                                         >
                                             <TileLayer
-                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                                                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                                             />
                                             <DraggableMarker position={position} />
                                             <MapClickHandler />
@@ -720,8 +763,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                     <label key={theme.id} className="flex items-center bg-green-50 rounded-lg px-2 py-1 shadow-sm hover:bg-green-100 transition cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={formData.themes.includes(theme.id)}
-                                            onChange={() => handleThemeChange(theme.id)}
+                                            checked={formData.themes.includes(Number(theme.id))}
+                                            onChange={() => handleThemeChange(Number(theme.id))}
                                             className="rounded border-green-300 text-green-600 focus:ring-green-500"
                                         />
                                         <span className="ml-2 text-sm text-green-700 font-medium">{theme.name}</span>
@@ -752,21 +795,35 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                         </div>
                     )}
 
-                    <div className="flex justify-end mt-8 space-x-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-6 py-2 text-base font-semibold text-green-700 bg-green-100 border-2 border-green-300 rounded-lg hover:bg-green-200 hover:text-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-6 py-2 text-base font-semibold text-white bg-gradient-to-r from-green-500 to-blue-500 border-0 rounded-lg shadow-md hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-60 transition"
-                        >
-                            {isSubmitting ? 'Saving...' : (provider ? 'Update Service Provider' : 'Create Service Provider')}
-                        </button>
+                    <div className="flex justify-between mt-8">
+                        {onBack && (
+                            <button
+                                type="button"
+                                onClick={onBack}
+                                className="px-6 py-2 text-base font-semibold text-blue-700 bg-blue-100 border-2 border-blue-300 rounded-lg hover:bg-blue-200 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Go Back
+                            </button>
+                        )}
+                        <div className={`flex space-x-4 ${!onBack ? 'ml-auto' : ''}`}>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-6 py-2 text-base font-semibold text-green-700 bg-green-100 border-2 border-green-300 rounded-lg hover:bg-green-200 hover:text-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="px-6 py-2 text-base font-semibold text-white bg-gradient-to-r from-green-500 to-blue-500 border-0 rounded-lg shadow-md hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-60 transition"
+                            >
+                                {isSubmitting ? 'Saving...' : (provider ? 'Update Service Provider' : 'Create Service Provider')}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

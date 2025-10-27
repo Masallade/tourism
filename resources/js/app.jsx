@@ -5,10 +5,21 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
 import AdminLogin from './components/AdminLogin';
-import AdminDashboard from './components/AdminDashboard';
+import AdminLayout from './components/admin/AdminDashboardHome';
+import AdminDashboardHome from './components/admin/AdminDashboardHome';
+import CountriesList from './components/admin/CountriesList';
+import ThemesList from './components/admin/ThemesList';
+import ServiceProvidersList from './components/admin/ServiceProvidersList';
+import UserLogin from './components/UserLogin';
+import UserSignup from './components/UserSignup';
+import UserProfile from './components/UserProfile';
 import CountryDetail from './components/CountryDetail';
 import ThemeDetail from './components/ThemeDetail';
 import ServiceDetail from './components/ServiceDetail';
+import AIAssistance from './components/AIAssistance';
+import About from './components/About';
+import Contact from './components/Contact';
+import Trips from './components/Trips';
 import '../css/app.css';
 import './bootstrap';
 
@@ -36,7 +47,21 @@ function App() {
       <Routes>
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboardHome />} />
+          <Route path="countries" element={<CountriesList />} />
+          <Route path="themes" element={<ThemesList />} />
+          <Route path="service-providers" element={<ServiceProvidersList />} />
+        </Route>
+        
+        {/* User authentication routes */}
+        <Route path="/login" element={<UserLogin />} />
+        <Route path="/signup" element={<UserSignup />} />
+        <Route path="/profile" element={
+          <Layout>
+            <UserProfile />
+          </Layout>
+        } />
         
         {/* Main frontend routes */}
         <Route path="/" element={
@@ -45,7 +70,7 @@ function App() {
           </Layout>
         } />
         
-        {/* Detail pages */}
+        {/* Detail pages - support both ID and slug */}
         <Route path="/country/:id" element={
           <Layout>
             <CountryDetail />
@@ -61,6 +86,34 @@ function App() {
         <Route path="/service/:serviceId" element={
           <Layout>
             <ServiceDetail />
+          </Layout>
+        } />
+        
+        {/* Trips page */}
+        <Route path="/trips" element={
+          <Layout>
+            <Trips />
+          </Layout>
+        } />
+        
+        {/* AI Assistance page */}
+        <Route path="/ai-assistance" element={
+          <Layout>
+            <AIAssistance />
+          </Layout>
+        } />
+        
+        {/* About page */}
+        <Route path="/about" element={
+          <Layout>
+            <About />
+          </Layout>
+        } />
+        
+        {/* Contact page */}
+        <Route path="/contact" element={
+          <Layout>
+            <Contact />
           </Layout>
         } />
         

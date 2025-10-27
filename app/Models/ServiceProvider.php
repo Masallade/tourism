@@ -59,6 +59,12 @@ class ServiceProvider extends Model
         return $this->belongsToMany(ServiceType::class, 'service_provider_service_type');
     }
 
+    // Alias for serviceType (singular) to match controller usage
+    public function serviceType()
+    {
+        return $this->belongsToMany(ServiceType::class, 'service_provider_service_type');
+    }
+
     public function themes()
     {
         return $this->belongsToMany(Theme::class, 'provider_theme');
