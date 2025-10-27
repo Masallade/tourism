@@ -5,7 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
 import AdminLogin from './components/AdminLogin';
-import AdminLayout from './components/admin/AdminDashboardHome';
+import AdminDashboard from './components/AdminDashboard';
 import AdminDashboardHome from './components/admin/AdminDashboardHome';
 import CountriesList from './components/admin/CountriesList';
 import ThemesList from './components/admin/ThemesList';
@@ -47,7 +47,7 @@ function App() {
       <Routes>
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminDashboard />}>
           <Route index element={<AdminDashboardHome />} />
           <Route path="countries" element={<CountriesList />} />
           <Route path="themes" element={<ThemesList />} />

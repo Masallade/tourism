@@ -2,14 +2,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
 
-const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+const AdminSidebar = ({ onLogout }) => {
     const location = useLocation();
 
     const menuItems = [
         {
             id: 'dashboard',
             name: 'Dashboard',
-            path: '/admin',
+            path: '',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
@@ -20,7 +20,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
         {
             id: 'countries',
             name: 'Countries',
-            path: '/admin/countries',
+            path: 'countries',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -30,7 +30,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
         {
             id: 'themes',
             name: 'Themes',
-            path: '/admin/themes',
+            path: 'themes',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7z" />
@@ -40,7 +40,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
         {
             id: 'service-providers',
             name: 'Service Providers',
-            path: '/admin/service-providers',
+            path: 'service-providers',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -66,8 +66,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
             <nav className="mt-6">
                 <div className="px-3">
                     {menuItems.map((item) => {
-                        const isActive = location.pathname === item.path || 
-                                       (item.path === '/admin' && location.pathname === '/admin/');
+                        const isActive = (item.path === '' && location.pathname === '/admin') || 
+                                       (item.path !== '' && location.pathname === `/admin/${item.path}`);
                         
                         return (
                             <Link
