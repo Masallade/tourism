@@ -4,7 +4,8 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
-        description: ''
+        description: '',
+        image_url: ''
     });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -17,7 +18,8 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             setFormData({
                 name: country.name || '',
                 slug: country.slug || '',
-                description: country.description || ''
+                description: country.description || '',
+                image_url: country.image_url || ''
             });
         }
     }, [country]);
@@ -112,7 +114,11 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             form.append('name', formData.name);
             form.append('slug', formData.slug);
             form.append('description', formData.description);
-            if (imageFile) form.append('image', imageFile);
+            if (imageFile) {
+                form.append('image', imageFile);
+            } else if (formData.image_url) {
+                form.append('image_url', formData.image_url);
+            }
 
             const responseData = country 
                 ? await window.apiClient.put(`/api/countries/${country.id}`, form)
@@ -265,6 +271,19 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                         {imagePreview && (
                             <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded shadow" />
                         )}
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Or Image URL</label>
+                        <input
+                            type="url"
+                            name="image_url"
+                            value={formData.image_url}
+                            onChange={handleInputChange}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">If a file is chosen, it will be used instead of the URL.</p>
                     </div>
 
                     {successMessage && (

@@ -14,11 +14,15 @@ class ThemeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_url' => 'nullable|url',
         ]);
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('uploads/themes', 'public');
             $validated['image_url'] = '/storage/' . $path;
             \Log::info('Theme image uploaded', ['path' => $path]);
+        } else if ($request->filled('image_url')) {
+            $validated['image_url'] = $request->input('image_url');
+            \Log::info('Theme image set via URL');
         } else {
             \Log::info('No image uploaded for theme');
         }
@@ -33,11 +37,15 @@ class ThemeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_url' => 'nullable|url',
         ]);
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('uploads/themes', 'public');
             $validated['image_url'] = '/storage/' . $path;
             \Log::info('Theme image uploaded', ['path' => $path]);
+        } else if ($request->filled('image_url')) {
+            $validated['image_url'] = $request->input('image_url');
+            \Log::info('Theme image set via URL on update');
         } else {
             \Log::info('No image uploaded for theme update');
         }

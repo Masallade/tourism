@@ -341,18 +341,7 @@ use App\Http\Controllers\Admin\ServiceProviderController;
 Route::patch('/service-providers/{serviceProvider}/approve', [ServiceProviderController::class, 'approve']);
 Route::patch('/service-providers/{serviceProvider}/reject', [ServiceProviderController::class, 'reject']);
 
-// Document download route
-Route::get('/documents/{filename}', function ($filename) {
-    $path = 'uploads/service_provider_documents/' . $filename;
-    
-    if (!Storage::disk('public')->exists($path)) {
-        abort(404, 'Document not found');
-    }
-    
-    return Storage::disk('public')->download($path);
-})->where('filename', '.*');
-
-// Document view route
+// Document view route (placed BEFORE download route to avoid greedy match)
 Route::get('/documents/view/{filename}', function ($filename) {
     $path = 'uploads/service_provider_documents/' . $filename;
     
@@ -366,6 +355,17 @@ Route::get('/documents/view/{filename}', function ($filename) {
     return response($file, 200)
         ->header('Content-Type', $mimeType)
         ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+})->where('filename', '.*');
+
+// Document download route
+Route::get('/documents/{filename}', function ($filename) {
+    $path = 'uploads/service_provider_documents/' . $filename;
+    
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404, 'Document not found');
+    }
+    
+    return Storage::disk('public')->download($path);
 })->where('filename', '.*');
 
 // AI Assistant

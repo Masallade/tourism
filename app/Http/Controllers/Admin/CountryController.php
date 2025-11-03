@@ -18,6 +18,7 @@ class CountryController extends Controller
                 'slug' => 'required|string|max:255|unique:countries,slug',
                 'description' => 'nullable|string',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image_url' => 'nullable|url',
             ]);
             
             if ($request->hasFile('image')) {
@@ -36,6 +37,9 @@ class CountryController extends Controller
                 
                 $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
+            } else if ($request->filled('image_url')) {
+                $validated['image_url'] = $request->input('image_url');
+                \Log::info('Country image set via URL');
             } else {
                 \Log::info('No image uploaded for country');
             }
@@ -76,6 +80,7 @@ class CountryController extends Controller
                 'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
                 'description' => 'nullable|string',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image_url' => 'nullable|url',
             ]);
             
             if ($request->hasFile('image')) {
@@ -103,6 +108,9 @@ class CountryController extends Controller
                 
                 $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
+            } else if ($request->filled('image_url')) {
+                $validated['image_url'] = $request->input('image_url');
+                \Log::info('Country image set via URL on update');
             } else {
                 \Log::info('No image uploaded for country update');
             }
