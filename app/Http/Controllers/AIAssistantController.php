@@ -18,7 +18,7 @@ class AIAssistantController extends Controller
         ]);
 
         $userMessage = $request->input('message');
-        $apiKey = env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.api_key');
 
         if (empty($apiKey)) {
             return response()->json([
@@ -37,34 +37,51 @@ Always encourage responsible tourism practices.
 Keep responses concise but helpful (max 250 words).
 Use emojis sparingly to make responses engaging.";
 
-            // Get model from env or use default
-            $model = env('OPENROUTER_MODEL', 'anthropic/claude-3.5-sonnet');
+            // Get model from config (env-backed) or use default (free tier model)
+            $model = config('services.openrouter.model', 'google/gemma-2-9b-it:free');
             
             Log::info('Using OpenRouter model: ' . $model);
             
-            // Call OpenRouter API (supports multiple models)
-            $response = Http::timeout(30)
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $apiKey,
-                    'HTTP-Referer' => env('APP_URL', 'http://localhost'),
-                    'X-Title' => 'Unison Tour AI Assistant',
-                    'Content-Type' => 'application/json',
-                ])
-                ->post('https://openrouter.ai/api/v1/chat/completions', [
-                    'model' => $model,
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => $systemPrompt
+            // Helper to call OpenRouter
+            $callOpenRouter = function (string $useModel) use ($apiKey, $systemPrompt, $userMessage) {
+                return Http::timeout(30)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $apiKey,
+                        'HTTP-Referer' => config('app.url', 'http://localhost'),
+                        'X-Title' => 'Unison Tour AI Assistant',
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post('https://openrouter.ai/api/v1/chat/completions', [
+                        'model' => $useModel,
+                        'messages' => [
+                            [ 'role' => 'system', 'content' => $systemPrompt ],
+                            [ 'role' => 'user', 'content' => $userMessage ],
                         ],
-                        [
-                            'role' => 'user',
-                            'content' => $userMessage
-                        ]
-                    ],
-                    'temperature' => 0.7,
-                    'max_tokens' => 1024,
-                ]);
+                        'temperature' => 0.7,
+                        'max_tokens' => 1024,
+                    ]);
+            };
+
+            // Try requested model first; if 404 (no endpoint), fall back to a list of free models
+            $fallbackModels = [
+                'google/gemma-2-9b-it:free',
+                'mistralai/mistral-7b-instruct:free',
+                'qwen/qwen2.5-7b-instruct:free',
+            ];
+
+            Log::info('Using OpenRouter model: ' . $model);
+            $response = $callOpenRouter($model);
+
+            if ($response->status() === 404) {
+                Log::warning('Model unavailable, attempting fallbacks', ['model' => $model]);
+                foreach ($fallbackModels as $fm) {
+                    Log::info('Trying fallback model', ['model' => $fm]);
+                    $try = $callOpenRouter($fm);
+                    if ($try->successful()) {
+                        $response = $try; $model = $fm; break;
+                    }
+                }
+            }
 
             if ($response->successful()) {
                 $data = $response->json();

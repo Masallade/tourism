@@ -41,4 +41,11 @@ return [
         ],
     ],
 
+    // OpenRouter (AI) configuration
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
+        // Default to a commonly available free model; can be overridden in .env
+        'model' => env('OPENROUTER_MODEL', 'google/gemma-2-9b-it:free'),
+    ],
+
 ];
