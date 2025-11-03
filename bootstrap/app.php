@@ -16,11 +16,16 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
         ]);
         
+        // Add CORS and session middleware to API routes
+        // Order matters: CORS first, then cookies, then session, then auth
         $middleware->api(prepend: [
-            // Exclude API routes from CSRF protection
+            \App\Http\Middleware\HandleCors::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
         ]);
 
-        // Exclude API routes from CSRF protection
+        // Exclude API routes from CSRF protection (they use token auth or session)
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);

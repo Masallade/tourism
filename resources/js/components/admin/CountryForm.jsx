@@ -10,6 +10,7 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
     const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (country) {
@@ -107,29 +108,72 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
         setIsSubmitting(true);
 
         try {
-            const url = country ? `/api/countries/${country.id}` : '/api/countries';
-            const method = country ? 'PUT' : 'POST';
             const form = new FormData();
             form.append('name', formData.name);
             form.append('slug', formData.slug);
             form.append('description', formData.description);
             if (imageFile) form.append('image', imageFile);
 
-            const response = await fetch(url, {
-                method,
-                body: form
-            });
+            const responseData = country 
+                ? await window.apiClient.put(`/api/countries/${country.id}`, form)
+                : await window.apiClient.upload('/api/countries', form);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                setErrors(errorData.errors || {});
+            // Check if image was saved
+            if (imageFile && responseData.data) {
+                const savedCountry = responseData.data.country || responseData.data;
+                if (savedCountry?.image_url) {
+                    const imagePath = savedCountry.image_url;
+                    console.log('Image saved successfully:', imagePath);
+                    setSuccessMessage(`✅ Image saved successfully to: ${imagePath}`);
+                    // Clear success message after 5 seconds
+                    setTimeout(() => setSuccessMessage(''), 5000);
+                } else {
+                    console.error('Image not in response:', responseData.data);
+                    setErrors({ 
+                        image: '❌ Image file was not saved. Please check storage permissions and try again.',
+                        general: 'Country saved but image upload failed. The image_url was not returned. Please try uploading the image again.'
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+            } else if (!imageFile && responseData.data) {
+                // Country saved without image
+                setSuccessMessage('✅ Country saved successfully');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            }
+
+            if (responseData.data?.success === false) {
+                if (responseData.data.errors) {
+                    setErrors(responseData.data.errors);
+                } else {
+                    setErrors({ general: responseData.data.message || 'An error occurred while saving the country' });
+                }
+                setIsSubmitting(false);
                 return;
             }
 
             onSuccess();
         } catch (error) {
             console.error('Error saving country:', error);
-            setErrors({ general: 'An error occurred while saving the country' });
+            
+            // Extract error messages
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else if (error.response?.data?.message) {
+                setErrors({ general: error.response.data.message });
+            } else if (error.message) {
+                setErrors({ general: error.message });
+            } else {
+                setErrors({ general: 'An error occurred while saving the country. Please try again.' });
+            }
+            
+            // Check specifically for image upload errors
+            if (imageFile && error.response?.data?.errors?.image) {
+                setErrors(prev => ({ 
+                    ...prev, 
+                    image: error.response.data.errors.image[0] || 'Image upload failed. Please try again.'
+                }));
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -223,9 +267,21 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                         )}
                     </div>
 
+                    {successMessage && (
+                        <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded">
+                            {successMessage}
+                        </div>
+                    )}
+                    
                     {errors.general && (
                         <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
                             {errors.general}
+                        </div>
+                    )}
+                    
+                    {errors.image && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+                            {Array.isArray(errors.image) ? errors.image[0] : errors.image}
                         </div>
                     )}
 

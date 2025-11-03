@@ -15,9 +15,8 @@ const CountriesList = () => {
 
     const fetchCountries = async () => {
         try {
-            const response = await fetch('/api/countries');
-            const data = await response.json();
-            setCountries(data);
+            const response = await window.apiClient.get('/api/countries');
+            setCountries(response.data);
         } catch (error) {
             console.error('Error fetching countries:', error);
         } finally {
@@ -31,13 +30,19 @@ const CountriesList = () => {
         }
 
         try {
-            await fetch(`/api/countries/${country.id}`, {
-                method: 'DELETE',
-            });
+            await window.apiClient.delete(`/api/countries/${country.id}`);
             setSuccessMessage('Country deleted successfully');
             fetchCountries();
         } catch (error) {
             console.error('Error deleting country:', error);
+            
+            // Handle authentication errors
+            if (error.response?.status === 401) {
+                alert('Your session has expired. Please log in again.');
+                window.location.href = '/admin/login';
+            } else {
+                alert('Failed to delete country. Please try again.');
+            }
         }
     };
 

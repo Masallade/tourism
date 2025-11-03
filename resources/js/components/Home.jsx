@@ -20,25 +20,23 @@ export default function Home() {
 
   const fetchCountries = async () => {
     try {
-      const response = await fetch('/api/countries');
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Log countries data to check for image_url
-        console.log('Countries data received:', data);
-        
-        // Specifically check Brazil if it exists
-        const brazil = data.find(country => country.name === 'Brazil');
-        if (brazil) {
-          console.log('Brazil data:', {
-            id: brazil.id,
-            name: brazil.name,
-            image_url: brazil.image_url
-          });
-        }
-        
-        setCountries(data);
+      const response = await window.apiClient.get('/api/countries');
+      const data = response.data;
+      
+      // Log countries data to check for image_url
+      console.log('Countries data received:', data);
+      
+      // Specifically check Brazil if it exists
+      const brazil = data.find(country => country.name === 'Brazil');
+      if (brazil) {
+        console.log('Brazil data:', {
+          id: brazil.id,
+          name: brazil.name,
+          image_url: brazil.image_url
+        });
       }
+      
+      setCountries(data);
     } catch (error) {
       console.error('Error fetching countries:', error);
     } finally {
@@ -48,11 +46,9 @@ export default function Home() {
 
   const fetchServiceTypes = async () => {
     try {
-      const response = await fetch('/api/service-types');
-      if (response.ok) {
-        const data = await response.json();
-        setServiceTypes(data);
-      }
+      const response = await window.apiClient.get('/api/service-types');
+      const data = response.data;
+      setServiceTypes(data);
     } catch (error) {
       console.error('Error fetching service types:', error);
     }
@@ -60,11 +56,9 @@ export default function Home() {
 
   const fetchThemes = async () => {
     try {
-      const response = await fetch('/api/themes');
-      if (response.ok) {
-        const data = await response.json();
-        setThemes(data);
-      }
+      const response = await window.apiClient.get('/api/themes');
+      const data = response.data;
+      setThemes(data);
     } catch (error) {
       console.error('Error fetching themes:', error);
     }

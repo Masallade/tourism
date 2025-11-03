@@ -58,12 +58,8 @@ const ServiceProvidersList = () => {
 
     const fetchServiceProviders = async () => {
         try {
-            const response = await fetch('/api/service-providers');
-            if (!response.ok) {
-                throw new Error('Failed to fetch service providers');
-            }
-            const data = await response.json();
-            setServiceProviders(data);
+            const response = await window.apiClient.get('/api/service-providers');
+            setServiceProviders(response.data);
             setError(null);
         } catch (error) {
             setError('Error fetching service providers. Please try again later.');
@@ -75,11 +71,8 @@ const ServiceProvidersList = () => {
 
     const fetchCountries = async () => {
         try {
-            const response = await fetch('/api/countries');
-            if (response.ok) {
-                const data = await response.json();
-                setCountries(data);
-            }
+            const response = await window.apiClient.get('/api/countries');
+            setCountries(response.data);
         } catch (error) {
             console.error('Error fetching countries:', error);
         }
@@ -87,11 +80,8 @@ const ServiceProvidersList = () => {
 
     const fetchServiceTypes = async () => {
         try {
-            const response = await fetch('/api/service-types');
-            if (response.ok) {
-                const data = await response.json();
-                setServiceTypes(data);
-            }
+            const response = await window.apiClient.get('/api/service-types');
+            setServiceTypes(response.data);
         } catch (error) {
             console.error('Error fetching service types:', error);
         }
@@ -199,12 +189,7 @@ const ServiceProvidersList = () => {
         }
 
         try {
-            const response = await fetch(`/api/service-providers/${provider.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+            await window.apiClient.delete(`/api/service-providers/${provider.id}`);
             setSuccessMessage('Service Provider deleted successfully');
             fetchServiceProviders();
         } catch (error) {
@@ -227,32 +212,21 @@ const ServiceProvidersList = () => {
                 ? `/api/service-providers/${processingProvider.id}/approve`
                 : `/api/service-providers/${processingProvider.id}/reject`;
             
-            const response = await fetch(endpoint, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+            await window.apiClient.patch(endpoint);
+            setSuccessMessage(
+                approvalAction === 'approve' 
+                    ? 'Service Provider approved successfully and email sent!' 
+                    : 'Service Provider rejected and email sent.'
+            );
+            await fetchServiceProviders();
             
-            if (response.ok) {
-                setSuccessMessage(
-                    approvalAction === 'approve' 
-                        ? 'Service Provider approved successfully and email sent!' 
-                        : 'Service Provider rejected and email sent.'
-                );
-                await fetchServiceProviders();
-                
-                // Close modal after a short delay to show success
-                setTimeout(() => {
-                    setShowApprovalModal(false);
-                    setProcessingProvider(null);
-                    setApprovalAction(null);
-                    setIsProcessing(false);
-                }, 1000);
-            } else {
-                setError('Failed to update approval status. Please try again.');
+            // Close modal after a short delay to show success
+            setTimeout(() => {
+                setShowApprovalModal(false);
+                setProcessingProvider(null);
+                setApprovalAction(null);
                 setIsProcessing(false);
-            }
+            }, 1000);
         } catch (error) {
             console.error('Error updating approval status:', error);
             setError('An error occurred. Please try again.');

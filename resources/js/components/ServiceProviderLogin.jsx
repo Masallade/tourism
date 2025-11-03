@@ -16,20 +16,11 @@ const ServiceProviderLogin = ({ onLogin, onBack = null }) => {
         setError('');
         setLoading(true);
         try {
-            const response = await fetch('/api/service-provider-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await response.json();
-            if (!response.ok) {
-                setError(data.error || 'Login failed');
-            } else {
-                setProvider(data.provider);
-                if (onLogin) onLogin(data.provider);
-            }
+            const { data } = await window.apiClient.post('/api/service-provider-login', { email, password });
+            setProvider(data.provider);
+            if (onLogin) onLogin(data.provider);
         } catch (err) {
-            setError('Network error');
+            setError(err?.response?.data?.error || 'Login failed');
         } finally {
             setLoading(false);
         }

@@ -35,9 +35,10 @@ export const auth = {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 },
-                credentials: 'same-origin', // Ensure cookies are sent
+                credentials: 'include', // Ensure cookies are sent (include is more explicit than same-origin)
                 body: JSON.stringify({
                     email,
                     password,
@@ -99,9 +100,10 @@ export const auth = {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 },
-                credentials: 'same-origin' // Ensure cookies are sent
+                credentials: 'include' // Ensure cookies are sent (include is more explicit than same-origin)
             });
 
             const data = await response.json();

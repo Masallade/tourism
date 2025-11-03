@@ -15,9 +15,8 @@ const ThemesList = () => {
 
     const fetchThemes = async () => {
         try {
-            const response = await fetch('/api/themes');
-            const data = await response.json();
-            setThemes(data);
+            const response = await window.apiClient.get('/api/themes');
+            setThemes(response.data);
         } catch (error) {
             console.error('Error fetching themes:', error);
         } finally {
@@ -31,9 +30,7 @@ const ThemesList = () => {
         }
 
         try {
-            await fetch(`/api/themes/${theme.id}`, {
-                method: 'DELETE',
-            });
+            await window.apiClient.delete(`/api/themes/${theme.id}`);
             setSuccessMessage('Theme deleted successfully');
             fetchThemes();
         } catch (error) {

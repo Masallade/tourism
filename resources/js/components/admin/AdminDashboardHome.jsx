@@ -34,16 +34,16 @@ const AdminDashboardHome = () => {
     const fetchStats = async () => {
         try {
             const [countriesRes, themesRes, providersRes, usersRes] = await Promise.all([
-                fetch('/api/countries'),
-                fetch('/api/themes'),
-                fetch('/api/service-providers'),
-                fetch('/api/users')
+                window.apiClient.get('/api/countries'),
+                window.apiClient.get('/api/themes'),
+                window.apiClient.get('/api/service-providers'),
+                window.apiClient.get('/api/users')
             ]);
 
-            const countries = await countriesRes.json();
-            const themes = await themesRes.json();
-            const providers = await providersRes.json();
-            const users = usersRes.ok ? await usersRes.json() : [];
+            const countries = countriesRes.data;
+            const themes = themesRes.data;
+            const providers = providersRes.data;
+            const users = usersRes.data || [];
 
             const approvedProviders = providers.filter(p => p.is_approved).length;
             const pendingProviders = providers.filter(p => !p.is_approved).length;
@@ -74,11 +74,9 @@ const AdminDashboardHome = () => {
 
     const fetchUserData = async () => {
         try {
-            const response = await fetch('/api/users');
-            if (response.ok) {
-                const users = await response.json();
-                setUserData(users.slice(0, 5)); // Get latest 5 users
-            }
+            const response = await window.apiClient.get('/api/users');
+            const users = response.data;
+            setUserData(users.slice(0, 5)); // Get latest 5 users
         } catch (error) {
             console.error('Error fetching user data:', error);
         }
@@ -97,9 +95,8 @@ const AdminDashboardHome = () => {
 
     const fetchUserGrowthData = async () => {
         try {
-            const response = await fetch('/api/users');
-            if (response.ok) {
-                const users = await response.json();
+            const response = await window.apiClient.get('/api/users');
+            const users = response.data;
                 
                 // Generate 30-day growth data
                 const growthData = [];
@@ -131,7 +128,6 @@ const AdminDashboardHome = () => {
                 }
                 
                 setUserGrowthData(growthData);
-            }
         } catch (error) {
             console.error('Error fetching user growth data:', error);
         }
@@ -139,10 +135,9 @@ const AdminDashboardHome = () => {
 
     const fetchUserAnalytics = async () => {
         try {
-            const response = await fetch('/api/users');
-            if (response.ok) {
-                const users = await response.json();
-                const now = new Date();
+            const response = await window.apiClient.get('/api/users');
+            const users = response.data;
+            const now = new Date();
                 const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                 const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
                 
@@ -163,7 +158,6 @@ const AdminDashboardHome = () => {
                     userRetention: 85, // 85% retention rate
                     averageSessionTime: 12.5 // 12.5 minutes average session
                 });
-            }
         } catch (error) {
             console.error('Error fetching user analytics:', error);
         }

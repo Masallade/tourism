@@ -33,13 +33,13 @@ const ServiceProviderDashboard = ({ provider }) => {
       try {
         let types = [];
         if (provider?.id) {
-          const res = await fetch(`/api/provider/${provider.id}/service-types`);
-          types = await res.json();
+          const res = await window.apiClient.get(`/api/provider/${provider.id}/service-types`);
+          types = res.data;
         } else if (provider?.serviceTypes) {
           types = provider.serviceTypes;
         } else {
-          const res = await fetch('/api/service-types');
-          types = await res.json();
+          const res = await window.apiClient.get('/api/service-types');
+          types = res.data;
         }
         setServiceTypes(types);
         // Only use provider's assigned themes
@@ -47,8 +47,8 @@ const ServiceProviderDashboard = ({ provider }) => {
           setThemes(provider.themes);
         } else if (provider?.id) {
           // fallback: fetch provider with themes
-          const res = await fetch(`/api/service-providers`);
-          const allProviders = await res.json();
+          const res = await window.apiClient.get(`/api/service-providers`);
+          const allProviders = res.data;
           const found = allProviders.find(p => p.id === provider.id);
           setThemes(found?.themes || []);
         } else {
@@ -60,8 +60,8 @@ const ServiceProviderDashboard = ({ provider }) => {
           console.log('Using provider country:', provider.country);
           setCountry(provider.country);
         } else if (provider?.country_id) {
-          const cres = await fetch(`/api/countries`);
-          const countries = await cres.json();
+          const cres = await window.apiClient.get(`/api/countries`);
+          const countries = cres.data;
           const foundCountry = countries.find(c => c.id === provider.country_id);
           console.log('Found country by ID:', foundCountry);
           setCountry(foundCountry || { id: 1, name: 'Default Country' }); // Provide a default as fallback
@@ -74,11 +74,9 @@ const ServiceProviderDashboard = ({ provider }) => {
         // Fetch provider's services if available
         if (provider?.id) {
           try {
-            const servicesRes = await fetch(`/api/provider/services?provider_id=${provider.id}`);
-            if (servicesRes.ok) {
-              const servicesData = await servicesRes.json();
-              setServices(servicesData);
-            }
+            const servicesRes = await window.apiClient.get(`/api/provider/services?provider_id=${provider.id}`);
+            const servicesData = servicesRes.data;
+            setServices(servicesData);
           } catch (error) {
             console.error('Failed to fetch provider services:', error);
           }
@@ -108,9 +106,7 @@ const ServiceProviderDashboard = ({ provider }) => {
     }
     
     try {
-      const response = await fetch(`/api/provider/services/${serviceId}`, {
-        method: 'DELETE',
-      });
+      const response = await window.apiClient.delete(`/api/provider/services/${serviceId}`);
       
       if (response.ok) {
         setServices(prev => prev.filter(s => s.id !== serviceId));
@@ -159,19 +155,13 @@ const ServiceProviderDashboard = ({ provider }) => {
     }
     setChangePasswordLoading(true);
     try {
-      const res = await fetch('/api/service-provider/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          provider_id: provider?.id,
-          old_password: passwordForm.oldPassword,
-          new_password: passwordForm.newPassword,
-          new_password_confirmation: passwordForm.confirmPassword,
-        }),
+      const res = await window.apiClient.post('/api/service-provider/change-password', {
+        provider_id: provider?.id,
+        old_password: passwordForm.oldPassword,
+        new_password: passwordForm.newPassword,
+        new_password_confirmation: passwordForm.confirmPassword,
       });
-      const data = await res.json();
+      const data = res.data;
       if (!res.ok || data.error) {
         setPasswordError(data.error || 'Failed to change password.');
         setChangePasswordLoading(false);
@@ -204,13 +194,11 @@ const ServiceProviderDashboard = ({ provider }) => {
       
       // Try to get token from localStorage or sessionStorage
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const res = await fetch(url, {
-        method: method,
-        body: formData,
+      const res = await window.apiClient.upload(url, formData, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
       
-      const responseData = await res.json();
+      const responseData = res.data;
       console.log('Service response:', responseData);
       
       if (!res.ok) {
