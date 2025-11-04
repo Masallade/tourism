@@ -84,7 +84,18 @@ class ServiceProviderController extends Controller
         $serviceProvider->is_approved = true;
         $serviceProvider->save();
         // Send approval email with password
-        Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('approved', $password));
+        // In production, queue to avoid blocking. In local, send synchronously for testing.
+        if ($serviceProvider->email) {
+            try {
+                if (app()->environment('production')) {
+                    Mail::to($serviceProvider->email)->queue(new ServiceProviderStatusMail('approved', $password));
+                } else {
+                    Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('approved', $password));
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send approval email: ' . $e->getMessage());
+            }
+        }
         return response()->json(['message' => 'Service provider approved and email sent.']);
     }
 
@@ -94,7 +105,18 @@ class ServiceProviderController extends Controller
         $serviceProvider->is_approved = false;
         $serviceProvider->save();
         // Send rejection email
-        Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('rejected'));
+        // In production, queue to avoid blocking. In local, send synchronously for testing.
+        if ($serviceProvider->email) {
+            try {
+                if (app()->environment('production')) {
+                    Mail::to($serviceProvider->email)->queue(new ServiceProviderStatusMail('rejected'));
+                } else {
+                    Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('rejected'));
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send rejection email: ' . $e->getMessage());
+            }
+        }
         return response()->json(['message' => 'Service provider rejected and email sent.']);
     }
 }

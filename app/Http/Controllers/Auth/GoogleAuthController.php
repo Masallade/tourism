@@ -17,7 +17,7 @@ class GoogleAuthController extends Controller
     public function redirectToGoogle()
     {
         return Socialite::driver('google')
-            ->with(['prompt' => 'select_account']) // Force account selection
+            ->scopes(['openid', 'profile', 'email'])
             ->redirect();
     }
 
@@ -59,6 +59,7 @@ class GoogleAuthController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('Google OAuth error: ' . $e->getMessage());
             return redirect('/login')->with('error', 'Google login failed. Please try again.');
         }
     }

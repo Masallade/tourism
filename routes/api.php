@@ -255,13 +255,31 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
         }
 
         // Send approval email if approved
+        // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ($password && $serviceProvider->email) {
-            \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderStatusMail('approved', $password));
+            try {
+                if (app()->environment('production')) {
+                    \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->queue(new \App\Mail\ServiceProviderStatusMail('approved', $password));
+                } else {
+                    \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderStatusMail('approved', $password));
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send approval email: ' . $e->getMessage());
+            }
         }
 
         // Send pending email to user if not approved (user-side submission)
+        // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ((!isset($data['is_approved']) || !$data['is_approved']) && $serviceProvider->email) {
-            \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderPendingMail($serviceProvider->name));
+            try {
+                if (app()->environment('production')) {
+                    \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->queue(new \App\Mail\ServiceProviderPendingMail($serviceProvider->name));
+                } else {
+                    \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderPendingMail($serviceProvider->name));
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send pending email: ' . $e->getMessage());
+            }
         }
 
         return response()->json($serviceProvider->load(['country', 'themes']), 201);
