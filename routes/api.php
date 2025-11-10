@@ -257,29 +257,63 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
         // Send approval email if approved
         // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ($password && $serviceProvider->email) {
+            \Log::info('ServiceProvider: Attempting to send approval email', [
+                'email' => $serviceProvider->email,
+                'environment' => app()->environment(),
+                'mail_mailer' => config('mail.default'),
+            ]);
+            
             try {
                 if (app()->environment('production')) {
+                    \Log::info('ServiceProvider: Queueing approval email (production)');
                     \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->queue(new \App\Mail\ServiceProviderStatusMail('approved', $password));
+                    \Log::info('ServiceProvider: Approval email queued successfully');
                 } else {
+                    \Log::info('ServiceProvider: Sending approval email synchronously (local)');
                     \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderStatusMail('approved', $password));
+                    \Log::info('ServiceProvider: Approval email sent successfully');
                 }
             } catch (\Exception $e) {
-                \Log::warning('Failed to send approval email: ' . $e->getMessage());
+                \Log::error('ServiceProvider: Failed to send approval email', [
+                    'error' => $e->getMessage(),
+                    'email' => $serviceProvider->email,
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
         }
 
         // Send pending email to user if not approved (user-side submission)
         // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ((!isset($data['is_approved']) || !$data['is_approved']) && $serviceProvider->email) {
+            \Log::info('ServiceProvider: Attempting to send pending email', [
+                'email' => $serviceProvider->email,
+                'name' => $serviceProvider->name,
+                'environment' => app()->environment(),
+                'mail_mailer' => config('mail.default'),
+            ]);
+            
             try {
                 if (app()->environment('production')) {
+                    \Log::info('ServiceProvider: Queueing pending email (production)');
                     \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->queue(new \App\Mail\ServiceProviderPendingMail($serviceProvider->name));
+                    \Log::info('ServiceProvider: Pending email queued successfully');
                 } else {
+                    \Log::info('ServiceProvider: Sending pending email synchronously (local)');
                     \Illuminate\Support\Facades\Mail::to($serviceProvider->email)->send(new \App\Mail\ServiceProviderPendingMail($serviceProvider->name));
+                    \Log::info('ServiceProvider: Pending email sent successfully');
                 }
             } catch (\Exception $e) {
-                \Log::warning('Failed to send pending email: ' . $e->getMessage());
+                \Log::error('ServiceProvider: Failed to send pending email', [
+                    'error' => $e->getMessage(),
+                    'email' => $serviceProvider->email,
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
+        } else {
+            \Log::info('ServiceProvider: Skipping pending email', [
+                'is_approved' => $data['is_approved'] ?? 'not set',
+                'has_email' => !empty($serviceProvider->email),
+            ]);
         }
 
         return response()->json($serviceProvider->load(['country', 'themes']), 201);

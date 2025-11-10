@@ -291,7 +291,7 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                             {successMessage}
                         </div>
                     )}
-                    
+
                     {errors.general && (
                         <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
                             {errors.general}

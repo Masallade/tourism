@@ -13,15 +13,15 @@ class CountryController extends Controller
         \Log::info('CountryController store called', ['hasFile' => $request->hasFile('image'), 'file' => $request->file('image')]);
         
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'slug' => 'required|string|max:255|unique:countries,slug',
-                'description' => 'nullable|string',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:countries,slug',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'image_url' => 'nullable|url',
-            ]);
+        ]);
             
-            if ($request->hasFile('image')) {
+        if ($request->hasFile('image')) {
                 $file = $request->file('image');
                 $path = $file->store('uploads/countries', 'public');
                 
@@ -35,16 +35,16 @@ class CountryController extends Controller
                     ], 422);
                 }
                 
-                $validated['image_url'] = '/storage/' . $path;
+            $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');
                 \Log::info('Country image set via URL');
-            } else {
-                \Log::info('No image uploaded for country');
-            }
+        } else {
+            \Log::info('No image uploaded for country');
+        }
             
-            $country = Country::create($validated);
+        $country = Country::create($validated);
             \Log::info('Country created successfully', ['country' => $country]);
             
             return response()->json([
@@ -75,15 +75,15 @@ class CountryController extends Controller
         \Log::info('CountryController update called', ['hasFile' => $request->hasFile('image'), 'file' => $request->file('image')]);
         
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
-                'description' => 'nullable|string',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'image_url' => 'nullable|url',
-            ]);
+        ]);
             
-            if ($request->hasFile('image')) {
+        if ($request->hasFile('image')) {
                 // Delete old image if exists
                 if ($country->image_url) {
                     $oldPath = str_replace('/storage/', '', $country->image_url);
@@ -106,16 +106,16 @@ class CountryController extends Controller
                     ], 422);
                 }
                 
-                $validated['image_url'] = '/storage/' . $path;
+            $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');
                 \Log::info('Country image set via URL on update');
-            } else {
-                \Log::info('No image uploaded for country update');
-            }
+        } else {
+            \Log::info('No image uploaded for country update');
+        }
             
-            $country->update($validated);
+        $country->update($validated);
             \Log::info('Country updated successfully', ['country' => $country]);
             
             return response()->json([

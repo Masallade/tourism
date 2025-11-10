@@ -86,15 +86,33 @@ class ServiceProviderController extends Controller
         // Send approval email with password
         // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ($serviceProvider->email) {
+            \Log::info('ServiceProviderController: Attempting to send approval email', [
+                'email' => $serviceProvider->email,
+                'environment' => app()->environment(),
+                'mail_mailer' => config('mail.default'),
+            ]);
+            
             try {
                 if (app()->environment('production')) {
+                    \Log::info('ServiceProviderController: Queueing approval email (production)');
                     Mail::to($serviceProvider->email)->queue(new ServiceProviderStatusMail('approved', $password));
+                    \Log::info('ServiceProviderController: Approval email queued successfully');
                 } else {
+                    \Log::info('ServiceProviderController: Sending approval email synchronously (local)');
                     Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('approved', $password));
+                    \Log::info('ServiceProviderController: Approval email sent successfully');
                 }
             } catch (\Exception $e) {
-                \Log::warning('Failed to send approval email: ' . $e->getMessage());
+                \Log::error('ServiceProviderController: Failed to send approval email', [
+                    'error' => $e->getMessage(),
+                    'email' => $serviceProvider->email,
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
+        } else {
+            \Log::warning('ServiceProviderController: No email address for service provider', [
+                'service_provider_id' => $serviceProvider->id,
+            ]);
         }
         return response()->json(['message' => 'Service provider approved and email sent.']);
     }
@@ -107,15 +125,33 @@ class ServiceProviderController extends Controller
         // Send rejection email
         // In production, queue to avoid blocking. In local, send synchronously for testing.
         if ($serviceProvider->email) {
+            \Log::info('ServiceProviderController: Attempting to send rejection email', [
+                'email' => $serviceProvider->email,
+                'environment' => app()->environment(),
+                'mail_mailer' => config('mail.default'),
+            ]);
+            
             try {
                 if (app()->environment('production')) {
+                    \Log::info('ServiceProviderController: Queueing rejection email (production)');
                     Mail::to($serviceProvider->email)->queue(new ServiceProviderStatusMail('rejected'));
+                    \Log::info('ServiceProviderController: Rejection email queued successfully');
                 } else {
+                    \Log::info('ServiceProviderController: Sending rejection email synchronously (local)');
                     Mail::to($serviceProvider->email)->send(new ServiceProviderStatusMail('rejected'));
+                    \Log::info('ServiceProviderController: Rejection email sent successfully');
                 }
             } catch (\Exception $e) {
-                \Log::warning('Failed to send rejection email: ' . $e->getMessage());
+                \Log::error('ServiceProviderController: Failed to send rejection email', [
+                    'error' => $e->getMessage(),
+                    'email' => $serviceProvider->email,
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
+        } else {
+            \Log::warning('ServiceProviderController: No email address for service provider', [
+                'service_provider_id' => $serviceProvider->id,
+            ]);
         }
         return response()->json(['message' => 'Service provider rejected and email sent.']);
     }
