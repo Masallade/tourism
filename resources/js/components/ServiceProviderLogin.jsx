@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ClipLoader } from 'react-spinners';
-import ServiceProviderDashboard from './ServiceProviderDashboard';
+import { useNavigate } from 'react-router-dom';
 
 const ServiceProviderLogin = ({ onLogin, onBack = null }) => {
     const [email, setEmail] = useState('');
@@ -9,7 +9,7 @@ const ServiceProviderLogin = ({ onLogin, onBack = null }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [provider, setProvider] = useState(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -17,18 +17,16 @@ const ServiceProviderLogin = ({ onLogin, onBack = null }) => {
         setLoading(true);
         try {
             const { data } = await window.apiClient.post('/api/service-provider-login', { email, password });
-            setProvider(data.provider);
-            if (onLogin) onLogin(data.provider);
+            if (onLogin) {
+                onLogin(data.provider);
+            }
+            navigate('/provider/dashboard');
         } catch (err) {
             setError(err?.response?.data?.error || 'Login failed');
         } finally {
             setLoading(false);
         }
     };
-
-    if (provider) {
-        return <ServiceProviderDashboard provider={provider} />;
-    }
 
     return (
         <form onSubmit={handleSubmit} className="p-8 max-w-md mx-auto bg-white rounded-xl shadow mt-10 space-y-6">

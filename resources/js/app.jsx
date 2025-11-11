@@ -24,23 +24,64 @@ import '../css/app.css';
 import './bootstrap';
 
 import ServiceProviderDashboard from './components/ServiceProviderDashboard';
+import ServiceProviderLogin from './components/ServiceProviderLogin';
 
 function App() {
-  const [provider, setProvider] = React.useState(null);
+  const STORAGE_KEY = 'serviceProvider';
+  const [provider, setProvider] = React.useState(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      console.warn('Failed to parse stored provider data:', error);
+      window.localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+  });
+
+  const handleProviderLogin = React.useCallback((providerData) => {
+    setProvider(providerData);
+  }, []);
+
+  const handleProviderLogout = React.useCallback(() => {
+    setProvider(null);
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (provider) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(provider));
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [provider]);
+
+  const RequireProvider = ({ children }) => {
+    if (!provider) {
+      return <Navigate to="/provider/login" replace />;
+    }
+    return children;
+  };
   
   // Common layout for frontend pages with header and footer
   const Layout = ({ children }) => (
     <>
-      <Header setProvider={setProvider} />
+      <Header
+        onProviderLogin={handleProviderLogin}
+        provider={provider}
+      />
       {children}
-     
+      {/* <Footer /> */}
     </>
   );
-
-  // If provider is logged in, show dashboard only
-  if (provider) {
-    return <ServiceProviderDashboard provider={provider} />;
-  }
 
   return (
     <Router>
@@ -57,6 +98,30 @@ function App() {
         {/* User authentication routes */}
         <Route path="/login" element={<UserLogin />} />
         <Route path="/signup" element={<UserSignup />} />
+        <Route
+          path="/provider/login"
+          element={
+            <Layout>
+              <ServiceProviderLogin
+                onLogin={(prov) => {
+                  handleProviderLogin(prov);
+                  return true;
+                }}
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/provider/dashboard"
+          element={
+            <RequireProvider>
+              <ServiceProviderDashboard
+                provider={provider}
+                onLogout={handleProviderLogout}
+              />
+            </RequireProvider>
+          }
+        />
         <Route path="/profile" element={
           <Layout>
             <UserProfile />

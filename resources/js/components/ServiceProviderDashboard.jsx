@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ServiceForm from './ServiceForm';
 import StaticMap from './StaticMap';
+import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
-const ServiceProviderDashboard = ({ provider }) => {
+const ServiceProviderDashboard = ({ provider, onLogout }) => {
   const [showForm, setShowForm] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
@@ -25,6 +26,22 @@ const ServiceProviderDashboard = ({ provider }) => {
   const [showProfileView, setShowProfileView] = useState(false);
   const [showEditDetails, setShowEditDetails] = useState(false);
   const [editingService, setEditingService] = useState(null);
+
+  const getServiceTypesFor = (svc) => extractServiceTypes(svc).map((type) => ({
+    ...type,
+    id: Number(type.id),
+  }));
+
+  const getThemesFor = (svc) => extractThemes(svc).map((theme) => ({
+    ...theme,
+    id: Number(theme.id),
+  }));
+
+  const handleProviderLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   useEffect(() => {
     // Fetch allowed service types, country, and all themes for this provider
@@ -106,14 +123,9 @@ const ServiceProviderDashboard = ({ provider }) => {
     }
     
     try {
-      const response = await window.apiClient.delete(`/api/provider/services/${serviceId}`);
-      
-      if (response.ok) {
-        setServices(prev => prev.filter(s => s.id !== serviceId));
-        alert('Service deleted successfully!');
-      } else {
-        alert('Failed to delete service');
-      }
+      await window.apiClient.delete(`/api/provider/services/${serviceId}`);
+      setServices(prev => prev.filter(s => s.id !== serviceId));
+      alert('Service deleted successfully!');
     } catch (error) {
       console.error('Error deleting service:', error);
       alert('An error occurred while deleting the service');
@@ -153,6 +165,10 @@ const ServiceProviderDashboard = ({ provider }) => {
       setPasswordError('New passwords do not match.');
       return;
     }
+    if (!provider?.id) {
+      setPasswordError('Provider information is missing. Please log in again.');
+      return;
+    }
     setChangePasswordLoading(true);
     try {
       const res = await window.apiClient.post('/api/service-provider/change-password', {
@@ -162,15 +178,22 @@ const ServiceProviderDashboard = ({ provider }) => {
         new_password_confirmation: passwordForm.confirmPassword,
       });
       const data = res.data;
-      if (!res.ok || data.error) {
-        setPasswordError(data.error || 'Failed to change password.');
-        setChangePasswordLoading(false);
+      if (data?.error) {
+        setPasswordError(data.error);
         return;
       }
       setShowChangePassword(false);
       alert('Password changed successfully!');
     } catch (err) {
-      setPasswordError('An error occurred. Please try again.');
+      const apiError = err?.response?.data;
+      if (apiError?.error) {
+        setPasswordError(apiError.error);
+      } else if (apiError?.errors) {
+        const firstError = Object.values(apiError.errors).flat()[0];
+        setPasswordError(firstError || 'An error occurred. Please try again.');
+      } else {
+        setPasswordError('An error occurred. Please try again.');
+      }
     } finally {
       setChangePasswordLoading(false);
     }
@@ -188,9 +211,8 @@ const ServiceProviderDashboard = ({ provider }) => {
       }
       console.log('Form data being sent:', formDataEntries);
       
-      // Determine URL and method
+      // Determine URL
       const url = serviceId ? `/api/provider/services/${serviceId}` : '/api/provider/services';
-      const method = serviceId ? 'POST' : 'POST'; // POST with _method=PUT for updates
       
       // Try to get token from localStorage or sessionStorage
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -201,22 +223,20 @@ const ServiceProviderDashboard = ({ provider }) => {
       const responseData = res.data;
       console.log('Service response:', responseData);
       
-      if (!res.ok) {
-        let msg = serviceId ? 'Failed to update service' : 'Failed to add service';
-        if (responseData && responseData.error) {
-          msg = responseData.error;
-        }
-        console.error('Service operation failed:', msg);
-        alert(msg);
+      if (responseData?.error) {
+        console.error('Service operation failed:', responseData.error);
+        alert(responseData.error);
         return;
       }
       
       // Update services list
       if (serviceId) {
         // Update existing service
-        setServices(prev => prev.map(s => 
-          s.id === serviceId ? { ...responseData.service, id: serviceId } : s
-        ));
+        if (responseData?.service) {
+          setServices(prev => prev.map(s => 
+            s.id === serviceId ? { ...responseData.service, id: serviceId } : s
+          ));
+        }
         alert('Service updated successfully!');
       } else {
         // Add new service
@@ -291,6 +311,17 @@ const ServiceProviderDashboard = ({ provider }) => {
                     </svg>
                     Change Password
                   </button>
+                <button
+                  className="px-5 py-2 bg-red-500 text-white rounded-md font-medium hover:bg-red-600 transition flex items-center gap-2 shadow-sm"
+                  onClick={handleProviderLogout}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Logout
+                </button>
         {/* Change Password Modal */}
         {showChangePassword && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -337,6 +368,7 @@ const ServiceProviderDashboard = ({ provider }) => {
                       value={passwordForm.newPassword}
                       onChange={handlePasswordInputChange}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 pr-10"
+                      minLength={8}
                       required
                     />
                     <button type="button" onClick={() => togglePasswordVisibility('new')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none">
@@ -357,6 +389,7 @@ const ServiceProviderDashboard = ({ provider }) => {
                       value={passwordForm.confirmPassword}
                       onChange={handlePasswordInputChange}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 pr-10"
+                      minLength={8}
                       required
                     />
                     <button type="button" onClick={() => togglePasswordVisibility('confirm')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none">
@@ -404,7 +437,9 @@ const ServiceProviderDashboard = ({ provider }) => {
             <div className="bg-white rounded-xl p-8 shadow-sm">
               {services && services.length > 0 ? (
                 serviceTypes.map(type => {
-                  const filtered = services.filter(s => s.service_type_id === type.id);
+                  const filtered = services.filter((s) =>
+                    getServiceTypesFor(s).some((st) => st.id === Number(type.id))
+                  );
                   if (!filtered.length) return null;
                   return (
                     <div key={type.id} className="mb-8">
@@ -420,7 +455,24 @@ const ServiceProviderDashboard = ({ provider }) => {
                               )}
                               <div>
                                 <h4 className="font-semibold text-gray-800">{service.name}</h4>
-                                <div className="text-xs text-gray-500">{service.theme?.name || 'No Theme'}</div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {getServiceTypesFor(service).map((serviceType) => (
+                                    <span key={`type-${service.id}-${serviceType.id}`} className="text-[11px] font-medium px-2 py-0.5 bg-white text-blue-600 border border-blue-200 rounded-full">
+                                      {serviceType.name}
+                                    </span>
+                                  ))}
+                                </div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {getThemesFor(service).length ? (
+                                    getThemesFor(service).map((theme) => (
+                                      <span key={`theme-${service.id}-${theme.id}`} className="text-[11px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                                        {theme.name}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-gray-400">No themes</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                             <p className="text-gray-600 text-sm mb-2">{service.description || 'No description provided'}</p>
@@ -440,7 +492,9 @@ const ServiceProviderDashboard = ({ provider }) => {
                               </>
                             )}
                             <div className="flex items-center justify-between mt-3">
-                              <span className="text-green-700 font-bold">${service.price || '0.00'}</span>
+                              <span className="text-green-700 font-bold">
+                                {service.price ? `$${Number(service.price).toFixed(2)}` : 'Contact for price'}
+                              </span>
                               <div className="flex gap-2">
                                 <button 
                                   onClick={() => handleEditService(service)}
@@ -499,7 +553,7 @@ const ServiceProviderDashboard = ({ provider }) => {
         {/* Service Form Modal */}
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingService ? 'Edit Service' : 'Add New Service'}

@@ -1,7 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 const ServiceCard = ({ service }) => {
+  const serviceTypes = extractServiceTypes(service);
+  const serviceThemes = extractThemes(service);
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative h-48 overflow-hidden">
@@ -24,13 +28,25 @@ const ServiceCard = ({ service }) => {
         <h3 className="font-bold text-lg text-green-800 mb-1">{service.name}</h3>
         <p className="text-sm text-gray-600 line-clamp-2 mb-2">{service.description || 'No description provided'}</p>
         <div className="flex items-center justify-between">
-          <div>
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-              {service.serviceType?.name || 'Service'}
-            </span>
-            {service.theme && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-1">
-                {service.theme.name}
+          <div className="flex flex-wrap gap-1">
+            {(serviceTypes.length ? serviceTypes : [{ id: 'fallback', name: 'Service' }]).slice(0, 2).map((type) => (
+              <span key={`card-type-${service.id}-${type.id}`} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                {type.name}
+              </span>
+            ))}
+            {serviceTypes.length > 2 && (
+              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+                +{serviceTypes.length - 2}
+              </span>
+            )}
+            {serviceThemes.slice(0, 2).map((theme) => (
+              <span key={`card-theme-${service.id}-${theme.id}`} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                {theme.name}
+              </span>
+            ))}
+            {serviceThemes.length > 2 && (
+              <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                +{serviceThemes.length - 2}
               </span>
             )}
           </div>

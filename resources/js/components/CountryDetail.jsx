@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ServiceCard from './ServiceCard';
+import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 
 const CountryDetail = () => {
@@ -41,17 +42,17 @@ const CountryDetail = () => {
 
         // Fetch services for this country
         const servicesRes = await fetch(`/api/country/${id}/services`);
+        let servicesData = [];
         
         if (!servicesRes.ok) {
           console.warn(`Services fetch failed with status: ${servicesRes.status}`);
-          // Don't throw error here, just set empty services array
           setServices([]);
-          // Still continue execution to show the country details
         } else {
           try {
-            const servicesData = await servicesRes.json();
-            if (Array.isArray(servicesData)) {
-              setServices(servicesData);
+            const parsed = await servicesRes.json();
+            if (Array.isArray(parsed)) {
+              servicesData = parsed;
+              setServices(parsed);
             } else {
               setServices([]);
             }
@@ -61,34 +62,30 @@ const CountryDetail = () => {
           }
         }
 
-        // Define servicesData variable to avoid undefined reference
-        let servicesData = [];
-        
         try {
-          // Extract unique service types from the fetched services
-          if (servicesRes.ok) {
-            servicesData = await servicesRes.json();
+          const serviceTypeIdSet = new Set();
+          servicesData.forEach((svc) => {
+            extractServiceTypes(svc).forEach((type) => {
+              serviceTypeIdSet.add(Number(type.id));
+            });
+          });
+          
+          if (serviceTypeIdSet.size) {
+            const typesRes = await fetch('/api/service-types');
+            if (!typesRes.ok) {
+              throw new Error('Failed to fetch service types');
+            }
+            const allTypes = await typesRes.json();
+            const filteredTypes = allTypes
+              .filter((type) => serviceTypeIdSet.has(Number(type.id)))
+              .map((type) => ({ ...type, id: Number(type.id) }));
+            setServiceTypes(filteredTypes);
           } else {
-            servicesData = []; // Empty array as fallback
+            setServiceTypes([]);
           }
-          
-          // Get unique service types from the services
-          const types = [...new Set(servicesData.filter(service => service.serviceType).map(service => service.serviceType.id))];
-          
-          // Fetch service type details
-          const typesRes = await fetch('/api/service-types');
-          if (!typesRes.ok) {
-            throw new Error('Failed to fetch service types');
-          }
-          const allTypes = await typesRes.json();
-          
-          // Filter for only service types we have
-          const filteredTypes = allTypes.filter(type => types.includes(type.id));
-          setServiceTypes(filteredTypes);
         } catch (servicesErr) {
           console.error('Error processing services data:', servicesErr);
-          // Continue execution with empty services array
-          servicesData = [];
+          setServiceTypes([]);
         }
         
         setLoading(false);
@@ -105,7 +102,9 @@ const CountryDetail = () => {
   // Filter services by selected type
   const filteredServices = selectedType === 'all' 
     ? services 
-    : services.filter(service => service.service_type_id === parseInt(selectedType));
+    : services.filter(service => 
+        extractServiceTypes(service).some(type => Number(type.id) === Number(selectedType))
+      );
   
   // Apply services filter based on selected type
 
@@ -230,7 +229,7 @@ const CountryDetail = () => {
             <p className="text-yellow-700">
               {selectedType === 'all' 
                 ? `There are no services available in ${country.name} yet.` 
-                : `There are no ${serviceTypes.find(t => t.id === parseInt(selectedType))?.name || ''} services in ${country.name} yet.`}
+                : `There are no ${serviceTypes.find(t => Number(t.id) === Number(selectedType))?.name || ''} services in ${country.name} yet.`}
             </p>
           </div>
         )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ServiceCard from './ServiceCard';
+import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 
 const ThemeDetail = () => {
@@ -36,21 +37,24 @@ const ThemeDetail = () => {
         const servicesData = await servicesRes.json();
         setServices(servicesData);
 
-        // Extract unique service types
-        const types = [...new Set(servicesData.map(service => 
-          service.serviceType?.id
-        ))];
-        
-        // Fetch service type details
-        const typesRes = await fetch('/api/service-types');
-        if (!typesRes.ok) {
-          throw new Error('Failed to fetch service types');
+        const serviceTypeIdSet = new Set();
+        servicesData.forEach((svc) => {
+          extractServiceTypes(svc).forEach((type) => serviceTypeIdSet.add(Number(type.id)));
+        });
+
+        if (serviceTypeIdSet.size) {
+          const typesRes = await fetch('/api/service-types');
+          if (!typesRes.ok) {
+            throw new Error('Failed to fetch service types');
+          }
+          const allTypes = await typesRes.json();
+          const filteredTypes = allTypes
+            .filter((type) => serviceTypeIdSet.has(Number(type.id)))
+            .map((type) => ({ ...type, id: Number(type.id) }));
+          setServiceTypes(filteredTypes);
+        } else {
+          setServiceTypes([]);
         }
-        const allTypes = await typesRes.json();
-        
-        // Filter for only service types we have
-        const filteredTypes = allTypes.filter(type => types.includes(type.id));
-        setServiceTypes(filteredTypes);
         
         setLoading(false);
       } catch (err) {

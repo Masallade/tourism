@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,8 +17,6 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   const [name, setName] = useState(service?.name || '');
   const [description, setDescription] = useState(service?.description || '');
   const [price, setPrice] = useState(service?.price || '');
-  const [serviceTypeId, setServiceTypeId] = useState(service?.service_type_id || serviceTypes[0]?.id || '');
-  const [themeId, setThemeId] = useState(service?.theme_id || themes[0]?.id || '');
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(service?.image ? `/storage/${service.image}` : null);
   const [image2, setImage2] = useState(null);
@@ -36,6 +35,28 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     service?.lat ? parseFloat(service.lat) : 25.276987,
     service?.lng ? parseFloat(service.lng) : 55.296249
   ]);
+  const [selectedServiceTypeIds, setSelectedServiceTypeIds] = useState(() => {
+    const existing = extractServiceTypes(service).map(({ id }) => Number(id));
+    if (existing.length) return existing;
+    return serviceTypes?.length ? [Number(serviceTypes[0].id)] : [];
+  });
+  const [selectedThemeIds, setSelectedThemeIds] = useState(() => {
+    const existing = extractThemes(service).map(({ id }) => Number(id));
+    if (existing.length) return existing;
+    return themes?.length ? [Number(themes[0].id)] : [];
+  });
+
+  useEffect(() => {
+    if (service) {
+      const currentTypes = extractServiceTypes(service).map(({ id }) => Number(id));
+      setSelectedServiceTypeIds(currentTypes.length ? currentTypes : (serviceTypes?.length ? [Number(serviceTypes[0].id)] : []));
+      const currentThemes = extractThemes(service).map(({ id }) => Number(id));
+      setSelectedThemeIds(currentThemes.length ? currentThemes : (themes?.length ? [Number(themes[0].id)] : []));
+    } else {
+      setSelectedServiceTypeIds(serviceTypes?.length ? [Number(serviceTypes[0].id)] : []);
+      setSelectedThemeIds(themes?.length ? [Number(themes[0].id)] : []);
+    }
+  }, [service, serviceTypes, themes]);
 
   useEffect(() => {
     if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
@@ -79,6 +100,24 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     return null;
   };
 
+  const toggleServiceType = (id) => {
+    setSelectedServiceTypeIds(prev => {
+      const numericId = Number(id);
+      return prev.includes(numericId)
+        ? prev.filter(existing => existing !== numericId)
+        : [...prev, numericId];
+    });
+  };
+
+  const toggleTheme = (id) => {
+    setSelectedThemeIds(prev => {
+      const numericId = Number(id);
+      return prev.includes(numericId)
+        ? prev.filter(existing => existing !== numericId)
+        : [...prev, numericId];
+    });
+  };
+
   // Handle image upload and preview for all images
   const handleImageChange = (e, imageNum) => {
     const file = e.target.files[0];
@@ -102,34 +141,44 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     if (!name) {
       setError('Service name is required.');
       return;
     }
-  const formData = new FormData();
-  formData.append('name', name);
-  formData.append('description', description || '');
-  formData.append('overview', overview || '');
-  formData.append('details', details || '');
-  formData.append('price', price || '');
-  formData.append('min_age', minAge || '');
-  formData.append('max_age', maxAge || '');
-  formData.append('duration', duration || '');
-  formData.append('service_type_id', serviceTypeId);
-  formData.append('theme_id', themeId);
-  formData.append('country_id', country?.id);
-  formData.append('provider_id', provider?.id);
-  formData.append('lat', lat);
-  formData.append('lng', lng);
-  // Append images if they exist
-  if (image) formData.append('image', image);
-  if (image2) formData.append('image_2', image2);
-  if (image3) formData.append('image_3', image3);
-  // Pass service ID if editing
-  if (service) {
-    formData.append('_method', 'PUT'); // Laravel method spoofing for FormData
-  }
-  onSubmit(formData, service?.id);
+    if (!selectedServiceTypeIds.length) {
+      setError('Please select at least one service type.');
+      return;
+    }
+    if (!selectedThemeIds.length) {
+      setError('Please select at least one theme.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', description || '');
+    formData.append('overview', overview || '');
+    formData.append('details', details || '');
+    formData.append('price', price || '');
+    formData.append('min_age', minAge || '');
+    formData.append('max_age', maxAge || '');
+    formData.append('duration', duration || '');
+    formData.append('country_id', country?.id);
+    formData.append('provider_id', provider?.id);
+    formData.append('lat', lat);
+    formData.append('lng', lng);
+    selectedServiceTypeIds.forEach(id => formData.append('service_type_ids[]', id));
+    selectedThemeIds.forEach(id => formData.append('theme_ids[]', id));
+    // Append images if they exist
+    if (image) formData.append('image', image);
+    if (image2) formData.append('image_2', image2);
+    if (image3) formData.append('image_3', image3);
+    // Pass service ID if editing
+    if (service) {
+      formData.append('_method', 'PUT'); // Laravel method spoofing for FormData
+    }
+    onSubmit(formData, service?.id);
   };
 
   return (
@@ -156,49 +205,75 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Service Type Field */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Service Type</label>
-          <div className="relative">
-            <select 
-              className="appearance-none w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white" 
-              value={serviceTypeId} 
-              onChange={e => setServiceTypeId(e.target.value)} 
-              required
-            >
-              {serviceTypes.map(type => (
-                <option key={type.id} value={type.id}>{type.name}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </div>
+          <label className="block text-gray-700 font-medium mb-2">Service Types</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {serviceTypes.length ? (
+              serviceTypes.map((type) => {
+                const numericId = Number(type.id);
+                const isChecked = selectedServiceTypeIds.includes(numericId);
+                return (
+                  <label
+                    key={type.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-150 cursor-pointer ${
+                      isChecked ? 'border-green-500 bg-green-50 shadow-sm' : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      checked={isChecked}
+                      onChange={() => toggleServiceType(numericId)}
+                    />
+                    <span className="text-sm font-medium text-gray-700 leading-tight">{type.name}</span>
+                  </label>
+                );
+              })
+            ) : (
+              <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4">
+                No service types are available for this provider. Please contact the administrator.
+              </div>
+            )}
           </div>
+          {!selectedServiceTypeIds.length && (
+            <p className="text-sm text-red-500 mt-2">Select at least one service type.</p>
+          )}
         </div>
 
-        {/* Theme Field */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Theme</label>
-          <div className="relative">
-            <select 
-              className="appearance-none w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white" 
-              value={themeId} 
-              onChange={e => setThemeId(e.target.value)} 
-              required
-            >
-              {themes.map(theme => (
-                <option key={theme.id} value={theme.id}>{theme.name}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </div>
+          <label className="block text-gray-700 font-medium mb-2">Themes</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {themes.length ? (
+              themes.map((theme) => {
+                const numericId = Number(theme.id);
+                const isChecked = selectedThemeIds.includes(numericId);
+                return (
+                  <label
+                    key={theme.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-150 cursor-pointer ${
+                      isChecked ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      checked={isChecked}
+                      onChange={() => toggleTheme(numericId)}
+                    />
+                    <span className="text-sm font-medium text-gray-700 leading-tight">{theme.name}</span>
+                  </label>
+                );
+              })
+            ) : (
+              <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4">
+                No themes are assigned yet. Please contact the administrator to add themes.
+              </div>
+            )}
           </div>
+          {!selectedThemeIds.length && (
+            <p className="text-sm text-red-500 mt-2">Select at least one theme.</p>
+          )}
         </div>
       </div>
       

@@ -11,8 +11,6 @@ class Service extends Model
 
     protected $fillable = [
         'provider_id',
-        'service_type_id',
-        'theme_id',
         'country_id',
         'name',
         'description',
@@ -39,9 +37,9 @@ class Service extends Model
         return $this->belongsTo(ServiceProvider::class, 'provider_id');
     }
 
-    public function serviceType()
+    public function serviceTypes()
     {
-        return $this->belongsTo(ServiceType::class, 'service_type_id');
+        return $this->belongsToMany(ServiceType::class, 'service_service_type')->withTimestamps();
     }
 
     public function country()
@@ -49,8 +47,8 @@ class Service extends Model
         return $this->belongsTo(Country::class, 'country_id');
     }
 
-    public function theme()
+    public function themes()
     {
-        return $this->belongsTo(Theme::class, 'theme_id');
+        return $this->belongsToMany(Theme::class, 'service_theme')->withTimestamps();
     }
 }

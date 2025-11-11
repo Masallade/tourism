@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ServiceProviderForm from './admin/ServiceProviderForm';
 import ServiceProviderLogin from './ServiceProviderLogin';
-import ServiceProviderDashboard from './ServiceProviderDashboard';
 import auth from '../utils/auth';
 
 
 
-export default function Header({ setProvider }) {
+export default function Header({ onProviderLogin, provider }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
@@ -16,6 +15,7 @@ export default function Header({ setProvider }) {
   const [user, setUser] = useState(null);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
 
   // Check if user is logged in
   useEffect(() => {
@@ -49,6 +49,10 @@ export default function Header({ setProvider }) {
   };
 
   const handleJoinClick = () => {
+    if (provider) {
+      navigate('/provider/dashboard');
+      return;
+    }
     setShowDialog(true);
   };
 
@@ -181,7 +185,12 @@ export default function Header({ setProvider }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="w-full max-w-md">
             <ServiceProviderLogin 
-              onLogin={prov => { setProvider(prov); setShowLogin(false); }} 
+              onLogin={prov => { 
+                if (onProviderLogin) {
+                  onProviderLogin(prov);
+                }
+                setShowLogin(false);
+              }} 
               onBack={handleLoginBack}
             />
             <button
@@ -320,7 +329,7 @@ export default function Header({ setProvider }) {
               onClick={handleJoinClick}
               className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-400 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
             >
-              Join as Provider
+              {provider ? 'Provider Dashboard' : 'Join as Provider'}
             </button>
             
             {/* User Authentication Section */}
@@ -517,7 +526,7 @@ export default function Header({ setProvider }) {
                 onClick={handleJoinClick}
                 className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md font-semibold text-base hover:from-green-600 hover:to-blue-600 transition-colors duration-200"
               >
-                Join as a Service Provider
+                {provider ? 'Go to Provider Dashboard' : 'Join as a Service Provider'}
               </button>
             </div>
           </div>
