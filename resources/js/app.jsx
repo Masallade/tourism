@@ -9,7 +9,9 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminDashboardHome from './components/admin/AdminDashboardHome';
 import CountriesList from './components/admin/CountriesList';
 import ThemesList from './components/admin/ThemesList';
+import ServiceTypesList from './components/admin/ServiceTypesList';
 import ServiceProvidersList from './components/admin/ServiceProvidersList';
+import AppSettings from './components/admin/AppSettings';
 import UserLogin from './components/UserLogin';
 import UserSignup from './components/UserSignup';
 import UserProfile from './components/UserProfile';
@@ -20,6 +22,8 @@ import AIAssistance from './components/AIAssistance';
 import About from './components/About';
 import Contact from './components/Contact';
 import Trips from './components/Trips';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsAndConditions from './components/TermsAndConditions';
 import '../css/app.css';
 import './bootstrap';
 
@@ -79,7 +83,7 @@ function App() {
         provider={provider}
       />
       {children}
-      {/* <Footer /> */}
+      <Footer />
     </>
   );
 
@@ -92,7 +96,9 @@ function App() {
           <Route index element={<AdminDashboardHome />} />
           <Route path="countries" element={<CountriesList />} />
           <Route path="themes" element={<ThemesList />} />
+          <Route path="service-types" element={<ServiceTypesList />} />
           <Route path="service-providers" element={<ServiceProvidersList />} />
+          <Route path="settings" element={<AppSettings />} />
         </Route>
         
         {/* User authentication routes */}
@@ -179,6 +185,20 @@ function App() {
         <Route path="/contact" element={
           <Layout>
             <Contact />
+          </Layout>
+        } />
+        
+        {/* Privacy Policy page */}
+        <Route path="/privacy-policy" element={
+          <Layout>
+            <PrivacyPolicy />
+          </Layout>
+        } />
+        
+        {/* Terms and Conditions page */}
+        <Route path="/terms-and-conditions" element={
+          <Layout>
+            <TermsAndConditions />
           </Layout>
         } />
         

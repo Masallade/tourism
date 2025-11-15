@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { extractServiceTypes } from '../utils/serviceHelpers';
 
 const Trips = () => {
+  const [searchParams] = useSearchParams();
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [countries, setCountries] = useState([]);
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedCountry, setSelectedCountry] = useState(searchParams.get('country') || 'all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchServices();
     fetchServiceTypes();
+    fetchCountries();
   }, []);
 
   useEffect(() => {
     filterServices();
-  }, [selectedType, searchQuery, services]);
+  }, [selectedType, selectedCountry, searchQuery, services]);
 
   const fetchServices = async () => {
     try {
@@ -45,14 +50,36 @@ const Trips = () => {
     }
   };
 
+  const fetchCountries = async () => {
+    try {
+      const response = await fetch('/api/countries');
+      if (!response.ok) throw new Error('Failed to fetch countries');
+      const data = await response.json();
+      setCountries(data);
+    } catch (err) {
+      console.error('Error fetching countries:', err);
+    }
+  };
+
   const filterServices = () => {
     let filtered = services;
 
     // Filter by service type
     if (selectedType !== 'all') {
-      filtered = filtered.filter(service => 
-        service.service_type_id === parseInt(selectedType)
-      );
+      filtered = filtered.filter(service => {
+        const serviceTypes = extractServiceTypes(service);
+        return serviceTypes.some(type => 
+          Number(type.id) === Number(selectedType)
+        );
+      });
+    }
+
+    // Filter by country
+    if (selectedCountry !== 'all') {
+      filtered = filtered.filter(service => {
+        const countryId = service.country?.id || service.country_id;
+        return Number(countryId) === Number(selectedCountry);
+      });
     }
 
     // Filter by search query
@@ -91,6 +118,18 @@ const Trips = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-blue-50">
+      <style>{`
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+      `}</style>
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-green-600 to-blue-600 text-white py-20">
         <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -98,16 +137,67 @@ const Trips = () => {
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
             Explore Eco-Friendly Trips
           </h1>
-          <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto mb-8">
             Discover sustainable adventures and experiences from verified eco-travel providers
           </p>
+          
+          {/* Service Types Scrollable Bar with Arrows */}
+          <div className="w-full flex justify-center mt-8">
+            <div className="relative max-w-4xl w-full">
+              <button
+                className="absolute left-[-16px] top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm border border-white/30 rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                onClick={() => {
+                  const scrollElement = document.getElementById('serviceTypeScrollTrips');
+                  if (scrollElement) {
+                    scrollElement.scrollBy({ left: -200, behavior: 'smooth' });
+                  }
+                }}
+                aria-label="Scroll left"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" className="text-green-700" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div 
+                id="serviceTypeScrollTrips" 
+                className="flex overflow-x-auto gap-3 px-3 py-3 scrollbar-hide rounded-full bg-white/20 backdrop-blur-sm shadow-lg border border-white/30" 
+                style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' }}
+              >
+                <button
+                  onClick={() => setSelectedType('all')}
+                  className={`flex items-center px-5 py-2 rounded-full transition-all duration-300 focus:outline-none whitespace-nowrap shadow-md ${selectedType === 'all' ? 'bg-gradient-to-r from-green-600 to-blue-600 text-white font-medium scale-105' : 'bg-white/80 text-gray-800 hover:bg-white'}`}
+                >
+                  <span className="text-base">All Types</span>
+                </button>
+                {serviceTypes.map(type => (
+                  <button
+                    key={type.id}
+                    onClick={() => setSelectedType(type.id.toString())}
+                    className={`flex items-center px-5 py-2 rounded-full transition-all duration-300 focus:outline-none whitespace-nowrap shadow-md ${selectedType === type.id.toString() ? 'bg-gradient-to-r from-green-600 to-blue-600 text-white font-medium scale-105' : 'bg-white/80 text-gray-800 hover:bg-white'}`}
+                  >
+                    <span className="text-base">{type.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                className="absolute right-[-16px] top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm border border-white/30 rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                onClick={() => {
+                  const scrollElement = document.getElementById('serviceTypeScrollTrips');
+                  if (scrollElement) {
+                    scrollElement.scrollBy({ left: 200, behavior: 'smooth' });
+                  }
+                }}
+                aria-label="Scroll right"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" className="text-green-700" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Filters Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Search Bar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -127,29 +217,31 @@ const Trips = () => {
               </div>
             </div>
 
-            {/* Service Type Filter */}
+            {/* Country Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Type
+                Filter by Country
               </label>
               <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               >
-                <option value="all">All Types</option>
-                {serviceTypes.map(type => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
+                <option value="all">All Countries</option>
+                {countries.map(country => (
+                  <option key={country.id} value={country.id}>{country.name}</option>
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Results Count */}
-          <div className="mt-4 text-center">
-            <p className="text-gray-600">
-              Showing <span className="font-bold text-green-600">{filteredServices.length}</span> of <span className="font-bold">{services.length}</span> trips
-            </p>
+            {/* Results Count */}
+            <div className="flex items-end">
+              <div className="w-full">
+                <p className="text-gray-600">
+                  Showing <span className="font-bold text-green-600">{filteredServices.length}</span> of <span className="font-bold">{services.length}</span> trips
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -197,10 +289,10 @@ const Trips = () => {
                   )}
                   
                   {/* Service Type Badge */}
-                  {service.service_type && (
+                  {extractServiceTypes(service).length > 0 && (
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-green-700 rounded-full text-xs font-bold shadow-lg">
-                        {service.service_type.name}
+                        {extractServiceTypes(service)[0].name}
                       </span>
                     </div>
                   )}

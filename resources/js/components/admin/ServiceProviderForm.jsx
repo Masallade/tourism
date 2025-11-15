@@ -502,18 +502,127 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             )}
                         </div>
                         <div className="flex-1">
-                            <label className="block text-sm font-semibold text-green-700 mb-2">Documents (PDF, JPG, PNG)</label>
+                            <label className="block text-sm font-semibold text-green-700 mb-2">
+                                Documents (PDF, JPG, PNG) <span className="text-red-500">*</span>
+                            </label>
+                            
+                            {/* Drag and Drop Area */}
+                            <div
+                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                                    errors.documents 
+                                        ? 'border-red-400 bg-red-50' 
+                                        : 'border-blue-300 bg-blue-50 hover:border-blue-400 hover:bg-blue-100'
+                                }`}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                onDragLeave={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const files = Array.from(e.dataTransfer.files).filter(file => {
+                                        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+                                        return validTypes.includes(file.type);
+                                    });
+                                    if (files.length > 0) {
+                                        setDocuments(prev => [...prev, ...files]);
+                                        if (errors.documents) {
+                                            setErrors(prev => ({ ...prev, documents: '' }));
+                                        }
+                                    }
+                                }}
+                            >
                             <input
                                 type="file"
                                 name="documents"
                                 accept="application/pdf,image/jpeg,image/png,image/jpg"
                                 multiple
-                                onChange={handleInputChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition"
-                            />
+                                    onChange={(e) => {
+                                        const files = Array.from(e.target.files || []);
+                                        setDocuments(prev => [...prev, ...files]);
+                                        if (errors.documents) {
+                                            setErrors(prev => ({ ...prev, documents: '' }));
+                                        }
+                                    }}
+                                    className="hidden"
+                                    id="documents-input"
+                                />
+                                <label
+                                    htmlFor="documents-input"
+                                    className="cursor-pointer flex flex-col items-center"
+                                >
+                                    <svg className="w-12 h-12 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    <p className="text-sm font-semibold text-blue-700 mb-1">
+                                        Click to browse or drag & drop files here
+                                    </p>
+                                    <p className="text-xs text-blue-600">
+                                        Select multiple files at once (PDF, JPG, PNG)
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            document.getElementById('documents-input').click();
+                                        }}
+                                        className="mt-3 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition"
+                                    >
+                                        Choose Files
+                                    </button>
+                                </label>
+                            </div>
+                            
                             {documents.length > 0 && (
-                                <div className="mt-2">
-                                    <span className="text-xs text-gray-500">Selected: {documents.map(doc => doc.name).join(', ')}</span>
+                                <div className="mt-3 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-semibold text-blue-700">
+                                            Selected {documents.length} file{documents.length !== 1 ? 's' : ''}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDocuments([])}
+                                            className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                        >
+                                            Clear All
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2 max-h-40 overflow-y-auto">
+                                        {documents.map((doc, index) => (
+                                            <li key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 gap-2">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                                    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span 
+                                                        className="text-xs text-blue-700 font-medium block min-w-0"
+                                                        title={doc.name}
+                                                    >
+                                                        {doc.name.length > 30 ? `${doc.name.substring(0, 30)}...` : doc.name}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <span className="text-xs text-blue-500 whitespace-nowrap">({(doc.size / 1024).toFixed(1)} KB)</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDocuments(prev => prev.filter((_, i) => i !== index));
+                                                        }}
+                                                        className="text-red-500 hover:text-red-700 flex-shrink-0"
+                                                        title="Remove file"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
                             {errors.documents && (

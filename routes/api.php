@@ -17,7 +17,7 @@ Route::get('/users', function () {
 Route::get('/country/{countryId}/services', function ($countryId) {
     \Log::info("Fetching services for country ID: {$countryId}");
     
-    $services = \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
         ->where('country_id', $countryId)
         ->get();
     
@@ -28,7 +28,7 @@ Route::get('/country/{countryId}/services', function ($countryId) {
 
 // Get all services for a theme
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    return \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    return \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
         ->where('theme_id', $themeId)
         ->get();
 });
@@ -85,7 +85,7 @@ Route::delete('/provider/services/{id}', [ServiceController::class, 'destroy']);
 
 // Service detail endpoint
 Route::get('/services/{id}', function($id) {
-    $service = \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    $service = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
         ->findOrFail($id);
     return $service;
 });
@@ -115,7 +115,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // Service Types (all)
 Route::get('/service-types', function () {
-    return \App\Models\ServiceType::all();
+    return \App\Models\ServiceType::withCount('serviceProviders')->get();
 });
 
 // Service Types for a specific provider
@@ -123,6 +123,20 @@ Route::get('/provider/{providerId}/service-types', function ($providerId) {
     $provider = \App\Models\ServiceProvider::with('serviceTypes')->findOrFail($providerId);
     return $provider->serviceTypes;
 });
+
+// Service Types CRUD for admin
+use App\Http\Controllers\Admin\ServiceTypeController;
+Route::post('/service-types', [ServiceTypeController::class, 'store'])->middleware('admin.auth');
+Route::put('/service-types/{serviceType}', [ServiceTypeController::class, 'update'])->middleware('admin.auth');
+Route::delete('/service-types/{serviceType}', function (\App\Models\ServiceType $serviceType) {
+    $serviceType->delete();
+    return response()->json(['message' => 'Service Type deleted successfully']);
+})->middleware('admin.auth');
+
+// App Settings - Public read, Admin write
+use App\Http\Controllers\Admin\AppSettingsController;
+Route::get('/app-settings', [AppSettingsController::class, 'index']);
+Route::post('/app-settings', [AppSettingsController::class, 'store'])->middleware('admin.auth');
 
 // API Routes for React Admin
 // Countries
@@ -158,7 +172,18 @@ Route::get('/countries/slug/{slug}', function ($slug) {
 });
 Route::post('/countries', [CountryController::class, 'store'])->middleware('admin.auth');
 Route::put('/countries/{country}', [CountryController::class, 'update'])->middleware('admin.auth');
+Route::post('/countries/{country}/update', [CountryController::class, 'update'])->middleware('admin.auth'); // For FormData updates
 Route::delete('/countries/{country}', function (\App\Models\Country $country) {
+    // Check if country has any service providers
+    $serviceProviderCount = $country->serviceProviders()->count();
+    
+    if ($serviceProviderCount > 0) {
+        return response()->json([
+            'error' => 'Cannot delete country',
+            'message' => "This country cannot be deleted because it has {$serviceProviderCount} service provider(s) associated with it. Please remove or reassign all service providers before deleting this country."
+        ], 422);
+    }
+    
     $country->delete();
     return response()->json(['message' => 'Country deleted successfully']);
 })->middleware('admin.auth');

@@ -13,66 +13,41 @@ use App\Mail\ServiceProviderStatusMail;
 
 class ServiceProviderController extends Controller
 {
+    // Redirect to React admin dashboard - all UI is handled in React
     public function index()
     {
-        $serviceProviders = ServiceProvider::with(['country', 'serviceType', 'themes'])->get();
-        return view('admin.service-providers.index', compact('serviceProviders'));
+        return redirect('/admin/service-providers');
     }
 
     public function create()
     {
-        $countries = Country::all();
-        $serviceTypes = ServiceType::all();
-        return view('admin.service-providers.create', compact('countries', 'serviceTypes'));
+        return redirect('/admin/service-providers');
     }
 
+    // Note: store, update, destroy are handled via API routes in routes/api.php
+    // These methods are kept for backward compatibility but should not be used
+    // The API endpoints in routes/api.php handle all CRUD operations
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'country_id' => 'required|exists:countries,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price_range' => 'nullable|string',
-            'website' => 'nullable|url',
-            'email' => 'nullable|email',
-        ]);
-        $serviceProvider = ServiceProvider::create($validated);
-        // Attach multiple service types
-        if ($request->has('service_type_ids')) {
-            $serviceProvider->serviceTypes()->sync($request->input('service_type_ids'));
-        }
-        return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider added successfully!');
+        // This should be handled via API endpoint, redirect to React
+        return redirect('/admin/service-providers');
     }
 
     public function edit(ServiceProvider $serviceProvider)
     {
-        $countries = Country::all();
-        $serviceTypes = ServiceType::all();
-        return view('admin.service-providers.edit', compact('serviceProvider', 'countries', 'serviceTypes'));
+        return redirect('/admin/service-providers');
     }
 
     public function update(Request $request, ServiceProvider $serviceProvider)
     {
-        $validated = $request->validate([
-            'country_id' => 'required|exists:countries,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price_range' => 'nullable|string',
-            'website' => 'nullable|url',
-            'email' => 'nullable|email',
-        ]);
-        $serviceProvider->update($validated);
-        // Sync multiple service types
-        if ($request->has('service_type_ids')) {
-            $serviceProvider->serviceTypes()->sync($request->input('service_type_ids'));
-        }
-        return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider updated successfully!');
+        // This should be handled via API endpoint, redirect to React
+        return redirect('/admin/service-providers');
     }
 
     public function destroy(ServiceProvider $serviceProvider)
     {
-        $serviceProvider->delete();
-        return redirect()->route('admin.service-providers.index')->with('success', 'Service Provider deleted successfully!');
+        // This should be handled via API endpoint, redirect to React
+        return redirect('/admin/service-providers');
     }
 
     // Approve a service provider (admin action)

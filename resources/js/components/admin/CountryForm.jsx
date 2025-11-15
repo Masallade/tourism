@@ -111,18 +111,23 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
 
         try {
             const form = new FormData();
-            form.append('name', formData.name);
-            form.append('slug', formData.slug);
-            form.append('description', formData.description);
+            form.append('name', formData.name.trim());
+            form.append('slug', formData.slug.trim());
+            form.append('description', formData.description.trim());
             if (imageFile) {
                 form.append('image', imageFile);
             } else if (formData.image_url) {
                 form.append('image_url', formData.image_url);
             }
 
-            const responseData = country 
-                ? await window.apiClient.put(`/api/countries/${country.id}`, form)
-                : await window.apiClient.upload('/api/countries', form);
+            let responseData;
+            if (country) {
+                // For FormData updates, use POST to /update endpoint
+                // Laravel API routes don't support method spoofing, so we use a dedicated POST route
+                responseData = await window.apiClient.upload(`/api/countries/${country.id}/update`, form);
+            } else {
+                responseData = await window.apiClient.upload('/api/countries', form);
+            }
 
             // Check if image was saved
             if (imageFile && responseData.data) {

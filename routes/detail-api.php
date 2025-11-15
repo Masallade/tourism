@@ -28,14 +28,14 @@ Route::get('/themes/{id}', function ($id) {
 
 // Get all services for a specific country with service type, theme, and provider details
 Route::get('/country/{countryId}/services', function ($countryId) {
-    return \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    return \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
         ->where('country_id', $countryId)
         ->get();
 });
 
 // Get all services for a specific theme with service type, country, and provider details
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    return \App\Models\Service::with(['provider', 'serviceType', 'country', 'theme'])
+    return \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
         ->where('theme_id', $themeId)
         ->get();
 });

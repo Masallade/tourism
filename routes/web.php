@@ -23,7 +23,7 @@ Route::prefix('api/auth')->group(function () {
 Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'handleGoogleCallback']);
 
-// Admin Routes for React
+// Admin Routes for React - All UI is handled in React, these routes serve the React app
 Route::get('/admin/login', function () {
     return view('welcome');
 });
@@ -32,9 +32,20 @@ Route::get('/admin', function () {
     return view('welcome');
 })->middleware('admin.auth');
 
-// Admin Service Provider CRUD
+// Admin service-providers routes - redirect to React (all CRUD operations are handled via API in routes/api.php)
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
-    Route::resource('service-providers', ServiceProviderController::class);
+    // All service provider CRUD is handled via API routes in routes/api.php
+    // These routes redirect to React for any direct access
+    Route::get('/service-providers', function () {
+        return view('welcome');
+    });
+    Route::get('/service-providers/create', function () {
+        return view('welcome');
+    });
+    Route::get('/service-providers/{serviceProvider}/edit', function () {
+        return view('welcome');
+    });
+    // Approve and reject are handled via API routes (PATCH /api/service-providers/{id}/approve)
 });
 
 // React Routes - Catch all routes for React Router to handle
@@ -43,6 +54,15 @@ Route::get('/country/{id}', function () {
 });
 
 Route::get('/theme/{id}', function () {
+    return view('welcome');
+});
+
+// Privacy Policy and Terms routes
+Route::get('/privacy-policy', function () {
+    return view('welcome');
+});
+
+Route::get('/terms-and-conditions', function () {
     return view('welcome');
 });
 

@@ -40,6 +40,10 @@ const CountriesList = () => {
             if (error.response?.status === 401) {
                 alert('Your session has expired. Please log in again.');
                 window.location.href = '/admin/login';
+            } else if (error.response?.status === 422) {
+                // Handle validation errors (e.g., country has service providers)
+                const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Cannot delete country';
+                alert(errorMessage);
             } else {
                 alert('Failed to delete country. Please try again.');
             }

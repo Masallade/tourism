@@ -13,6 +13,6 @@ class ServiceType extends Model
 
     public function serviceProviders()
     {
-        return $this->hasMany(ServiceProvider::class);
+        return $this->belongsToMany(ServiceProvider::class, 'service_provider_service_type');
     }
 }

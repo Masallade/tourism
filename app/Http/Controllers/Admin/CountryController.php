@@ -72,7 +72,14 @@ class CountryController extends Controller
 
     public function update(Request $request, Country $country)
     {
-        \Log::info('CountryController update called', ['hasFile' => $request->hasFile('image'), 'file' => $request->file('image')]);
+        \Log::info('CountryController update called', [
+            'hasFile' => $request->hasFile('image'), 
+            'file' => $request->file('image'),
+            'all_data' => $request->all(),
+            'name' => $request->input('name'),
+            'slug' => $request->input('slug'),
+            'description' => $request->input('description'),
+        ]);
         
         try {
         $validated = $request->validate([

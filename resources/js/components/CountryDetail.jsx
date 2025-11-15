@@ -40,8 +40,9 @@ const CountryDetail = () => {
         
         setCountry(countryData);
 
-        // Fetch services for this country
-        const servicesRes = await fetch(`/api/country/${id}/services`);
+        // Fetch services for this country using the numeric country ID
+        const countryId = countryData.id;
+        const servicesRes = await fetch(`/api/country/${countryId}/services`);
         let servicesData = [];
         
         if (!servicesRes.ok) {
