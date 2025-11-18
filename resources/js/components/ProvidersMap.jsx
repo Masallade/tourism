@@ -805,7 +805,7 @@ const ProvidersMap = () => {
               <Marker
                 key={`service-${service.id}`}
                 position={[parseFloat(service.lat), parseFloat(service.lng)]}
-                icon={getServiceIcon(service.service_types)}
+                icon={blueIcon}
                 eventHandlers={{
                   click: () => handleServiceClick(service)
                 }}
@@ -894,36 +894,22 @@ const ProvidersMap = () => {
       <div className="mt-6 bg-white rounded-xl shadow-md p-4">
         <div className="flex flex-wrap items-center justify-center gap-4">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-500 rounded-full mr-2 flex items-center justify-center text-white text-sm font-bold">P</div>
+            <img 
+              src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" 
+              alt="Service Provider" 
+              className="w-8 h-8 mr-2"
+              style={{ width: '32px', height: '32px' }}
+            />
             <span className="text-sm text-gray-700">Service Provider</span>
           </div>
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🗺️</div>
-            <span className="text-sm text-gray-700">Tour/Guide</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-orange-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🛏️</div>
-            <span className="text-sm text-gray-700">Accommodation</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-yellow-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🍴</div>
-            <span className="text-sm text-gray-700">Restaurant/Food</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-purple-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">⛰️</div>
-            <span className="text-sm text-gray-700">Activity/Adventure</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-cyan-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🚗</div>
-            <span className="text-sm text-gray-700">Transportation</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-pink-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🛍️</div>
-            <span className="text-sm text-gray-700">Shopping</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-teal-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">💆</div>
-            <span className="text-sm text-gray-700">Spa/Wellness</span>
+            <img 
+              src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" 
+              alt="Service" 
+              className="w-8 h-8 mr-2"
+              style={{ width: '32px', height: '32px' }}
+            />
+            <span className="text-sm text-gray-700">Service</span>
           </div>
           <div className="flex items-center">
             <svg className="w-6 h-6 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

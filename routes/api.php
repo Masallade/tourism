@@ -362,14 +362,54 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
     }
 });
 Route::put('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider, \Illuminate\Http\Request $request) {
+    // Debug: Log what we're receiving
+    \Log::info('ServiceProvider update request received', [
+        'all_input' => $request->all(),
+        'service_type_ids_raw' => $request->input('service_type_ids'),
+        'service_type_ids_array' => $request->input('service_type_ids', []),
+        'has_service_type_ids' => $request->has('service_type_ids'),
+        'request_method' => $request->method(),
+        'content_type' => $request->header('Content-Type'),
+    ]);
+    
     $request->merge([
         'email' => $request->email ? strtolower($request->email) : null,
     ]);
 
+    // Get service_type_ids - handle FormData array format (service_type_ids[])
+    // Laravel should parse service_type_ids[] automatically, but with PUT + FormData it might not
+    $allInput = $request->all();
+    $serviceTypeIds = [];
+    
+    // Try multiple ways to get the array
+    if ($request->has('service_type_ids') && is_array($request->input('service_type_ids'))) {
+        $serviceTypeIds = $request->input('service_type_ids');
+    } elseif (isset($allInput['service_type_ids']) && is_array($allInput['service_type_ids'])) {
+        $serviceTypeIds = $allInput['service_type_ids'];
+    } else {
+        // Check if it's in the raw input (for FormData arrays)
+        $rawInput = $request->input();
+        if (isset($rawInput['service_type_ids']) && is_array($rawInput['service_type_ids'])) {
+            $serviceTypeIds = $rawInput['service_type_ids'];
+        }
+    }
+    
+    // Ensure it's an array of integers
+    $serviceTypeIds = array_filter(array_map('intval', (array)$serviceTypeIds));
+    
+    \Log::info('Processed service_type_ids', [
+        'service_type_ids' => $serviceTypeIds,
+        'count' => count($serviceTypeIds),
+    ]);
+    
+    // Merge service_type_ids back into request for validation
+    // If we couldn't find any, validation will catch it
+    $request->merge(['service_type_ids' => $serviceTypeIds]);
+
     $request->validate([
         'country_id' => 'required|exists:countries,id',
         'service_type_ids' => 'required|array|min:1',
-        'service_type_ids.*' => 'exists:service_types,id',
+        'service_type_ids.*' => 'required|exists:service_types,id',
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'price_range' => 'required|in:$,$$,$$$,$$$$',
@@ -404,16 +444,107 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
     }
 
     $serviceProvider->update($data);
-    // Sync multiple service types
-    if ($request->has('service_type_ids')) {
-        $serviceProvider->serviceTypes()->sync($request->input('service_type_ids'));
+    // Sync multiple service types - use the processed array
+    if (!empty($serviceTypeIds)) {
+        $serviceProvider->serviceTypes()->sync($serviceTypeIds);
     }
     if ($request->has('themes')) {
-        $serviceProvider->themes()->sync($request->themes);
+        $themes = $request->input('themes', []);
+        if (!is_array($themes)) {
+            $themes = [$themes];
+        }
+        $serviceProvider->themes()->sync(array_filter(array_map('intval', $themes)));
     }
 
     return response()->json($serviceProvider->load(['country', 'themes', 'serviceTypes']));
 })->middleware('admin.auth');
+
+// POST route for FormData updates (more reliable for file uploads and arrays)
+Route::post('/service-providers/{serviceProvider}/update', function (\App\Models\ServiceProvider $serviceProvider, \Illuminate\Http\Request $request) {
+    // Debug: Log what we're receiving
+    \Log::info('ServiceProvider update request received (POST)', [
+        'all_input' => $request->all(),
+        'service_type_ids_raw' => $request->input('service_type_ids'),
+        'service_type_ids_array' => $request->input('service_type_ids', []),
+        'has_service_type_ids' => $request->has('service_type_ids'),
+        'request_method' => $request->method(),
+        'content_type' => $request->header('Content-Type'),
+    ]);
+    
+    $request->merge([
+        'email' => $request->email ? strtolower($request->email) : null,
+    ]);
+
+    // Get service_type_ids - FormData arrays should be parsed automatically with POST
+    $serviceTypeIds = $request->input('service_type_ids', []);
+    // Ensure it's an array
+    if (!is_array($serviceTypeIds)) {
+        $serviceTypeIds = $request->has('service_type_ids') ? [$request->input('service_type_ids')] : [];
+    }
+    // Ensure it's an array of integers
+    $serviceTypeIds = array_filter(array_map('intval', (array)$serviceTypeIds));
+    
+    \Log::info('Processed service_type_ids (POST)', [
+        'service_type_ids' => $serviceTypeIds,
+        'count' => count($serviceTypeIds),
+    ]);
+    
+    // Merge service_type_ids back into request for validation
+    $request->merge(['service_type_ids' => $serviceTypeIds]);
+
+    $request->validate([
+        'country_id' => 'required|exists:countries,id',
+        'service_type_ids' => 'required|array|min:1',
+        'service_type_ids.*' => 'required|exists:service_types,id',
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price_range' => 'required|in:$,$$,$$$,$$$$',
+        'website' => 'nullable|url|unique:service_providers,website,' . $serviceProvider->id,
+        'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email,' . $serviceProvider->id],
+        'phone' => 'nullable|string|unique:service_providers,phone,' . $serviceProvider->id,
+        'is_approved' => 'boolean',
+        'themes' => 'array',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+    ], [
+        'email.unique' => 'This email is already registered.',
+        'phone.unique' => 'This phone number is already registered.',
+        'website.unique' => 'This website is already registered.',
+    ]);
+
+    $data = $request->except(['themes', 'image', 'documents', 'service_type_ids']);
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
+    }
+
+    // Handle documents upload
+    $documentPaths = [];
+    if ($request->hasFile('documents')) {
+        foreach ($request->file('documents') as $doc) {
+            $documentPaths[] = $doc->store('uploads/service_provider_documents', 'public');
+        }
+        $data['documents'] = $documentPaths;
+    }
+
+    $serviceProvider->update($data);
+    // Sync multiple service types - use the processed array
+    if (!empty($serviceTypeIds)) {
+        $serviceProvider->serviceTypes()->sync($serviceTypeIds);
+    }
+    if ($request->has('themes')) {
+        $themes = $request->input('themes', []);
+        if (!is_array($themes)) {
+            $themes = [$themes];
+        }
+        $serviceProvider->themes()->sync(array_filter(array_map('intval', $themes)));
+    }
+
+    return response()->json($serviceProvider->load(['country', 'themes', 'serviceTypes']));
+})->middleware('admin.auth');
+
 Route::delete('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider) {
     $serviceProvider->delete();
     return response()->json(['message' => 'Service Provider deleted successfully']);

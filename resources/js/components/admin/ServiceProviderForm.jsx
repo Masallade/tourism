@@ -67,7 +67,32 @@ const MapClickHandler = () => {
 
 // Add showApproveCheckbox prop and onBack prop
 const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false, onBack = null }) => {
-    const [formData, setFormData] = useState({
+    // Initialize formData synchronously with provider data if available
+    const getInitialFormData = () => {
+        if (provider) {
+            const serviceTypesData = provider.service_types || provider.serviceTypes || [];
+            const serviceTypeIds = serviceTypesData.map(st => Number(st.id)).filter(id => !isNaN(id) && id > 0);
+            const countryId = provider.country_id;
+            const finalCountryId = (countryId !== null && countryId !== undefined && countryId !== '') 
+                ? Number(countryId) 
+                : '';
+            
+            return {
+                country_id: finalCountryId,
+                name: String(provider.name || '').trim(),
+                service_type_ids: serviceTypeIds.length > 0 ? serviceTypeIds : [],
+                description: String(provider.description || '').trim(),
+                price_range: String(provider.price_range || '').trim(),
+                website: String(provider.website || '').trim(),
+                email: String(provider.email || '').toLowerCase().trim(),
+                phone: String(provider.phone || '').trim(),
+                is_approved: Boolean(provider.is_approved),
+                themes: provider.themes?.map(t => Number(t.id)).filter(id => !isNaN(id) && id > 0) || [],
+                lat: provider.lat ? String(provider.lat).trim() : '',
+                lng: provider.lng ? String(provider.lng).trim() : '',
+            };
+        }
+        return {
         country_id: '',
         name: '',
         service_type_ids: [],
@@ -80,10 +105,17 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         themes: [],
         lat: '',
         lng: '',
-    });
+        };
+    };
 
+    const [formData, setFormData] = useState(getInitialFormData);
     
-    const [position, setPosition] = useState([25.276987, 55.296249]); // Default position (Dubai)
+    const [position, setPosition] = useState(() => {
+        if (provider?.lat && provider?.lng) {
+            return [parseFloat(provider.lat), parseFloat(provider.lng)];
+        }
+        return [25.276987, 55.296249]; // Default position (Dubai)
+    });
     
     // Function to update both position and form data
     const updateLocationData = (lat, lng) => {
@@ -104,7 +136,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     };
     const [serviceTypes, setServiceTypes] = useState([]);
     const [image, setImage] = useState(null);
+    const [existingImage, setExistingImage] = useState(null); // For displaying existing image
     const [documents, setDocuments] = useState([]);
+    const [existingDocuments, setExistingDocuments] = useState([]); // For displaying existing documents
     const [countries, setCountries] = useState([]);
     const [themes, setThemes] = useState([]);
     const [errors, setErrors] = useState({});
@@ -114,6 +148,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     // We handle form data updates directly in updateLocationData
     
     // We don't need this effect anymore as we handle position updates in updateLocationData and handleInputChange
+
 
     useEffect(() => {
         fetchCountries();
@@ -146,22 +181,45 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 service_types_data: serviceTypesData
             });
             
-            setFormData({
+            // Ensure all values are properly formatted
+            const initializedFormData = {
                 country_id: finalCountryId,
-                name: provider.name || '',
-                service_type_ids: serviceTypeIds,
-                description: provider.description || '',
-                price_range: provider.price_range || '',
-                website: provider.website || '',
-                email: (provider.email || '').toLowerCase(),
-                phone: provider.phone || '',
-                is_approved: provider.is_approved || false,
+                name: String(provider.name || '').trim(),
+                service_type_ids: serviceTypeIds.length > 0 ? serviceTypeIds : [],
+                description: String(provider.description || '').trim(),
+                price_range: String(provider.price_range || '').trim(),
+                website: String(provider.website || '').trim(),
+                email: String(provider.email || '').toLowerCase().trim(),
+                phone: String(provider.phone || '').trim(),
+                is_approved: Boolean(provider.is_approved),
                 themes: provider.themes?.map(t => Number(t.id)).filter(id => !isNaN(id) && id > 0) || [],
-                lat: provider.lat || '',
-                lng: provider.lng || '',
-            });
-            setImage(null); // You may want to show existing image preview here
-            setDocuments([]); // You may want to show existing documents here
+                lat: provider.lat ? String(provider.lat).trim() : '',
+                lng: provider.lng ? String(provider.lng).trim() : '',
+            };
+            
+            console.log('Setting formData:', initializedFormData);
+            
+            setFormData(initializedFormData);
+            setImage(null); // New image file (if user selects one)
+            
+            // Set existing image for display
+            if (provider.image) {
+                setExistingImage(provider.image);
+            } else {
+                setExistingImage(null);
+            }
+            
+            // Set existing documents for display
+            if (provider.documents && Array.isArray(provider.documents) && provider.documents.length > 0) {
+                setExistingDocuments(provider.documents);
+            } else {
+                setExistingDocuments([]);
+            }
+            
+            setDocuments([]); // New documents (if user selects any)
+            // Clear any existing errors when loading provider data
+            setErrors({});
+            setSummaryError('');
         }
     }, [provider]);
 
@@ -205,6 +263,10 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
         if (name === 'image') {
             setImage(files[0]);
+            // Hide existing image when new one is selected
+            if (files[0]) {
+                setExistingImage(null);
+            }
             return;
         }
         if (name === 'documents') {
@@ -215,6 +277,23 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         // Handle multi-select for service_type_ids
         if (name === 'service_type_ids' && multiple) {
             fieldValue = Array.from(options).filter(opt => opt.selected).map(opt => opt.value);
+        }
+        
+        // Handle country_id - convert to number or empty string
+        if (name === 'country_id') {
+            const numValue = fieldValue === '' ? '' : Number(fieldValue);
+            setFormData(prev => ({
+                ...prev,
+                [name]: numValue
+            }));
+            
+            if (errors[name]) {
+                setErrors(prev => ({
+                    ...prev,
+                    [name]: ''
+                }));
+            }
+            return;
         }
         
         // Handle lat/lng changes
@@ -321,56 +400,88 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
     const validateForm = () => {
         const newErrors = {};
-        // Name
-        if (!formData.name.trim()) {
-            newErrors.name = 'Name is required';
-        } else if (formData.name.length < 3) {
+        
+        // Debug logging
+        console.log('Validating form with data:', {
+            name: formData.name,
+            country_id: formData.country_id,
+            service_type_ids: formData.service_type_ids,
+            price_range: formData.price_range,
+            lat: formData.lat,
+            lng: formData.lng,
+            formDataKeys: Object.keys(formData),
+            providerExists: !!provider
+        });
+        
+        // Name - ensure we check the actual value
+        const nameValue = (formData.name || '').toString().trim();
+        if (!nameValue) {
+            newErrors.name = 'The name field is required.';
+        } else if (nameValue.length < 3) {
             newErrors.name = 'Name must be at least 3 characters';
-        } else if (formData.name.length > 100) {
+        } else if (nameValue.length > 100) {
             newErrors.name = 'Name must be less than 100 characters';
-        } else if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
+        } else if (!/^[A-Za-z\s]+$/.test(nameValue)) {
             newErrors.name = 'Name can only contain letters and spaces';
         }
-        // Service Type
-        if (!formData.service_type_ids || formData.service_type_ids.length === 0) {
-            newErrors.service_type_ids = 'At least one service type is required';
+        
+        // Service Type - check if it's an array and has items
+        const serviceTypeIds = formData.service_type_ids || [];
+        if (!Array.isArray(serviceTypeIds) || serviceTypeIds.length === 0) {
+            newErrors.service_type_ids = 'The service type ids field is required.';
         }
-        // Country
-        if (!formData.country_id) {
-            newErrors.country_id = 'Country is required';
+        
+        // Country - check if it's a valid number
+        const countryId = formData.country_id;
+        const isValidCountryId = countryId !== null && 
+                                 countryId !== undefined && 
+                                 countryId !== '' && 
+                                 !isNaN(Number(countryId)) && 
+                                 Number(countryId) > 0;
+        if (!isValidCountryId) {
+            newErrors.country_id = 'The country id field is required.';
         }
+        
         // Location
-        if (!formData.lat || !formData.lng) {
+        const lat = (formData.lat || '').toString().trim();
+        const lng = (formData.lng || '').toString().trim();
+        if (!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
             newErrors.location = 'Please select a location on the map';
         }
+        
         // Price Range
-        if (!formData.price_range || !allowedPriceRanges.includes(formData.price_range)) {
-            newErrors.price_range = 'Select a valid price range';
+        const priceRange = (formData.price_range || '').toString().trim();
+        if (!priceRange || !allowedPriceRanges.includes(priceRange)) {
+            newErrors.price_range = 'The price range field is required.';
         }
         // Website (required and must be valid)
-        if (!formData.website.trim()) {
+        const websiteValue = (formData.website || '').toString().trim();
+        if (!websiteValue) {
             newErrors.website = 'Website is required';
-        } else if (!validateURL(formData.website)) {
+        } else if (!validateURL(websiteValue)) {
             newErrors.website = 'Enter a valid website URL (https://...)';
         }
         // Email (required and must be valid)
-        if (!formData.email.trim()) {
+        const emailValue = (formData.email || '').toString().trim();
+        if (!emailValue) {
             newErrors.email = 'Email is required';
-        } else if (!validateEmail(formData.email)) {
+        } else if (!validateEmail(emailValue)) {
             newErrors.email = 'Enter a valid email (lowercase only)';
         }
         // Phone (required and must be valid)
-        if (!formData.phone.trim()) {
+        const phoneValue = (formData.phone || '').toString().trim();
+        if (!phoneValue) {
             newErrors.phone = 'Phone number is required';
-        } else if (!validatePhone(formData.phone)) {
+        } else if (!validatePhone(phoneValue)) {
             newErrors.phone = 'Enter a valid phone number';
         }
         // Description
-        if (!formData.description.trim()) {
+        const descriptionValue = (formData.description || '').toString().trim();
+        if (!descriptionValue) {
             newErrors.description = 'Description is required';
-        } else if (formData.description.length < 10) {
+        } else if (descriptionValue.length < 10) {
             newErrors.description = 'Description must be at least 10 characters';
-        } else if (formData.description.length > 1000) {
+        } else if (descriptionValue.length > 1000) {
             newErrors.description = 'Description must be less than 1000 characters';
         }
         // Image (required for new, optional for edit)
@@ -379,10 +490,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         } else if (image && !allowedImageTypes.includes(image.type)) {
             newErrors.image = 'Image must be JPG or PNG';
         }
-        // Documents (at least one required, all must be valid type)
-        if (documents.length === 0) {
+        // Documents (at least one required for new providers, optional for edits if existing documents exist)
+        const hasExistingDocuments = existingDocuments && existingDocuments.length > 0;
+        if (!provider && documents.length === 0) {
             newErrors.documents = 'At least one document is required';
-        } else if (documents.some(doc => !allowedDocTypes.includes(doc.type))) {
+        } else if (provider && !hasExistingDocuments && documents.length === 0) {
+            // Editing but no existing documents and no new documents selected
+            newErrors.documents = 'At least one document is required';
+        } else if (documents.length > 0 && documents.some(doc => !allowedDocTypes.includes(doc.type))) {
             newErrors.documents = 'Documents must be PDF, JPG, or PNG';
         }
         setErrors(newErrors);
@@ -593,12 +708,13 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             }
             
             // Use apiClient for authenticated requests with FormData
-            // Axios automatically sets Content-Type for FormData, so we don't need to set it manually
+            // For updates with FormData, use POST to /update endpoint (more reliable for arrays)
             try {
                 if (provider) {
-                    // Update request
-                    console.log('Sending PUT request to:', url);
-                    await window.apiClient.put(url, form);
+                    // Update request - use POST to /update endpoint for FormData
+                    const updateUrl = `/api/service-providers/${provider.id}/update`;
+                    console.log('Sending POST request to update endpoint:', updateUrl);
+                    await window.apiClient.post(updateUrl, form);
                 } else {
                     // Create request
                     console.log('Sending POST request to:', url);
@@ -673,6 +789,36 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                     <div className="mb-4 flex flex-col md:flex-row gap-6 items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-gray-100 shadow-sm">
                         <div className="flex-1">
                             <label className="block text-sm font-semibold text-green-700 mb-2">Profile Image</label>
+                            
+                            {/* Show existing image if available */}
+                            {existingImage && !image && (
+                                <div className="mb-3 p-3 bg-white rounded-lg border-2 border-green-200">
+                                    <p className="text-xs text-gray-600 mb-2">Current Image:</p>
+                                    <div className="flex items-center gap-3">
+                                        <img 
+                                            src={`/storage/${existingImage}`} 
+                                            alt="Current profile" 
+                                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'block';
+                                            }}
+                                        />
+                                        <div className="flex-1">
+                                            <p className="text-sm text-gray-700 font-medium truncate">{existingImage.split('/').pop()}</p>
+                                            <a 
+                                                href={`/storage/${existingImage}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-blue-600 hover:text-blue-800"
+                                            >
+                                                View Full Image
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <input
                                 type="file"
                                 name="image"
@@ -681,8 +827,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 transition"
                             />
                             {image && (
-                                <div className="mt-2">
-                                    <span className="text-xs text-gray-500">Selected: {image.name}</span>
+                                <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                                    <p className="text-xs text-green-700 font-medium">New image selected: {image.name}</p>
+                                    <p className="text-xs text-gray-500 mt-1">This will replace the current image</p>
                                 </div>
                             )}
                             {errors.image && (
@@ -765,11 +912,54 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                 </label>
                             </div>
                             
+                            {/* Show existing documents if available */}
+                            {existingDocuments.length > 0 && documents.length === 0 && (
+                                <div className="mt-3 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-semibold text-blue-700">
+                                            Current Documents ({existingDocuments.length})
+                                        </p>
+                                    </div>
+                                    <ul className="space-y-2 max-h-40 overflow-y-auto">
+                                        {existingDocuments.map((docPath, index) => {
+                                            const fileName = typeof docPath === 'string' ? docPath.split('/').pop() : `Document ${index + 1}`;
+                                            return (
+                                                <li key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 gap-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                                        <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                        </svg>
+                                                        <span 
+                                                            className="text-xs text-blue-700 font-medium block min-w-0"
+                                                            title={fileName}
+                                                        >
+                                                            {fileName.length > 30 ? `${fileName.substring(0, 30)}...` : fileName}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <a
+                                                            href={`/storage/${docPath}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                            title="View document"
+                                                        >
+                                                            View
+                                                        </a>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <p className="text-xs text-gray-500 mt-2">Upload new files above to replace these documents</p>
+                                </div>
+                            )}
+                            
                             {documents.length > 0 && (
                                 <div className="mt-3 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-sm">
                                     <div className="flex items-center justify-between mb-3">
                                         <p className="text-sm font-semibold text-blue-700">
-                                            Selected {documents.length} file{documents.length !== 1 ? 's' : ''}
+                                            New Files Selected ({documents.length})
                                         </p>
                                         <button
                                             type="button"
@@ -811,6 +1001,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             </li>
                                         ))}
                                     </ul>
+                                    {existingDocuments.length > 0 && (
+                                        <p className="text-xs text-orange-600 mt-2">⚠️ These new files will replace the existing documents</p>
+                                    )}
                                 </div>
                             )}
                             {errors.documents && (
@@ -848,7 +1041,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             }`}>
                                 {serviceTypes.map((type) => {
                                     const typeId = Number(type.id);
-                                    const isChecked = formData.service_type_ids.includes(typeId);
+                                    // Ensure both are numbers for proper comparison
+                                    const serviceTypeIds = (formData.service_type_ids || []).map(id => Number(id));
+                                    const isChecked = serviceTypeIds.includes(typeId);
                                     return (
                                         <label key={type.id} className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm hover:bg-blue-100 transition cursor-pointer border border-blue-200">
                                             <input
@@ -873,7 +1068,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             </label>
                             <select
                                 name="country_id"
-                                value={formData.country_id}
+                                value={formData.country_id !== null && formData.country_id !== undefined ? String(formData.country_id) : ''}
                                 onChange={handleInputChange}
                                 className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${
                                     errors.country_id ? 'border-red-400' : 'border-green-200'
@@ -881,7 +1076,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             >
                                 <option value="">Select country</option>
                                 {countries.map(country => (
-                                    <option key={country.id} value={country.id}>
+                                    <option key={country.id} value={String(country.id)}>
                                         {country.name}
                                     </option>
                                 ))}
