@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { Link, useLocation } from 'react-router-dom';
 import ProvidersMap from './ProvidersMap';
+import TripCalculatorModal from './TripCalculatorModal';
 
 
 export default function Home() {
   const [countries, setCountries] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showTripModal, setShowTripModal] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -145,7 +147,10 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Discover More
               </button>
-              <button className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-3 rounded-full font-medium text-lg hover:from-green-600 hover:to-blue-600 transition shadow-lg flex items-center gap-2">
+              <button 
+                onClick={() => setShowTripModal(true)}
+                className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-3 rounded-full font-medium text-lg hover:from-green-600 hover:to-blue-600 transition shadow-lg flex items-center gap-2"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 Plan Your Trip
               </button>
@@ -778,6 +783,14 @@ export default function Home() {
       {/* Call to Action Section */}
 
       </div>
+      
+      {/* Trip Calculator Modal */}
+      {showTripModal && (
+        <TripCalculatorModal
+          onClose={() => setShowTripModal(false)}
+          countries={countries}
+        />
+      )}
     </>
   );
 }

@@ -31,8 +31,123 @@ const redIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// Component to fit bounds when providers change or zoom to searched location
-function MapBounds({ providers, searchedLocation }) {
+// Custom blue marker icon for services
+const blueIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom orange marker icon for services
+const orangeIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom purple marker icon for services
+const purpleIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom yellow marker icon for services
+const yellowIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Function to create custom HTML div icon
+const createCustomIcon = (html, bgColor, iconColor = 'white') => {
+  return L.divIcon({
+    className: 'custom-marker-icon',
+    html: html,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
+  });
+};
+
+// Function to get icon for service based on service type
+const getServiceIcon = (serviceTypes) => {
+  if (!serviceTypes || serviceTypes.length === 0) {
+    return createCustomIcon(
+      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">📍</div></div>',
+      '#3b82f6'
+    );
+  }
+  
+  // Get the first service type name
+  const typeName = serviceTypes[0]?.name?.toLowerCase() || '';
+  
+  // Assign icons based on service type
+  if (typeName.includes('tour') || typeName.includes('guide')) {
+    // Tour/Guide - Blue with map icon
+    return createCustomIcon(
+      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🗺️</div></div>',
+      '#3b82f6'
+    );
+  } else if (typeName.includes('accommodation') || typeName.includes('hotel') || typeName.includes('lodge')) {
+    // Accommodation - Orange with bed icon
+    return createCustomIcon(
+      '<div style="background: #f97316; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🛏️</div></div>',
+      '#f97316'
+    );
+  } else if (typeName.includes('restaurant') || typeName.includes('food') || typeName.includes('dining')) {
+    // Restaurant/Food - Yellow with fork/knife icon
+    return createCustomIcon(
+      '<div style="background: #eab308; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🍴</div></div>',
+      '#eab308'
+    );
+  } else if (typeName.includes('activity') || typeName.includes('adventure')) {
+    // Activity/Adventure - Purple with hiking icon
+    return createCustomIcon(
+      '<div style="background: #a855f7; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">⛰️</div></div>',
+      '#a855f7'
+    );
+  } else if (typeName.includes('transport') || typeName.includes('vehicle') || typeName.includes('car')) {
+    // Transportation - Cyan with car icon
+    return createCustomIcon(
+      '<div style="background: #06b6d4; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🚗</div></div>',
+      '#06b6d4'
+    );
+  } else if (typeName.includes('shopping') || typeName.includes('market') || typeName.includes('store')) {
+    // Shopping - Pink with shopping bag icon
+    return createCustomIcon(
+      '<div style="background: #ec4899; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🛍️</div></div>',
+      '#ec4899'
+    );
+  } else if (typeName.includes('spa') || typeName.includes('wellness') || typeName.includes('relaxation')) {
+    // Spa/Wellness - Teal with spa icon
+    return createCustomIcon(
+      '<div style="background: #14b8a6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">💆</div></div>',
+      '#14b8a6'
+    );
+  } else {
+    // Default - Blue with location pin
+    return createCustomIcon(
+      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">📍</div></div>',
+      '#3b82f6'
+    );
+  }
+};
+
+// Component to fit bounds when providers/services change or zoom to searched location
+function MapBounds({ providers, services, searchedLocation }) {
   const map = useMap();
   
   useEffect(() => {
@@ -45,16 +160,18 @@ function MapBounds({ providers, searchedLocation }) {
         animate: true,
         duration: 1.5
       });
-    } else if (providers.length > 0) {
-      const bounds = providers
-        .filter(p => p.lat && p.lng)
-        .map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+    } else {
+      // Combine providers and services for bounds calculation
+      const allLocations = [
+        ...providers.filter(p => p.lat && p.lng).map(p => [parseFloat(p.lat), parseFloat(p.lng)]),
+        ...services.filter(s => s.lat && s.lng).map(s => [parseFloat(s.lat), parseFloat(s.lng)])
+      ];
       
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      if (allLocations.length > 0) {
+        map.fitBounds(allLocations, { padding: [50, 50], maxZoom: 12 });
       }
     }
-  }, [providers, searchedLocation, map]);
+  }, [providers, services, searchedLocation, map]);
   
   return null;
 }
@@ -62,6 +179,8 @@ function MapBounds({ providers, searchedLocation }) {
 const ProvidersMap = () => {
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
+  const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('all');
@@ -76,6 +195,7 @@ const ProvidersMap = () => {
 
   useEffect(() => {
     fetchProviders();
+    fetchServices();
     fetchCountries();
   }, []);
 
@@ -92,7 +212,8 @@ const ProvidersMap = () => {
 
   useEffect(() => {
     filterProviders();
-  }, [searchQuery, selectedCountry, providers, searchType]);
+    filterServices();
+  }, [searchQuery, selectedCountry, providers, services, searchType]);
 
   const fetchProviders = async () => {
     try {
@@ -101,20 +222,31 @@ const ProvidersMap = () => {
       if (!response.ok) throw new Error('Failed to fetch providers');
       const data = await response.json();
       
-      // Log the data to debug
-      console.log('Fetched providers:', data);
-      
       // Only include providers with valid coordinates
       const validProviders = data.filter(p => p.lat && p.lng && p.is_approved);
       
-      console.log('Valid providers with coordinates:', validProviders);
-      
       setProviders(validProviders);
       setFilteredProviders(validProviders);
-      setLoading(false);
     } catch (err) {
       console.error('Error fetching providers:', err);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('/api/services/all');
+      if (!response.ok) throw new Error('Failed to fetch services');
+      const data = await response.json();
+      
+      // Only include services with valid coordinates
+      const validServices = data.filter(s => s.lat && s.lng);
+      
+      setServices(validServices);
+      setFilteredServices(validServices);
+    } catch (err) {
+      console.error('Error fetching services:', err);
     }
   };
 
@@ -275,9 +407,57 @@ const ProvidersMap = () => {
     setFilteredProviders(filtered);
   };
 
+  const filterServices = async () => {
+    let filtered = services;
+
+    // Reset searched location when changing filters
+    setSearchedLocation(null);
+
+    // Filter by country
+    if (selectedCountry !== 'all') {
+      filtered = filtered.filter(s => s.country_id === parseInt(selectedCountry));
+    }
+
+    // Handle search based on search type
+    if (searchQuery.trim() && searchType === 'provider') {
+      const query = searchQuery.toLowerCase();
+      
+      // Service search: filter services
+      filtered = filtered.filter(s => {
+        // Search in service name
+        const nameMatch = s.name?.toLowerCase().includes(query);
+        
+        // Search in description
+        const descriptionMatch = s.description?.toLowerCase().includes(query);
+        
+        // Search in country name
+        const countryMatch = s.country?.name?.toLowerCase().includes(query);
+        
+        // Search in service types
+        const serviceTypeMatch = s.service_types?.some(st => 
+          st.name?.toLowerCase().includes(query)
+        ) || false;
+        
+        // Search in themes
+        const themeMatch = s.themes?.some(theme => 
+          theme.name?.toLowerCase().includes(query)
+        ) || false;
+
+        return nameMatch || descriptionMatch || countryMatch || serviceTypeMatch || themeMatch;
+      });
+    }
+
+    setFilteredServices(filtered);
+  };
+
   const handleMarkerClick = (provider) => {
     // Optional: Could open a modal or navigate to provider detail
     console.log('Provider clicked:', provider);
+  };
+
+  const handleServiceClick = (service) => {
+    // Optional: Could open a modal or navigate to service detail
+    console.log('Service clicked:', service);
   };
 
   if (loading) {
@@ -304,6 +484,16 @@ const ProvidersMap = () => {
         .leaflet-container::before,
         .leaflet-container::after {
           display: none !important;
+        }
+        .custom-marker-icon {
+          background: transparent !important;
+          border: none !important;
+        }
+        .custom-marker-icon > div {
+          transition: transform 0.2s;
+        }
+        .custom-marker-icon:hover > div {
+          transform: rotate(-45deg) scale(1.1);
         }
       `}</style>
       {/* Search and Filter Controls */}
@@ -346,7 +536,7 @@ const ProvidersMap = () => {
                 type="text"
                 placeholder={
                   searchType === 'provider'
-                    ? 'Search by name, description, themes...'
+                    ? 'Search providers and services by name, description, themes...'
                     : 'e.g., Lahore, Ichhra Lahore, Ferozepur Road, Pakistan...'
                 }
                 value={searchQuery}
@@ -452,6 +642,9 @@ const ProvidersMap = () => {
           <div>
             <p className="text-sm text-gray-600">
               Showing <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} providers
+              {filteredServices.length > 0 && (
+                <span> and <span className="font-bold text-blue-600">{filteredServices.length}</span> of {services.length} services</span>
+              )}
             </p>
             {searchedLocation && (
               <p className="text-sm text-blue-600 mt-1">
@@ -489,13 +682,13 @@ const ProvidersMap = () => {
 
       {/* Map Container */}
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-green-100">
-        {filteredProviders.length === 0 && !searchedLocation ? (
+        {filteredProviders.length === 0 && filteredServices.length === 0 && !searchedLocation ? (
           <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <svg className="mx-auto w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">No providers found</h3>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">No providers or services found</h3>
               <p className="text-gray-500">Try adjusting your search filters</p>
             </div>
           </div>
@@ -518,7 +711,7 @@ const ProvidersMap = () => {
             />
             
             {/* Fit bounds to show all markers or zoom to searched location */}
-            <MapBounds providers={filteredProviders} searchedLocation={searchedLocation} />
+            <MapBounds providers={filteredProviders} services={filteredServices} searchedLocation={searchedLocation} />
             
             {/* Markers for each provider */}
             {filteredProviders.map((provider) => (
@@ -606,19 +799,134 @@ const ProvidersMap = () => {
                 </Popup>
               </Marker>
             ))}
+            
+            {/* Markers for each service */}
+            {filteredServices.map((service) => (
+              <Marker
+                key={`service-${service.id}`}
+                position={[parseFloat(service.lat), parseFloat(service.lng)]}
+                icon={getServiceIcon(service.service_types)}
+                eventHandlers={{
+                  click: () => handleServiceClick(service)
+                }}
+              >
+                <Popup>
+                  <div className="p-2 min-w-[250px]">
+                    {/* Service Image */}
+                    {service.image && (
+                      <img
+                        src={`/storage/${service.image}`}
+                        alt={service.name}
+                        className="w-full h-32 object-cover rounded-lg mb-3"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    )}
+                    
+                    {/* Service Name */}
+                    <h3 className="font-bold text-lg text-gray-800 mb-2">
+                      {service.name}
+                    </h3>
+                    
+                    {/* Location */}
+                    {service.country && (
+                      <div className="flex items-center text-gray-600 mb-2">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-sm">{service.country.name}</span>
+                      </div>
+                    )}
+                    
+                    {/* Service Types */}
+                    {service.service_types && service.service_types.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex flex-wrap gap-1">
+                          {service.service_types.slice(0, 3).map((type) => (
+                            <span
+                              key={type.id}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {type.name}
+                            </span>
+                          ))}
+                          {service.service_types.length > 3 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                              +{service.service_types.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Description */}
+                    {service.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {service.description}
+                      </p>
+                    )}
+                    
+                    {/* Price */}
+                    {service.price && (
+                      <div className="mb-3">
+                        <span className="text-sm font-medium text-gray-700">
+                          Price: <span className="text-blue-600">${service.price}</span>
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* View Details Button */}
+                    <a
+                      href={`/service/${service.id}`}
+                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition"
+                    >
+                      View Service Details
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
           </MapContainer>
         )}
       </div>
 
       {/* Map Legend */}
       <div className="mt-6 bg-white rounded-xl shadow-md p-4">
-        <div className="flex flex-wrap items-center justify-center gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <div className="flex items-center">
-            <div className="w-6 h-6 bg-green-500 rounded-full mr-2"></div>
-            <span className="text-sm text-gray-700">Service Provider Location</span>
+            <div className="w-8 h-8 bg-green-500 rounded-full mr-2 flex items-center justify-center text-white text-sm font-bold">P</div>
+            <span className="text-sm text-gray-700">Service Provider</span>
           </div>
           <div className="flex items-center">
-            <svg className="w-6 h-6 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 bg-blue-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🗺️</div>
+            <span className="text-sm text-gray-700">Tour/Guide</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-orange-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🛏️</div>
+            <span className="text-sm text-gray-700">Accommodation</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-yellow-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🍴</div>
+            <span className="text-sm text-gray-700">Restaurant/Food</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-purple-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">⛰️</div>
+            <span className="text-sm text-gray-700">Activity/Adventure</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-cyan-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🚗</div>
+            <span className="text-sm text-gray-700">Transportation</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-pink-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">🛍️</div>
+            <span className="text-sm text-gray-700">Shopping</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-teal-500 rounded-full mr-2 flex items-center justify-center text-white text-lg">💆</div>
+            <span className="text-sm text-gray-700">Spa/Wellness</span>
+          </div>
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <span className="text-sm text-gray-700">Click markers for details</span>

@@ -12,6 +12,7 @@ import ThemesList from './components/admin/ThemesList';
 import ServiceTypesList from './components/admin/ServiceTypesList';
 import ServiceProvidersList from './components/admin/ServiceProvidersList';
 import AppSettings from './components/admin/AppSettings';
+import AboutPageEditor from './components/admin/AboutPageEditor';
 import UserLogin from './components/UserLogin';
 import UserSignup from './components/UserSignup';
 import UserProfile from './components/UserProfile';
@@ -98,6 +99,7 @@ function App() {
           <Route path="themes" element={<ThemesList />} />
           <Route path="service-types" element={<ServiceTypesList />} />
           <Route path="service-providers" element={<ServiceProvidersList />} />
+          <Route path="about-page" element={<AboutPageEditor />} />
           <Route path="settings" element={<AppSettings />} />
         </Route>
         

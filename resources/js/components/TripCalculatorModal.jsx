@@ -1,60 +1,133 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 
 const TripCalculatorModal = ({ onClose, countries }) => {
   const [formData, setFormData] = useState({
     destination: '',
-    budget: '',
+    tourType: '',
+    travelDates: '',
     duration: '',
-    startDate: '',
-    endDate: '',
-    travelers: '',
-    interests: '',
+    groupSize: '',
+    adults: '',
+    children: '',
+    budgetPerPerson: '',
+    activityLevel: '',
+    travelStyle: [],
     accommodation: '',
-    travelStyle: ''
+    transportation: '',
+    interests: [],
+    specialRequirements: ''
   });
+  const [themes, setThemes] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [aiResponse, setAiResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState('form'); // 'form' or 'result'
 
+  useEffect(() => {
+    fetchThemesAndServiceTypes();
+  }, []);
+
+  const fetchThemesAndServiceTypes = async () => {
+    try {
+      setLoadingData(true);
+      const [themesRes, serviceTypesRes] = await Promise.all([
+        fetch('/api/themes'),
+        fetch('/api/service-types')
+      ]);
+      
+      const themesData = await themesRes.json();
+      const serviceTypesData = await serviceTypesRes.json();
+      
+      setThemes(themesData);
+      setServiceTypes(serviceTypesData);
+    } catch (err) {
+      console.error('Error fetching themes and service types:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const checked = e.target.checked;
+      const fieldName = e.target.getAttribute('data-field') || name;
+      
+      setFormData(prev => {
+        const currentArray = prev[fieldName] || [];
+        const updatedArray = checked
+          ? [...currentArray, value]
+          : currentArray.filter(item => item !== value);
+        
+        return {
+          ...prev,
+          [fieldName]: updatedArray
+        };
+      });
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate that at least one service type is selected
+    if (formData.travelStyle.length === 0) {
+      setError('Please select at least one service type (travel style).');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setAiResponse(null);
 
     // Construct a detailed prompt for the AI
-    const prompt = `I need help planning an eco-friendly trip with the following details:
+    const groupComposition = [];
+    if (formData.adults) groupComposition.push(`${formData.adults} adult(s)`);
+    if (formData.children) groupComposition.push(`${formData.children} child(ren)`);
+    const groupInfo = groupComposition.length > 0 ? groupComposition.join(', ') : (formData.groupSize || 'Not specified');
+    
+    const prompt = `I need help planning an eco-friendly tour with the following details:
 
-Destination: ${formData.destination || 'Not specified'}
-Budget: ${formData.budget || 'Not specified'}
-Duration: ${formData.duration || 'Not specified'} days
-Travel Dates: ${formData.startDate ? `${formData.startDate} to ${formData.endDate || 'TBD'}` : 'Not specified'}
-Number of Travelers: ${formData.travelers || 'Not specified'}
-Interests: ${formData.interests || 'Not specified'}
-Accommodation Preference: ${formData.accommodation || 'Not specified'}
-Travel Style: ${formData.travelStyle || 'Not specified'}
+TOUR BASICS:
+- Destination: ${formData.destination || 'Not specified'}
+- Tour Type: ${formData.tourType || 'Not specified'}
+- Travel Dates: ${formData.travelDates || 'Not specified'}
+- Duration: ${formData.duration || 'Not specified'} days
 
-Please create a comprehensive, detailed eco-friendly travel plan for this trip. Include:
-1. A day-by-day itinerary with sustainable activities
-2. Recommended eco-friendly accommodations within the budget
-3. Sustainable transportation options
-4. Local eco-friendly restaurants and dining options
-5. Cultural and environmental experiences
-6. Tips for minimizing environmental impact
-7. Estimated costs breakdown
-8. Best practices for responsible tourism in this destination
+GROUP DETAILS:
+- Group Size: ${formData.groupSize || 'Not specified'} travelers
+- Group Composition: ${groupInfo}
+- Budget: ${formData.budgetPerPerson || 'Not specified'} per person
 
-Make the response detailed, practical, and focused on sustainability. Format it in a clear, easy-to-read way with sections and bullet points where appropriate.`;
+TRAVEL PREFERENCES:
+- Activity Level: ${formData.activityLevel || 'Not specified'}
+- Service Types (Travel Styles): ${formData.travelStyle.length > 0 ? formData.travelStyle.join(', ') : 'Not specified'}
+- Accommodation Type: ${formData.accommodation || 'Not specified'}
+- Transportation Preference: ${formData.transportation || 'Not specified'}
+- Themes (Interests & Activities): ${formData.interests.length > 0 ? formData.interests.join(', ') : 'Not specified'}
+- Special Requirements: ${formData.specialRequirements || 'None'}
+
+Please create a comprehensive, detailed eco-friendly tour plan. Include:
+1. A day-by-day itinerary with sustainable activities and tour highlights
+2. Recommended eco-friendly accommodations suitable for the group size and budget
+3. Sustainable transportation options (local transport, eco-friendly tours)
+4. Local eco-friendly restaurants and dining experiences
+5. Cultural immersion activities and environmental experiences
+6. Group-friendly activities and tour recommendations
+7. Tips for minimizing environmental impact during the tour
+8. Estimated costs breakdown per person
+9. Best practices for responsible tourism in this destination
+10. Safety considerations and travel tips
+
+Make the response detailed, practical, and focused on sustainability and group travel. Format it in a clear, easy-to-read way with sections and bullet points where appropriate.`;
 
     try {
       const response = await fetch('/api/ai-chat', {
@@ -87,14 +160,19 @@ Make the response detailed, practical, and focused on sustainability. Format it 
   const handleReset = () => {
     setFormData({
       destination: '',
-      budget: '',
+      tourType: '',
+      travelDates: '',
       duration: '',
-      startDate: '',
-      endDate: '',
-      travelers: '',
-      interests: '',
+      groupSize: '',
+      adults: '',
+      children: '',
+      budgetPerPerson: '',
+      activityLevel: '',
+      travelStyle: [],
       accommodation: '',
-      travelStyle: ''
+      transportation: '',
+      interests: [],
+      specialRequirements: ''
     });
     setAiResponse(null);
     setError(null);
@@ -132,160 +210,337 @@ Make the response detailed, practical, and focused on sustainability. Format it 
         <div className="p-6">
           {step === 'form' ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Destination */}
+              {/* Section 1: Trip Basics */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 mb-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Trip Basics
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Destination and Tour Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Destination <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="destination"
+                        value={formData.destination}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      >
+                        <option value="">Select destination</option>
+                        {countries && countries.length > 0 ? (
+                          countries.map(country => (
+                            <option key={country.id} value={country.name}>{country.name}</option>
+                          ))
+                        ) : (
+                          <option value="" disabled>Loading destinations...</option>
+                        )}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Tour Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="tourType"
+                        value={formData.tourType}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      >
+                        <option value="">Select tour type</option>
+                        <option value="Group Tour">Group Tour (Join others)</option>
+                        <option value="Private Tour">Private Tour (Just your group)</option>
+                        <option value="Self-Guided">Self-Guided Tour</option>
+                        <option value="Custom Tour">Custom Tour Package</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Travel Dates and Duration */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Preferred Travel Dates <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="travelDates"
+                        value={formData.travelDates}
+                        onChange={handleChange}
+                        required
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Tour Duration <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="duration"
+                        value={formData.duration}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      >
+                        <option value="">Select duration</option>
+                        <option value="1-3 days">1-3 days (Weekend getaway)</option>
+                        <option value="4-7 days">4-7 days (Week tour)</option>
+                        <option value="8-14 days">8-14 days (Extended tour)</option>
+                        <option value="15-21 days">15-21 days (Long tour)</option>
+                        <option value="22+ days">22+ days (Extended journey)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Group Details */}
+              <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-4 mb-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Group Details
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Total Travelers <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="groupSize"
+                        value={formData.groupSize}
+                        onChange={handleChange}
+                        required
+                        min="1"
+                        max="50"
+                        placeholder="e.g., 4"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Adults (18+)
+                      </label>
+                      <input
+                        type="number"
+                        name="adults"
+                        value={formData.adults}
+                        onChange={handleChange}
+                        min="0"
+                        placeholder="e.g., 2"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Children (Under 18)
+                      </label>
+                      <input
+                        type="number"
+                        name="children"
+                        value={formData.children}
+                        onChange={handleChange}
+                        min="0"
+                        placeholder="e.g., 2"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Budget Per Person <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="budgetPerPerson"
+                      value={formData.budgetPerPerson}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                    >
+                      <option value="">Select budget per person</option>
+                      <option value="Budget ($300-$600)">Budget ($300-$600)</option>
+                      <option value="Moderate ($600-$1,200)">Moderate ($600-$1,200)</option>
+                      <option value="Comfortable ($1,200-$2,500)">Comfortable ($1,200-$2,500)</option>
+                      <option value="Premium ($2,500-$5,000)">Premium ($2,500-$5,000)</option>
+                      <option value="Luxury ($5,000+)">Luxury ($5,000+)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Travel Preferences */}
+              <div className="bg-gradient-to-r from-amber-50 to-green-50 rounded-xl p-4 mb-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Travel Preferences
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Activity Level <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="activityLevel"
+                      value={formData.activityLevel}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                    >
+                      <option value="">Select activity level</option>
+                      <option value="Easy">Easy (Light walking, minimal physical activity)</option>
+                      <option value="Moderate">Moderate (Regular walking, some hiking)</option>
+                      <option value="Active">Active (Hiking, biking, physical activities)</option>
+                      <option value="Challenging">Challenging (Strenuous activities, adventure sports)</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Service Types (Travel Styles) <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 font-normal ml-2">(Select one or more)</span>
+                    </label>
+                    {loadingData ? (
+                      <div className="flex items-center justify-center p-8 border-2 border-gray-200 rounded-xl">
+                        <ClipLoader color="#10b981" size={24} />
+                        <span className="ml-3 text-gray-600">Loading service types...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border-2 border-gray-200 rounded-xl bg-gray-50">
+                        {serviceTypes.length > 0 ? (
+                          serviceTypes.map((serviceType) => (
+                            <label key={serviceType.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors">
+                              <input
+                                type="checkbox"
+                                name="travelStyle"
+                                data-field="travelStyle"
+                                value={serviceType.name}
+                                checked={formData.travelStyle.includes(serviceType.name)}
+                                onChange={handleChange}
+                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                              />
+                              <span className="text-sm text-gray-700">{serviceType.name}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="col-span-full text-center text-gray-500 py-4">
+                            No service types available
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Accommodation Type
+                      </label>
+                      <select
+                        name="accommodation"
+                        value={formData.accommodation}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      >
+                        <option value="">Any preference</option>
+                        <option value="Eco-Lodge">Eco-Lodge</option>
+                        <option value="Sustainable Hotel">Sustainable Hotel</option>
+                        <option value="Boutique Hotel">Boutique Hotel</option>
+                        <option value="Homestay">Homestay (Local family)</option>
+                        <option value="Green Hostel">Green Hostel</option>
+                        <option value="Camping">Camping/Glamping</option>
+                        <option value="Resort">Eco-Resort</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Transportation Preference
+                      </label>
+                      <select
+                        name="transportation"
+                        value={formData.transportation}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                      >
+                        <option value="">Any preference</option>
+                        <option value="Public Transport">Public Transport (Buses, Trains)</option>
+                        <option value="Private Vehicle">Private Vehicle/Driver</option>
+                        <option value="Walking & Cycling">Walking & Cycling Tours</option>
+                        <option value="Boat & Ferry">Boat & Ferry</option>
+                        <option value="Mixed">Mixed (Best option for route)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Interests & Activities (Themes) */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  Interests & Activities (Themes)
+                  <span className="text-xs text-gray-500 font-normal ml-2">(Select one or more)</span>
+                </h3>
+                
+                {loadingData ? (
+                  <div className="flex items-center justify-center p-8 border-2 border-gray-200 rounded-xl bg-white">
+                    <ClipLoader color="#10b981" size={24} />
+                    <span className="ml-3 text-gray-600">Loading themes...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {themes.length > 0 ? (
+                      themes.map((theme) => (
+                        <label key={theme.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors">
+                          <input
+                            type="checkbox"
+                            name="interests"
+                            data-field="interests"
+                            value={theme.name}
+                            checked={formData.interests.includes(theme.name)}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          />
+                          <span className="text-sm text-gray-700">{theme.name}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center text-gray-500 py-4">
+                        No themes available
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Special Requirements */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Destination <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="destination"
-                  value={formData.destination}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                >
-                  <option value="">Select a destination</option>
-                  {countries.map(country => (
-                    <option key={country.id} value={country.name}>{country.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Budget and Duration Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Budget <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="budget"
-                    value={formData.budget}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  >
-                    <option value="">Select budget range</option>
-                    <option value="Budget ($500-$1000)">Budget ($500-$1000)</option>
-                    <option value="Moderate ($1000-$2500)">Moderate ($1000-$2500)</option>
-                    <option value="Comfortable ($2500-$5000)">Comfortable ($2500-$5000)</option>
-                    <option value="Luxury ($5000+)">Luxury ($5000+)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Duration (Days) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    placeholder="e.g., 7"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Travel Dates Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    min={formData.startDate}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Travelers and Accommodation Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Number of Travelers
-                  </label>
-                  <input
-                    type="number"
-                    name="travelers"
-                    value={formData.travelers}
-                    onChange={handleChange}
-                    min="1"
-                    placeholder="e.g., 2"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Accommodation Preference
-                  </label>
-                  <select
-                    name="accommodation"
-                    value={formData.accommodation}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                  >
-                    <option value="">Select preference</option>
-                    <option value="Eco-lodge">Eco-lodge</option>
-                    <option value="Sustainable Hotel">Sustainable Hotel</option>
-                    <option value="Green Hostel">Green Hostel</option>
-                    <option value="Homestay">Homestay</option>
-                    <option value="Camping">Camping</option>
-                    <option value="No preference">No preference</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Travel Style */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Travel Style
-                </label>
-                <select
-                  name="travelStyle"
-                  value={formData.travelStyle}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
-                >
-                  <option value="">Select travel style</option>
-                  <option value="Adventure">Adventure</option>
-                  <option value="Relaxation">Relaxation</option>
-                  <option value="Cultural Immersion">Cultural Immersion</option>
-                  <option value="Nature & Wildlife">Nature & Wildlife</option>
-                  <option value="Volunteering">Volunteering</option>
-                  <option value="Mixed">Mixed</option>
-                </select>
-              </div>
-
-              {/* Interests */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Interests & Activities
+                  Special Requirements or Preferences
                 </label>
                 <textarea
-                  name="interests"
-                  value={formData.interests}
+                  name="specialRequirements"
+                  value={formData.specialRequirements}
                   onChange={handleChange}
                   rows="3"
-                  placeholder="e.g., Hiking, Wildlife watching, Local cuisine, Photography..."
+                  placeholder="e.g., Dietary restrictions, accessibility needs, specific places to visit, special occasions..."
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors resize-none"
                 />
               </div>
@@ -392,6 +647,7 @@ Make the response detailed, practical, and focused on sustainability. Format it 
 };
 
 export default TripCalculatorModal;
+
 
 
 

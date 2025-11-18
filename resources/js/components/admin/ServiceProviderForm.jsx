@@ -128,10 +128,26 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             
             // Use snake_case (service_types) because that's how Laravel returns it
             const serviceTypesData = provider.service_types || provider.serviceTypes || [];
-            const serviceTypeIds = serviceTypesData.map(st => Number(st.id));
+            const serviceTypeIds = serviceTypesData.map(st => Number(st.id)).filter(id => !isNaN(id) && id > 0);
+            
+            // Ensure country_id is a number, not empty string
+            const countryId = provider.country_id;
+            const finalCountryId = (countryId !== null && countryId !== undefined && countryId !== '') 
+                ? Number(countryId) 
+                : '';
+            
+            console.log('Initializing form with provider data:', {
+                provider_id: provider.id,
+                country_id: countryId,
+                final_country_id: finalCountryId,
+                name: provider.name,
+                price_range: provider.price_range,
+                service_type_ids: serviceTypeIds,
+                service_types_data: serviceTypesData
+            });
             
             setFormData({
-                country_id: provider.country_id || '',
+                country_id: finalCountryId,
                 name: provider.name || '',
                 service_type_ids: serviceTypeIds,
                 description: provider.description || '',
@@ -140,7 +156,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 email: (provider.email || '').toLowerCase(),
                 phone: provider.phone || '',
                 is_approved: provider.is_approved || false,
-                themes: provider.themes?.map(t => Number(t.id)) || [],
+                themes: provider.themes?.map(t => Number(t.id)).filter(id => !isNaN(id) && id > 0) || [],
                 lat: provider.lat || '',
                 lng: provider.lng || '',
             });
@@ -252,12 +268,21 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     };
 
     const handleServiceTypeChange = (serviceTypeId) => {
-        setFormData(prev => ({
+        // Ensure serviceTypeId is a number
+        const numId = Number(serviceTypeId);
+        
+        setFormData(prev => {
+            // Ensure all IDs in the array are numbers for proper comparison
+            const currentIds = prev.service_type_ids.map(id => Number(id));
+            const isChecked = currentIds.includes(numId);
+            
+            return {
             ...prev,
-            service_type_ids: prev.service_type_ids.includes(serviceTypeId)
-                ? prev.service_type_ids.filter(id => id !== serviceTypeId)
-                : [...prev.service_type_ids, serviceTypeId]
-        }));
+                service_type_ids: isChecked
+                    ? currentIds.filter(id => id !== numId)
+                    : [...currentIds, numId]
+            };
+        });
         
         // Clear error if exists
         if (errors.service_type_ids) {
@@ -388,36 +413,200 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         }
         setIsSubmitting(true);
         try {
+            // Validate provider has ID for update
+            if (provider && !provider.id) {
+                console.error('Provider object exists but has no ID:', provider);
+                setErrors({ general: 'Invalid provider data. Please refresh and try again.' });
+                setIsSubmitting(false);
+                return;
+            }
+            
             const url = provider ? `/api/service-providers/${provider.id}` : '/api/service-providers';
-            const method = provider ? 'PUT' : 'POST';
+            
+            console.log('Request URL:', url);
+            console.log('Provider object:', provider);
+            console.log('Provider ID:', provider?.id);
+            
+            // Validate formData has required values before building FormData
+            console.log('FormData state before submission:', {
+                country_id: formData.country_id,
+                name: formData.name,
+                service_type_ids: formData.service_type_ids,
+                price_range: formData.price_range,
+                isArray: Array.isArray(formData.service_type_ids),
+                arrayLength: Array.isArray(formData.service_type_ids) ? formData.service_type_ids.length : 'not array',
+                fullFormData: formData
+            });
+            
+            // Pre-validate required fields before building FormData
+            const validationErrors = {};
+            
+            // Validate country_id
+            const countryId = formData.country_id;
+            if (!countryId || countryId === '' || isNaN(Number(countryId)) || Number(countryId) <= 0) {
+                validationErrors.country_id = 'Country is required';
+                console.error('country_id validation failed:', countryId);
+            }
+            
+            // Validate name
+            const name = formData.name;
+            if (!name || String(name).trim() === '') {
+                validationErrors.name = 'Name is required';
+                console.error('name validation failed:', name);
+            }
+            
+            // Validate price_range
+            const priceRange = formData.price_range;
+            if (!priceRange || String(priceRange).trim() === '') {
+                validationErrors.price_range = 'Price range is required';
+                console.error('price_range validation failed:', priceRange);
+            }
+            
+            // Validate service_type_ids
+            if (!Array.isArray(formData.service_type_ids) || formData.service_type_ids.length === 0) {
+                validationErrors.service_type_ids = 'At least one service type is required';
+                console.error('service_type_ids validation failed:', formData.service_type_ids);
+            }
+            
+            // If there are validation errors, stop submission
+            if (Object.keys(validationErrors).length > 0) {
+                console.error('Validation errors found, stopping submission:', validationErrors);
+                setErrors(prev => ({ ...prev, ...validationErrors }));
+                setIsSubmitting(false);
+                return;
+            }
+            
             const form = new FormData();
+            
+            // Append all form fields, ensuring proper formatting
+            // Required fields: country_id, name, service_type_ids, price_range
+            
+            // Always append required fields first - we've already validated they exist
+            form.append('country_id', Number(countryId));
+            form.append('name', String(name).trim());
+            form.append('price_range', String(priceRange).trim());
+            
+            // service_type_ids (required) - must be an array
+            if (Array.isArray(formData.service_type_ids) && formData.service_type_ids.length > 0) {
+                formData.service_type_ids.forEach((typeId) => {
+                    // Convert to number, handling both string and number inputs
+                    const numId = Number(typeId);
+                    // Only append valid positive numbers (IDs should be > 0)
+                    if (!isNaN(numId) && numId > 0) {
+                        form.append('service_type_ids[]', numId);
+                    }
+                });
+            } else {
+                // If array is empty, log warning but don't append (validation will catch this)
+                console.warn('service_type_ids is empty or not an array:', formData.service_type_ids);
+            }
+            
+            // Append optional fields
             Object.entries(formData).forEach(([key, value]) => {
-                if (key === 'themes') {
-                    value.forEach((themeId) => form.append('themes[]', themeId));
-                } else if (key === 'service_type_ids') {
-                    value.forEach((typeId) => form.append('service_type_ids[]', typeId));
-                } else if (key === 'is_approved') {
+                // Skip fields we've already handled
+                if (['country_id', 'name', 'price_range', 'service_type_ids', 'is_approved', 'themes', 'lat', 'lng'].includes(key)) {
+                    return;
+                }
+                
+                // Append other optional fields
+                if (value !== null && value !== undefined && value !== '') {
+                    form.append(key, String(value));
+                }
+            });
+            
+            // Handle themes (optional)
+            if (Array.isArray(formData.themes) && formData.themes.length > 0) {
+                formData.themes.forEach((themeId) => {
+                    const numId = typeof themeId === 'string' ? Number(themeId) : Number(themeId);
+                    if (!isNaN(numId) && numId > 0) {
+                        form.append('themes[]', numId);
+                    }
+                });
+            }
+            
+            // Handle is_approved
                     if (showApproveCheckbox) {
-                        form.append('is_approved', value ? 1 : 0);
+                form.append('is_approved', formData.is_approved ? 1 : 0);
                     } else {
                         form.append('is_approved', 0);
                     }
-                } else {
-                    form.append(key, value);
-                }
-            });
+            
+            // Handle lat/lng (optional)
+            if (formData.lat !== null && formData.lat !== undefined && formData.lat !== '') {
+                form.append('lat', String(formData.lat));
+            }
+            if (formData.lng !== null && formData.lng !== undefined && formData.lng !== '') {
+                form.append('lng', String(formData.lng));
+            }
+            
+            // Append image if provided
             if (image) {
                 form.append('image', image);
             }
+            
+            // Append documents if provided
             if (documents.length > 0) {
                 documents.forEach((doc) => form.append('documents[]', doc));
             }
-            const response = await fetch(url, {
-                method,
-                body: form
+            
+            // Debug: Log FormData contents before sending
+            console.log('FormData state before sending:', {
+                country_id: formData.country_id,
+                name: formData.name,
+                service_type_ids: formData.service_type_ids,
+                price_range: formData.price_range,
+                themes: formData.themes,
+                is_approved: formData.is_approved
             });
-            if (!response.ok) {
-                const errorData = await response.json();
+            
+            // Log actual FormData entries (for debugging)
+            console.log('FormData entries being sent:');
+            const formDataEntries = [];
+            for (let pair of form.entries()) {
+                console.log(pair[0] + ': ' + pair[1] + ' (type: ' + typeof pair[1] + ')');
+                formDataEntries.push({ key: pair[0], value: pair[1] });
+            }
+            console.log('All FormData entries:', formDataEntries);
+            
+            // Verify required fields are present
+            const hasCountryId = formDataEntries.some(e => e.key === 'country_id');
+            const hasName = formDataEntries.some(e => e.key === 'name');
+            const hasPriceRange = formDataEntries.some(e => e.key === 'price_range');
+            const hasServiceTypeIds = formDataEntries.some(e => e.key === 'service_type_ids[]');
+            
+            console.log('Required fields check:', {
+                hasCountryId,
+                hasName,
+                hasPriceRange,
+                hasServiceTypeIds,
+                serviceTypeIdsCount: formDataEntries.filter(e => e.key === 'service_type_ids[]').length
+            });
+            
+            if (!hasCountryId || !hasName || !hasPriceRange || !hasServiceTypeIds) {
+                console.error('Missing required fields in FormData!');
+                setErrors(prev => ({
+                    ...prev,
+                    general: 'Required fields are missing. Please check the form and try again.'
+                }));
+                setIsSubmitting(false);
+                return;
+            }
+            
+            // Use apiClient for authenticated requests with FormData
+            // Axios automatically sets Content-Type for FormData, so we don't need to set it manually
+            try {
+                if (provider) {
+                    // Update request
+                    console.log('Sending PUT request to:', url);
+                    await window.apiClient.put(url, form);
+                } else {
+                    // Create request
+                    console.log('Sending POST request to:', url);
+                    await window.apiClient.post(url, form);
+                }
+                onSuccess();
+            } catch (error) {
+                const errorData = error.response?.data || {};
                 setErrors(errorData.errors || {});
                 
                 // Scroll to first error field
@@ -433,22 +622,21 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 // Show all unique field errors in summary if present
                 if (errorData.errors) {
                     let summary = [];
-                    if (errorData.errors.email && errorData.errors.email[0].includes('already registered')) {
+                    if (errorData.errors.email && errorData.errors.email[0]?.includes('already registered')) {
                         summary.push('Email is already registered.');
                     }
-                    if (errorData.errors.phone && errorData.errors.phone[0].includes('already registered')) {
+                    if (errorData.errors.phone && errorData.errors.phone[0]?.includes('already registered')) {
                         summary.push('Phone number is already registered.');
                     }
-                    if (errorData.errors.website && errorData.errors.website[0].includes('already registered')) {
+                    if (errorData.errors.website && errorData.errors.website[0]?.includes('already registered')) {
                         summary.push('Website is already registered.');
                     }
                     setSummaryError(summary.join(' '));
                 } else {
-                    setSummaryError('');
+                    setSummaryError(errorData.message || 'An error occurred while saving the service provider');
                 }
                 return;
             }
-            onSuccess();
         } catch (error) {
             console.error('Error saving service provider:', error);
             setErrors({ general: 'An error occurred while saving the service provider' });

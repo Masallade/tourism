@@ -138,6 +138,11 @@ use App\Http\Controllers\Admin\AppSettingsController;
 Route::get('/app-settings', [AppSettingsController::class, 'index']);
 Route::post('/app-settings', [AppSettingsController::class, 'store'])->middleware('admin.auth');
 
+// About Page - Public read, Admin write
+use App\Http\Controllers\Admin\AboutPageController;
+Route::get('/about-page', [AboutPageController::class, 'index']);
+Route::post('/about-page', [AboutPageController::class, 'store'])->middleware('admin.auth');
+
 // API Routes for React Admin
 // Countries
 use App\Http\Controllers\Admin\CountryController;
@@ -407,8 +412,8 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
         $serviceProvider->themes()->sync($request->themes);
     }
 
-    return response()->json($serviceProvider->load(['country', 'themes']));
-});
+    return response()->json($serviceProvider->load(['country', 'themes', 'serviceTypes']));
+})->middleware('admin.auth');
 Route::delete('/service-providers/{serviceProvider}', function (\App\Models\ServiceProvider $serviceProvider) {
     $serviceProvider->delete();
     return response()->json(['message' => 'Service Provider deleted successfully']);
