@@ -126,6 +126,7 @@ function App() {
               <ServiceProviderDashboard
                 provider={provider}
                 onLogout={handleProviderLogout}
+                onProviderUpdate={setProvider}
               />
             </RequireProvider>
           }

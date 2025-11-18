@@ -761,9 +761,25 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         }
     };
 
+    // Image preview state
+    const [imagePreview, setImagePreview] = useState(null);
+
+    // Handle image preview
+    useEffect(() => {
+        if (image) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(image);
+        } else {
+            setImagePreview(null);
+        }
+    }, [image]);
+
     return (
-    <div className="fixed inset-0 bg-gradient-to-br from-green-100 via-white to-blue-100 bg-opacity-80 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-            <div className="relative mx-auto p-0 w-full max-w-3xl shadow-2xl rounded-2xl bg-white max-h-[95vh] overflow-y-auto border-0">
+    <div className="fixed inset-0 bg-gradient-to-br from-green-100 via-white to-blue-100 bg-opacity-80 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <div className="relative mx-auto p-0 w-full max-w-6xl shadow-2xl rounded-2xl bg-white max-h-[95vh] overflow-y-auto border-0">
                 <div className="flex justify-between items-center px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-t-2xl">
                     <h3 className="text-2xl font-bold text-green-700 tracking-tight">
                         {provider ? 'Edit Service Provider' : 'Add New Service Provider'}
@@ -785,230 +801,346 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             {summaryError}
                         </div>
                     )}
-                    {/* Image Picker */}
-                    <div className="mb-4 flex flex-col md:flex-row gap-6 items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-gray-100 shadow-sm">
-                        <div className="flex-1">
-                            <label className="block text-sm font-semibold text-green-700 mb-2">Profile Image</label>
-                            
-                            {/* Show existing image if available */}
-                            {existingImage && !image && (
-                                <div className="mb-3 p-3 bg-white rounded-lg border-2 border-green-200">
-                                    <p className="text-xs text-gray-600 mb-2">Current Image:</p>
-                                    <div className="flex items-center gap-3">
-                                        <img 
-                                            src={`/storage/${existingImage}`} 
-                                            alt="Current profile" 
-                                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'block';
-                                            }}
-                                        />
-                                        <div className="flex-1">
-                                            <p className="text-sm text-gray-700 font-medium truncate">{existingImage.split('/').pop()}</p>
-                                            <a 
-                                                href={`/storage/${existingImage}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="text-xs text-blue-600 hover:text-blue-800"
-                                            >
-                                                View Full Image
-                                            </a>
+                    {/* Image Picker - Enhanced */}
+                    <div className="mb-6 bg-gradient-to-br from-emerald-50 via-white to-blue-50 rounded-2xl p-6 border border-gray-200 shadow-lg">
+                        <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Profile Image <span className="text-red-500">*</span>
+                        </label>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Image Preview Section */}
+                            <div className="space-y-4">
+                                {/* Existing Image Preview */}
+                                {existingImage && !image && (
+                                    <div className="relative group">
+                                        <div className="p-4 bg-white rounded-xl border-2 border-green-200 shadow-md">
+                                            <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">Current Image</p>
+                                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
+                                                <img 
+                                                    src={`/storage/${existingImage}`} 
+                                                    alt="Current profile" 
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <p className="text-xs text-gray-600 font-medium truncate flex-1" title={existingImage.split('/').pop()}>
+                                                    {existingImage.split('/').pop()}
+                                                </p>
+                                                <a 
+                                                    href={`/storage/${existingImage}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="ml-2 px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                                                >
+                                                    View Full
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
-                            
-                            <input
-                                type="file"
-                                name="image"
-                                accept="image/jpeg,image/png,image/jpg"
-                                onChange={handleInputChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 transition"
-                            />
-                            {image && (
-                                <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                                    <p className="text-xs text-green-700 font-medium">New image selected: {image.name}</p>
-                                    <p className="text-xs text-gray-500 mt-1">This will replace the current image</p>
-                                </div>
-                            )}
-                            {errors.image && (
-                                <p className="text-red-500 text-sm mt-1">{errors.image}</p>
-                            )}
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-sm font-semibold text-green-700 mb-2">
-                                Documents (PDF, JPG, PNG) <span className="text-red-500">*</span>
-                            </label>
-                            
-                            {/* Drag and Drop Area */}
-                            <div
-                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                                    errors.documents 
-                                        ? 'border-red-400 bg-red-50' 
-                                        : 'border-blue-300 bg-blue-50 hover:border-blue-400 hover:bg-blue-100'
-                                }`}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                }}
-                                onDragLeave={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const files = Array.from(e.dataTransfer.files).filter(file => {
-                                        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-                                        return validTypes.includes(file.type);
-                                    });
-                                    if (files.length > 0) {
-                                        setDocuments(prev => [...prev, ...files]);
-                                        if (errors.documents) {
-                                            setErrors(prev => ({ ...prev, documents: '' }));
-                                        }
-                                    }
-                                }}
-                            >
-                            <input
-                                type="file"
-                                name="documents"
-                                accept="application/pdf,image/jpeg,image/png,image/jpg"
-                                multiple
-                                    onChange={(e) => {
-                                        const files = Array.from(e.target.files || []);
-                                        setDocuments(prev => [...prev, ...files]);
-                                        if (errors.documents) {
-                                            setErrors(prev => ({ ...prev, documents: '' }));
+                                )}
+
+                                {/* New Image Preview */}
+                                {imagePreview && (
+                                    <div className="relative group">
+                                        <div className="p-4 bg-white rounded-xl border-2 border-emerald-300 shadow-md">
+                                            <p className="text-xs font-semibold text-emerald-700 mb-3 uppercase tracking-wide flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                                New Image Preview
+                                            </p>
+                                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-emerald-200 bg-gray-50">
+                                                <img 
+                                                    src={imagePreview} 
+                                                    alt="Preview" 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                                    New
+                                                </div>
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs text-gray-700 font-medium truncate" title={image.name}>
+                                                        {image.name}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        {(image.size / 1024 / 1024).toFixed(2)} MB
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setImage(null);
+                                                        setImagePreview(null);
+                                                        // Reset file input
+                                                        const fileInput = document.querySelector('input[name="image"]');
+                                                        if (fileInput) fileInput.value = '';
+                                                    }}
+                                                    className="ml-2 px-3 py-1 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* File Input */}
+                                {!imagePreview && (
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            name="image"
+                                            accept="image/jpeg,image/png,image/jpg"
+                                            onChange={handleInputChange}
+                                            className="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gradient-to-r file:from-green-500 file:to-emerald-600 file:text-white hover:file:from-green-600 hover:file:to-emerald-700 file:cursor-pointer file:transition-all file:shadow-lg file:hover:shadow-xl cursor-pointer"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 2MB</p>
+                                    </div>
+                                )}
+                                
+                                {errors.image && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p className="text-red-600 text-sm font-medium">{errors.image}</p>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Documents Section - Enhanced */}
+                            <div className="space-y-4">
+                                <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Documents (PDF, JPG, PNG) <span className="text-red-500">*</span>
+                                </label>
+                                
+                                {/* Drag and Drop Area - Enhanced */}
+                                <div
+                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+                                        errors.documents 
+                                            ? 'border-red-400 bg-red-50' 
+                                            : 'border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-100 hover:to-indigo-100'
+                                    }`}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        e.currentTarget.classList.add('border-blue-500', 'bg-blue-100');
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-100');
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-100');
+                                        const files = Array.from(e.dataTransfer.files).filter(file => {
+                                            const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+                                            return validTypes.includes(file.type);
+                                        });
+                                        if (files.length > 0) {
+                                            setDocuments(prev => [...prev, ...files]);
+                                            if (errors.documents) {
+                                                setErrors(prev => ({ ...prev, documents: '' }));
+                                            }
                                         }
                                     }}
-                                    className="hidden"
-                                    id="documents-input"
-                                />
-                                <label
-                                    htmlFor="documents-input"
-                                    className="cursor-pointer flex flex-col items-center"
                                 >
-                                    <svg className="w-12 h-12 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                    <p className="text-sm font-semibold text-blue-700 mb-1">
-                                        Click to browse or drag & drop files here
-                                    </p>
-                                    <p className="text-xs text-blue-600">
-                                        Select multiple files at once (PDF, JPG, PNG)
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            document.getElementById('documents-input').click();
+                                    <input
+                                        type="file"
+                                        name="documents"
+                                        accept="application/pdf,image/jpeg,image/png,image/jpg"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            setDocuments(prev => [...prev, ...files]);
+                                            if (errors.documents) {
+                                                setErrors(prev => ({ ...prev, documents: '' }));
+                                            }
                                         }}
-                                        className="mt-3 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition"
+                                        className="hidden"
+                                        id="documents-input"
+                                    />
+                                    <label
+                                        htmlFor="documents-input"
+                                        className="cursor-pointer flex flex-col items-center"
                                     >
-                                        Choose Files
-                                    </button>
-                                </label>
-                            </div>
-                            
-                            {/* Show existing documents if available */}
-                            {existingDocuments.length > 0 && documents.length === 0 && (
-                                <div className="mt-3 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-sm">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sm font-semibold text-blue-700">
-                                            Current Documents ({existingDocuments.length})
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                        </div>
+                                        <p className="text-base font-bold text-gray-800 mb-2">
+                                            Click to browse or drag & drop files here
                                         </p>
-                                    </div>
-                                    <ul className="space-y-2 max-h-40 overflow-y-auto">
-                                        {existingDocuments.map((docPath, index) => {
-                                            const fileName = typeof docPath === 'string' ? docPath.split('/').pop() : `Document ${index + 1}`;
-                                            return (
-                                                <li key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 gap-2">
-                                                    <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                                        <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                                                        </svg>
-                                                        <span 
-                                                            className="text-xs text-blue-700 font-medium block min-w-0"
-                                                            title={fileName}
-                                                        >
-                                                            {fileName.length > 30 ? `${fileName.substring(0, 30)}...` : fileName}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            Select multiple files at once (PDF, JPG, PNG) • Max 4MB per file
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById('documents-input').click();
+                                            }}
+                                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm font-bold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                                        >
+                                            Choose Files
+                                        </button>
+                                    </label>
+                                </div>
+                                
+                                {/* Existing Documents Display */}
+                                {existingDocuments.length > 0 && documents.length === 0 && (
+                                    <div className="mt-4 p-5 bg-white border-2 border-blue-200 rounded-xl shadow-md">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                </svg>
+                                                <p className="text-sm font-bold text-gray-800">
+                                                    Current Documents ({existingDocuments.length})
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                                            {existingDocuments.map((docPath, index) => {
+                                                const fileName = typeof docPath === 'string' ? docPath.split('/').pop() : `Document ${index + 1}`;
+                                                const isImage = fileName.match(/\.(jpg|jpeg|png)$/i);
+                                                return (
+                                                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all">
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                                                isImage ? 'bg-green-100' : 'bg-red-100'
+                                                            }`}>
+                                                                {isImage ? (
+                                                                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <span 
+                                                                className="text-sm text-gray-700 font-medium truncate flex-1"
+                                                                title={fileName}
+                                                            >
+                                                                {fileName}
+                                                            </span>
+                                                        </div>
                                                         <a
                                                             href={`/storage/${docPath}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                            className="ml-2 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex-shrink-0"
                                                             title="View document"
                                                         >
                                                             View
                                                         </a>
                                                     </div>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                    <p className="text-xs text-gray-500 mt-2">Upload new files above to replace these documents</p>
-                                </div>
-                            )}
-                            
-                            {documents.length > 0 && (
-                                <div className="mt-3 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-sm">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sm font-semibold text-blue-700">
-                                            New Files Selected ({documents.length})
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={() => setDocuments([])}
-                                            className="text-xs text-red-600 hover:text-red-800 font-medium"
-                                        >
-                                            Clear All
-                                        </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-3 text-center">Upload new files above to replace these documents</p>
                                     </div>
-                                    <ul className="space-y-2 max-h-40 overflow-y-auto">
-                                        {documents.map((doc, index) => (
-                                            <li key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 gap-2">
-                                                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                                    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                )}
+                                
+                                {/* New Documents Display - Enhanced */}
+                                {documents.length > 0 && (
+                                    <div className="mt-4 p-5 bg-white border-2 border-emerald-300 rounded-xl shadow-lg">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                                <p className="text-sm font-bold text-emerald-700">
+                                                    New Files Selected ({documents.length})
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDocuments([])}
+                                                className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 transition"
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                                            {documents.map((doc, index) => {
+                                                const isImage = doc.name.match(/\.(jpg|jpeg|png)$/i);
+                                                const isPDF = doc.name.match(/\.pdf$/i);
+                                                return (
+                                                    <div key={index} className="group relative p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                                                isImage ? 'bg-green-200' : isPDF ? 'bg-red-200' : 'bg-blue-200'
+                                                            }`}>
+                                                                {isImage ? (
+                                                                    <svg className="w-7 h-7 text-green-700" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="w-7 h-7 text-red-700" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p 
+                                                                    className="text-sm font-semibold text-gray-800 truncate mb-1" 
+                                                                    title={doc.name}
+                                                                >
+                                                                    {doc.name}
+                                                                </p>
+                                                                <p className="text-xs text-gray-600">
+                                                                    {(doc.size / 1024).toFixed(1)} KB
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setDocuments(prev => prev.filter((_, i) => i !== index));
+                                                                }}
+                                                                className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                                                                title="Remove file"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        {existingDocuments.length > 0 && (
+                                            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                                <p className="text-xs font-semibold text-orange-700 flex items-center gap-2">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                     </svg>
-                                                    <span 
-                                                        className="text-xs text-blue-700 font-medium block min-w-0"
-                                                        title={doc.name}
-                                                    >
-                                                        {doc.name.length > 30 ? `${doc.name.substring(0, 30)}...` : doc.name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2 flex-shrink-0">
-                                                    <span className="text-xs text-blue-500 whitespace-nowrap">({(doc.size / 1024).toFixed(1)} KB)</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setDocuments(prev => prev.filter((_, i) => i !== index));
-                                                        }}
-                                                        className="text-red-500 hover:text-red-700 flex-shrink-0"
-                                                        title="Remove file"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    {existingDocuments.length > 0 && (
-                                        <p className="text-xs text-orange-600 mt-2">⚠️ These new files will replace the existing documents</p>
-                                    )}
-                                </div>
-                            )}
-                            {errors.documents && (
-                                <p className="text-red-500 text-sm mt-1">{errors.documents}</p>
-                            )}
+                                                    These new files will replace the existing documents
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                
+                                {errors.documents && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p className="text-red-600 text-sm font-medium">{errors.documents}</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

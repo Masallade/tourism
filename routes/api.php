@@ -506,6 +506,8 @@ Route::post('/service-providers/{serviceProvider}/update', function (\App\Models
         'themes' => 'array',
         'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+        'lat' => 'nullable|numeric|between:-90,90',
+        'lng' => 'nullable|numeric|between:-180,180',
     ], [
         'email.unique' => 'This email is already registered.',
         'phone.unique' => 'This phone number is already registered.',
