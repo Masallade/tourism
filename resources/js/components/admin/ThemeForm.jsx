@@ -97,7 +97,7 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
         }
 
         if (theme) {
-            await window.apiClient.put(`/api/themes/${theme.id}`, form);
+            await window.apiClient.upload(`/api/themes/${theme.id}/update`, form);
         } else {
             await window.apiClient.upload('/api/themes', form);
         }
@@ -105,7 +105,13 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
         onSuccess();
         } catch (error) {
             console.error('Error saving theme:', error);
-            setErrors({ general: 'An error occurred while saving the theme' });
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else if (error.response?.data?.message) {
+                setErrors({ general: error.response.data.message });
+            } else {
+                setErrors({ general: 'An error occurred while saving the theme' });
+            }
         } finally {
             setIsSubmitting(false);
         }

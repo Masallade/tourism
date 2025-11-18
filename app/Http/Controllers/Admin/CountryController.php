@@ -18,7 +18,7 @@ class CountryController extends Controller
             'slug' => 'required|string|max:255|unique:countries,slug',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'image_url' => 'nullable|url',
+            'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
         ]);
             
         if ($request->hasFile('image')) {
@@ -87,7 +87,7 @@ class CountryController extends Controller
             'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'image_url' => 'nullable|url',
+            'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
         ]);
             
         if ($request->hasFile('image')) {
@@ -146,5 +146,21 @@ class CountryController extends Controller
                 'errors' => ['general' => ['Failed to update country. Please try again.']]
             ], 500);
         }
+    }
+
+    private function imageUrlRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if (empty($value)) {
+                return;
+            }
+
+            $isValidFullUrl = filter_var($value, FILTER_VALIDATE_URL);
+            $isStoragePath = str_starts_with($value, '/storage/');
+
+            if (!$isValidFullUrl && !$isStoragePath) {
+                $fail('The ' . str_replace('_', ' ', $attribute) . ' must be a valid URL or storage path.');
+            }
+        };
     }
 }

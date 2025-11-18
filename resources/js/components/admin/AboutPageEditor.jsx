@@ -153,8 +153,13 @@ const AboutPageEditor = () => {
         try {
             const formData = new FormData();
             
-            // Add all text fields
+            // Add all text fields (excluding image fields - they're handled separately)
             Object.keys(aboutPage).forEach(key => {
+                // Skip image fields - they're handled separately below
+                if (key === 'hero_image' || key === 'mission_image') {
+                    return;
+                }
+                
                 if (key === 'team_members' || key === 'values') {
                     formData.append(key, JSON.stringify(aboutPage[key]));
                 } else {
@@ -162,7 +167,8 @@ const AboutPageEditor = () => {
                 }
             });
 
-            // Add image files
+            // Add image files only if new files are selected
+            // Don't send existing image paths as strings - backend will preserve them
             if (heroImageFile) {
                 formData.append('hero_image', heroImageFile);
             }

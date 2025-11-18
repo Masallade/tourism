@@ -101,18 +101,44 @@ class AboutPageController extends Controller
             'cta_description' => 'nullable|string',
         ]);
 
+        $aboutPage = AboutPage::first();
+        
         $data = $request->except(['hero_image', 'mission_image', 'team_member_images']);
 
         // Handle hero image upload
         if ($request->hasFile('hero_image')) {
+            // Delete old image if exists
+            if ($aboutPage && $aboutPage->hero_image) {
+                $oldPath = storage_path('app/public/' . $aboutPage->hero_image);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
             $imagePath = $request->file('hero_image')->store('uploads/about_page', 'public');
             $data['hero_image'] = $imagePath;
+        } else {
+            // Preserve existing image if no new file is uploaded
+            if ($aboutPage && $aboutPage->hero_image) {
+                $data['hero_image'] = $aboutPage->hero_image;
+            }
         }
 
         // Handle mission image upload
         if ($request->hasFile('mission_image')) {
+            // Delete old image if exists
+            if ($aboutPage && $aboutPage->mission_image) {
+                $oldPath = storage_path('app/public/' . $aboutPage->mission_image);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
             $imagePath = $request->file('mission_image')->store('uploads/about_page', 'public');
             $data['mission_image'] = $imagePath;
+        } else {
+            // Preserve existing image if no new file is uploaded
+            if ($aboutPage && $aboutPage->mission_image) {
+                $data['mission_image'] = $aboutPage->mission_image;
+            }
         }
 
         // Handle team member image uploads
@@ -135,8 +161,6 @@ class AboutPageController extends Controller
             
             $data['team_members'] = $teamMembers;
         }
-
-        $aboutPage = AboutPage::first();
         
         if ($aboutPage) {
             $aboutPage->update($data);
