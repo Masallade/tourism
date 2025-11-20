@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ServiceProviderPasswordController;
 use Illuminate\Support\Facades\Storage;
 
@@ -89,6 +90,8 @@ Route::get('/services/{id}', function($id) {
         ->findOrFail($id);
     return $service;
 });
+
+Route::post('/services/{service}/bookings', [BookingController::class, 'store']);
 
 use Illuminate\Support\Facades\Hash;
 // Service Provider Login

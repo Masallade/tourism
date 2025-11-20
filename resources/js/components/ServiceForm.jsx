@@ -5,6 +5,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
+const capacityPresets = [
+  { id: '1-2', label: '1 to 2 persons', description: 'Ideal for couples or solo travelers', min: 1, max: 2 },
+  { id: '3-5', label: '3 to 5 persons', description: 'Perfect for small families', min: 3, max: 5 },
+  { id: '6-10', label: '6 to 10 persons', description: 'Great for groups and tours', min: 6, max: 10 },
+  { id: 'custom', label: 'Custom capacity', description: 'Define your own min/max values' },
+];
+
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -45,6 +52,23 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     if (existing.length) return existing;
     return themes?.length ? [Number(themes[0].id)] : [];
   });
+  const initialCapacity = (() => {
+    const min = service?.min_travelers ?? 1;
+    const max = service?.max_travelers ?? 10;
+    const matchedPreset = capacityPresets.find(
+      (preset) => typeof preset.min === 'number' && typeof preset.max === 'number' && preset.min === Number(min) && preset.max === Number(max)
+    );
+    return {
+      min: Number(min),
+      max: Number(max),
+      option: matchedPreset?.id || 'custom',
+    };
+  })();
+  const [capacityOption, setCapacityOption] = useState(initialCapacity.option);
+  const [minTravelers, setMinTravelers] = useState(initialCapacity.min);
+  const [maxTravelers, setMaxTravelers] = useState(initialCapacity.max);
+  const [customMinTravelers, setCustomMinTravelers] = useState(initialCapacity.min);
+  const [customMaxTravelers, setCustomMaxTravelers] = useState(initialCapacity.max);
 
   useEffect(() => {
     if (service) {
@@ -57,6 +81,19 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
       setSelectedThemeIds(themes?.length ? [Number(themes[0].id)] : []);
     }
   }, [service, serviceTypes, themes]);
+
+  useEffect(() => {
+    const nextMin = service?.min_travelers ?? 1;
+    const nextMax = service?.max_travelers ?? 10;
+    const matchedPreset = capacityPresets.find(
+      (preset) => typeof preset.min === 'number' && typeof preset.max === 'number' && preset.min === Number(nextMin) && preset.max === Number(nextMax)
+    );
+    setCapacityOption(matchedPreset?.id || 'custom');
+    setMinTravelers(Number(nextMin));
+    setMaxTravelers(Number(nextMax));
+    setCustomMinTravelers(Number(nextMin));
+    setCustomMaxTravelers(Number(nextMax));
+  }, [service]);
 
   useEffect(() => {
     if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
@@ -118,6 +155,40 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     });
   };
 
+  const handleCapacitySelect = (optionId) => {
+    setCapacityOption(optionId);
+    const selectedPreset = capacityPresets.find((preset) => preset.id === optionId);
+    if (selectedPreset && typeof selectedPreset.min === 'number' && typeof selectedPreset.max === 'number') {
+      setMinTravelers(selectedPreset.min);
+      setMaxTravelers(selectedPreset.max);
+      setCustomMinTravelers(selectedPreset.min);
+      setCustomMaxTravelers(selectedPreset.max);
+    } else {
+      setMinTravelers(customMinTravelers);
+      setMaxTravelers(customMaxTravelers);
+    }
+  };
+
+  const handleCustomMinChange = (value) => {
+    const numericValue = Math.max(1, Number(value) || 1);
+    setCustomMinTravelers(numericValue);
+    if (capacityOption === 'custom') {
+      setMinTravelers(numericValue);
+    }
+  };
+
+  const handleCustomMaxChange = (value) => {
+    const numericValue = Math.max(1, Number(value) || 1);
+    setCustomMaxTravelers(numericValue);
+    if (capacityOption === 'custom') {
+      setMaxTravelers(numericValue);
+    }
+  };
+
+  const capacityRangeError = minTravelers > maxTravelers
+    ? 'Minimum number of travelers cannot be greater than the maximum number of travelers.'
+    : '';
+
   // Handle image upload and preview for all images
   const handleImageChange = (e, imageNum) => {
     const file = e.target.files[0];
@@ -154,6 +225,10 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
       setError('Please select at least one theme.');
       return;
     }
+    if (capacityRangeError) {
+      setError(capacityRangeError);
+      return;
+    }
 
     const formData = new FormData();
     formData.append('name', name);
@@ -168,6 +243,8 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     formData.append('provider_id', provider?.id);
     formData.append('lat', lat);
     formData.append('lng', lng);
+    formData.append('min_travelers', minTravelers || 1);
+    formData.append('max_travelers', maxTravelers || 1);
     selectedServiceTypeIds.forEach(id => formData.append('service_type_ids[]', id));
     selectedThemeIds.forEach(id => formData.append('theme_ids[]', id));
     // Append images if they exist
@@ -391,6 +468,73 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
         </div>
       </div>
       
+    {/* Traveler Capacity */}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <label className="text-gray-700 font-medium">Traveler Capacity</label>
+        <span className="text-sm text-gray-500">
+          Current range: {minTravelers} - {maxTravelers} travelers
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {capacityPresets.map((preset) => {
+          const isActive = capacityOption === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-green-400 ${
+                isActive ? 'border-green-500 bg-green-50 shadow-sm' : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
+              }`}
+              onClick={() => handleCapacitySelect(preset.id)}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-gray-900">{preset.label}</span>
+                {isActive && (
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              {preset.description && (
+                <p className="text-sm text-gray-600 mt-1">{preset.description}</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {capacityOption === 'custom' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Travelers</label>
+            <input
+              type="number"
+              min="1"
+              className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              value={customMinTravelers}
+              onChange={(e) => handleCustomMinChange(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Maximum Travelers</label>
+            <input
+              type="number"
+              min="1"
+              className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              value={customMaxTravelers}
+              onChange={(e) => handleCustomMaxChange(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+      <p className="text-sm text-gray-500">
+        This determines how many travelers can book this service in a single reservation. Booking forms will enforce these limits automatically.
+      </p>
+      {capacityRangeError && (
+        <p className="text-sm text-red-500">{capacityRangeError}</p>
+      )}
+    </div>
+    
       {/* Location Picker */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Service Location (Pick on map)</label>

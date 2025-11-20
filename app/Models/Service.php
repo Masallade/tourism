@@ -21,6 +21,8 @@ class Service extends Model
         'image_3',
         'min_age',
         'max_age',
+        'min_travelers',
+        'max_travelers',
         'duration',
         'overview',
         'details',
@@ -31,6 +33,8 @@ class Service extends Model
     protected $casts = [
         'lat' => 'decimal:7',
         'lng' => 'decimal:7',
+        'min_travelers' => 'integer',
+        'max_travelers' => 'integer',
     ];
 
     public function provider()
@@ -56,5 +60,10 @@ class Service extends Model
     public function themes()
     {
         return $this->belongsToMany(Theme::class, 'service_theme')->withTimestamps();
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 }

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import StaticMap from './StaticMap';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 
 const ServiceDetail = () => {
   const { serviceId } = useParams();
+  const navigate = useNavigate();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,22 +12,6 @@ const ServiceDetail = () => {
   
   // Images for carousel
   const [images, setImages] = useState([]);
-  // Modal state
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  // Stepper state
-  const [bookingStep, setBookingStep] = useState(0); // 0: Contact, 1: Location, 2: Payment
-  // Booking form state
-  const [bookingForm, setBookingForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    location: '',
-    card: '',
-    expiry: '',
-    cvv: '',
-  });
-  // Animation state
-  const [stepAnim, setStepAnim] = useState('');
   
   useEffect(() => {
     const fetchServiceDetails = async () => {
@@ -319,104 +304,12 @@ const ServiceDetail = () => {
               <div className="p-6">
                 <button
                   className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md font-medium hover:from-green-600 hover:to-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
-                  onClick={() => setShowBookingModal(true)}
+                  onClick={() => navigate(`/booking/${serviceId}`)}
                 >
                   Book Now
                 </button>
               </div>
             </div>
-            {/* Booking Modal - Multi-step/Stepper UI */}
-            {showBookingModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 animate-fadeIn">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-modalPop">
-                  <button
-                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl font-bold focus:outline-none"
-                    onClick={() => { setShowBookingModal(false); setBookingStep(0); setStepAnim(''); }}
-                    aria-label="Close"
-                  >
-                    &times;
-                  </button>
-                  <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 tracking-tight">Book This Service</h2>
-                  {/* Progress Stepper - pill/circular modern look */}
-                  <div className="flex items-center justify-center mb-8">
-                    {["Contact", "Location", "Payment"].map((label, idx) => (
-                      <React.Fragment key={label}>
-                        <div className={`flex flex-col items-center transition-all duration-300 ${idx === bookingStep ? 'text-green-600 scale-110' : 'text-gray-400'}`}>
-                          <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 font-bold text-lg shadow-sm transition-all duration-300 ${idx === bookingStep ? 'border-green-600 bg-gradient-to-br from-green-100 to-blue-100' : 'border-gray-300 bg-white'}`}>{idx+1}</div>
-                          <span className="text-xs mt-1 font-medium tracking-wide">{label}</span>
-                        </div>
-                        {idx < 2 && <div className="w-10 h-1 rounded-full bg-gray-200 mx-2 transition-all duration-300" />}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <form className="space-y-8">
-                    {/* Step 1: Contact Details */}
-                    <div className={`transition-all duration-500 ${bookingStep === 0 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'} ${stepAnim === 'left' ? 'animate-slideLeft' : stepAnim === 'right' ? 'animate-slideRight' : ''}`}>
-                      {bookingStep === 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">Contact Details</h3>
-                          <div className="grid grid-cols-1 gap-4">
-                            <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Full Name" value={bookingForm.name} onChange={e => setBookingForm(f => ({...f, name: e.target.value}))} />
-                            <input type="tel" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Phone Number" value={bookingForm.phone} onChange={e => setBookingForm(f => ({...f, phone: e.target.value}))} />
-                            <input type="email" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Email" value={bookingForm.email} onChange={e => setBookingForm(f => ({...f, email: e.target.value}))} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {/* Step 2: Pick Up Location */}
-                    <div className={`transition-all duration-500 ${bookingStep === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'} ${stepAnim === 'left' ? 'animate-slideLeft' : stepAnim === 'right' ? 'animate-slideRight' : ''}`}>
-                      {bookingStep === 1 && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">Pick Up Location</h3>
-                          <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder="Enter pick up location" value={bookingForm.location} onChange={e => setBookingForm(f => ({...f, location: e.target.value}))} />
-                        </div>
-                      )}
-                    </div>
-                    {/* Step 3: Payment Details */}
-                    <div className={`transition-all duration-500 ${bookingStep === 2 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'} ${stepAnim === 'left' ? 'animate-slideLeft' : stepAnim === 'right' ? 'animate-slideRight' : ''}`}>
-                      {bookingStep === 2 && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">Payment Details</h3>
-                          <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder="Card Number" value={bookingForm.card} onChange={e => setBookingForm(f => ({...f, card: e.target.value}))} />
-                          <div className="flex gap-4 mt-2">
-                            <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder="MM/YY" value={bookingForm.expiry} onChange={e => setBookingForm(f => ({...f, expiry: e.target.value}))} />
-                            <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder="CVV" value={bookingForm.cvv} onChange={e => setBookingForm(f => ({...f, cvv: e.target.value}))} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {/* Stepper Navigation */}
-                    <div className="flex justify-between mt-8">
-                      <button
-                        type="button"
-                        className={`px-6 py-2 rounded-full bg-gray-200 text-gray-700 font-medium shadow-sm transition-all duration-200 ${bookingStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
-                        onClick={() => { setStepAnim('right'); setTimeout(() => { setBookingStep((s) => Math.max(0, s - 1)); setStepAnim(''); }, 200); }}
-                        disabled={bookingStep === 0}
-                      >
-                        Back
-                      </button>
-                      {bookingStep < 2 ? (
-                        <button
-                          type="button"
-                          className="px-6 py-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium shadow-md hover:from-green-600 hover:to-blue-600 transition-all duration-200"
-                          onClick={() => { setStepAnim('left'); setTimeout(() => { setBookingStep((s) => Math.min(2, s + 1)); setStepAnim(''); }, 200); }}
-                        >
-                          Next
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="px-6 py-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium opacity-60 cursor-not-allowed shadow-md"
-                          disabled
-                        >
-                          Confirm Booking (Coming Soon)
-                        </button>
-                      )}
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

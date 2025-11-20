@@ -69,4 +69,9 @@ class ServiceProvider extends Model
     {
         return $this->belongsToMany(Theme::class, 'provider_theme');
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'provider_id');
+    }
 } 

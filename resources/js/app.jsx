@@ -30,6 +30,7 @@ import './bootstrap';
 
 import ServiceProviderDashboard from './components/ServiceProviderDashboard';
 import ServiceProviderLogin from './components/ServiceProviderLogin';
+import BookingPage from './components/BookingPage';
 
 function App() {
   const STORAGE_KEY = 'serviceProvider';
@@ -160,6 +161,13 @@ function App() {
         <Route path="/service/:serviceId" element={
           <Layout>
             <ServiceDetail />
+          </Layout>
+        } />
+        
+        {/* Booking page */}
+        <Route path="/booking/:serviceId" element={
+          <Layout>
+            <BookingPage />
           </Layout>
         } />
         
