@@ -70,10 +70,10 @@ class AboutPageController extends Controller
         $validated = $request->validate([
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string|max:500',
-            'hero_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'hero_image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'mission_title' => 'nullable|string|max:255',
             'mission_description' => 'nullable|string',
-            'mission_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'mission_image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'mission_stat_number' => 'nullable|string|max:50',
             'mission_stat_label' => 'nullable|string|max:100',
             'values_title' => 'nullable|string|max:255',
@@ -96,7 +96,7 @@ class AboutPageController extends Controller
             'team_members.*.role' => 'nullable|string|max:255',
             'team_members.*.image' => 'nullable|string|max:500', // Can be URL or file path
             'team_member_images' => 'nullable|array',
-            'team_member_images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'team_member_images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'cta_title' => 'nullable|string|max:255',
             'cta_description' => 'nullable|string',
         ]);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
+import { countryCodes } from '../../utils/countryCodes';
 
 const AppSettings = () => {
     const [loading, setLoading] = useState(true);
@@ -11,6 +12,7 @@ const AppSettings = () => {
         company_description: '',
         address: '',
         phone: '',
+        country_code: '',
         email: '',
         twitter_url: '',
         instagram_url: '',
@@ -33,6 +35,7 @@ const AppSettings = () => {
                     company_description: response.data.company_description || '',
                     address: response.data.address || '',
                     phone: response.data.phone || '',
+                    country_code: response.data.country_code || '',
                     email: response.data.email || '',
                     twitter_url: response.data.twitter_url || '',
                     instagram_url: response.data.instagram_url || '',
@@ -170,15 +173,31 @@ const AppSettings = () => {
                             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                                 Phone
                             </label>
-                            <input
-                                type="text"
-                                id="phone"
-                                name="phone"
-                                value={settings.phone}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                placeholder="+1 (555) 123-4567"
-                            />
+                            <div className="flex gap-2">
+                                <select
+                                    id="country_code"
+                                    name="country_code"
+                                    value={settings.country_code || ''}
+                                    onChange={handleChange}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                >
+                                    <option value="">Code</option>
+                                    {countryCodes.map((cc) => (
+                                        <option key={cc.code} value={cc.code}>
+                                            {cc.code}
+                                        </option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="text"
+                                    id="phone"
+                                    name="phone"
+                                    value={settings.phone}
+                                    onChange={handleChange}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="(555) 123-4567"
+                                />
+                            </div>
                         </div>
 
                         <div className="md:col-span-2">

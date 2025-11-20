@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import auth from '../utils/auth';
+import { countryCodes } from '../utils/countryCodes';
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -10,6 +11,7 @@ export default function UserProfile() {
     name: '',
     email: '',
     phone: '',
+    country_code: '',
     bio: ''
   });
   const [message, setMessage] = useState('');
@@ -25,6 +27,7 @@ export default function UserProfile() {
             name: userData?.name || '',
             email: userData?.email || '',
             phone: userData?.phone || '',
+            country_code: userData?.country_code || '',
             bio: userData?.bio || ''
           });
         } else {
@@ -192,14 +195,30 @@ export default function UserProfile() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number
                 </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100"
-                />
+                <div className="flex gap-2">
+                  <select
+                    name="country_code"
+                    value={formData.country_code || ''}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">Code</option>
+                    {countryCodes.map((cc) => (
+                      <option key={cc.code} value={cc.code}>
+                        {cc.code}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100"
+                  />
+                </div>
               </div>
 
               <div>
@@ -247,6 +266,7 @@ export default function UserProfile() {
                       name: user?.name || '',
                       email: user?.email || '',
                       phone: user?.phone || '',
+                      country_code: user?.country_code || '',
                       bio: user?.bio || ''
                     });
                   }}

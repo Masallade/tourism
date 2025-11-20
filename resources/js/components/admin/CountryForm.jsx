@@ -62,9 +62,9 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             setErrors(prev => ({ ...prev, image: 'Only JPG, PNG, WEBP images allowed.' }));
             return;
         }
-        // Validate size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB.' }));
+        // Validate size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB.' }));
             return;
         }
         setImageFile(file);
@@ -92,8 +92,8 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             if (!validTypes.includes(imageFile.type)) {
                 newErrors.image = 'Only JPG, PNG, WEBP images allowed.';
             }
-            if (imageFile.size > 2 * 1024 * 1024) {
-                newErrors.image = 'Image size must be less than 2MB.';
+            if (imageFile.size > 5 * 1024 * 1024) {
+                newErrors.image = 'Image size must be less than 5MB.';
             }
         }
         setErrors(newErrors);

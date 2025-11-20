@@ -523,7 +523,10 @@ const ServiceProvidersList = () => {
                                                         <div>{provider.email}</div>
                                                     )}
                                                     {provider.phone && (
-                                                        <div>{provider.phone}</div>
+                                                        <div>
+                                                          {provider.country_code ? `${provider.country_code} ` : ''}
+                                                          {provider.phone}
+                                                        </div>
                                                     )}
                                                     {provider.website && (
                                                         <div className="truncate max-w-xs">

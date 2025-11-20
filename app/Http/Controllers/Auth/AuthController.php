@@ -128,6 +128,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'country_code' => $user->country_code,
                     'bio' => $user->bio,
                     'role' => $user->role ?? 'user',
                     'email_verified_at' => $user->email_verified_at,
@@ -205,6 +206,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            'country_code' => 'nullable|string|max:10',
             'bio' => 'nullable|string|max:1000',
         ]);
 
@@ -220,6 +222,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'country_code' => $request->country_code,
             'bio' => $request->bio,
         ]);
 
@@ -231,6 +234,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
+                'country_code' => $user->country_code,
                 'bio' => $user->bio,
                 'role' => $user->role ?? 'user',
                 'email_verified_at' => $user->email_verified_at,

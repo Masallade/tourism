@@ -305,12 +305,6 @@ export default function Header({ onProviderLogin, provider }) {
             >
               About
             </Link>
-            <Link 
-              to="/contact" 
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
-            >
-              Contact
-            </Link>
             </div>
 
             {/* AI Assistance Button */}
@@ -444,7 +438,6 @@ export default function Header({ onProviderLogin, provider }) {
               <Link to="/trips" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Trips</Link>
               <a href="#reviews" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Reviews</a>
               <Link to="/about" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">About</Link>
-              <Link to="/contact" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Contact</Link>
               
               {/* AI Assistance */}
               <Link to="/ai-assistance" className="flex items-center bg-gradient-to-r from-green-400 to-blue-400 text-white px-3 py-2 rounded-md text-base font-bold shadow-md">

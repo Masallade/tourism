@@ -283,7 +283,7 @@ const AboutPageEditor = () => {
                         <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <p className="text-sm text-blue-800 font-medium mb-1">📐 Recommended Size:</p>
                             <p className="text-xs text-blue-700">1920 × 600 pixels (16:5 aspect ratio)</p>
-                            <p className="text-xs text-blue-600 mt-1">Max file size: 2MB | Formats: JPG, PNG</p>
+                            <p className="text-xs text-blue-600 mt-1">Max file size: 5MB | Formats: JPG, PNG</p>
                         </div>
                         <input
                             type="file"
@@ -364,7 +364,7 @@ const AboutPageEditor = () => {
                         <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <p className="text-sm text-blue-800 font-medium mb-1">📐 Recommended Size:</p>
                             <p className="text-xs text-blue-700">800 × 600 pixels (4:3 aspect ratio)</p>
-                            <p className="text-xs text-blue-600 mt-1">Max file size: 2MB | Formats: JPG, PNG</p>
+                            <p className="text-xs text-blue-600 mt-1">Max file size: 5MB | Formats: JPG, PNG</p>
                         </div>
                         <input
                             type="file"
@@ -649,7 +649,7 @@ const AboutPageEditor = () => {
                                         </label>
                                         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded">
                                             <p className="text-xs text-blue-700">📐 Recommended: 400 × 400px (Square)</p>
-                                            <p className="text-xs text-blue-600">Max: 2MB | JPG, PNG</p>
+                                            <p className="text-xs text-blue-600">Max: 5MB | JPG, PNG</p>
                                         </div>
                                         <input
                                             type="file"

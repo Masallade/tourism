@@ -35,9 +35,17 @@ Route::get('/country/{countryId}/services', function ($countryId) {
 
 // Get all services for a specific theme with service type, country, and provider details
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    return \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
-        ->where('theme_id', $themeId)
+    // Get services that have this theme either through theme_id or through the many-to-many relationship
+    $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
+        ->where(function($query) use ($themeId) {
+            $query->where('theme_id', $themeId)
+                  ->orWhereHas('themes', function($q) use ($themeId) {
+                      $q->where('themes.id', $themeId);
+                  });
+        })
         ->get();
+    
+    return $services;
 });
 
 // Get all service types with their counts

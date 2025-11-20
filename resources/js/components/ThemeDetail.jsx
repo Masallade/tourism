@@ -29,8 +29,9 @@ const ThemeDetail = () => {
         const themeData = await themeRes.json();
         setTheme(themeData);
 
-        // Fetch services for this theme
-        const servicesRes = await fetch(`/api/theme/${id}/services`);
+        // Fetch services for this theme using the numeric theme ID
+        const themeId = themeData.id;
+        const servicesRes = await fetch(`/api/theme/${themeId}/services`);
         if (!servicesRes.ok) {
           throw new Error('Failed to fetch services');
         }

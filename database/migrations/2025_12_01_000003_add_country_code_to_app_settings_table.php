@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('phone')->nullable()->after('email');
-            $table->text('bio')->nullable()->after('phone');
+        Schema::table('app_settings', function (Blueprint $table) {
+            $table->string('country_code', 10)->nullable()->after('phone');
         });
     }
 
@@ -22,41 +21,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['phone', 'bio']);
+        Schema::table('app_settings', function (Blueprint $table) {
+            $table->dropColumn('country_code');
         });
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

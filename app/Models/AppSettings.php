@@ -16,6 +16,7 @@ class AppSettings extends Model
         'company_description',
         'address',
         'phone',
+        'country_code',
         'email',
         'twitter_url',
         'instagram_url',

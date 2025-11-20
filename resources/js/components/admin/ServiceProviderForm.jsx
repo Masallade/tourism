@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { countryCodes } from '../../utils/countryCodes';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -101,6 +102,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         website: '',
         email: '',
         phone: '',
+        country_code: '',
         is_approved: false,
         themes: [],
         lat: '',
@@ -623,6 +625,12 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                     return;
                 }
                 
+                // Handle country_code separately if needed
+                if (key === 'country_code' && value) {
+                    form.append('country_code', String(value));
+                    return;
+                }
+                
                 // Append other optional fields
                 if (value !== null && value !== undefined && value !== '') {
                     form.append(key, String(value));
@@ -902,7 +910,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             onChange={handleInputChange}
                                             className="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gradient-to-r file:from-green-500 file:to-emerald-600 file:text-white hover:file:from-green-600 hover:file:to-emerald-700 file:cursor-pointer file:transition-all file:shadow-lg file:hover:shadow-xl cursor-pointer"
                                         />
-                                        <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 2MB</p>
+                                        <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 5MB</p>
                                     </div>
                                 )}
                                 
@@ -982,7 +990,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             Click to browse or drag & drop files here
                                         </p>
                                         <p className="text-sm text-gray-600 mb-4">
-                                            Select multiple files at once (PDF, JPG, PNG) • Max 4MB per file
+                                            Select multiple files at once (PDF, JPG, PNG) • Max 10MB per file
                                         </p>
                                         <button
                                             type="button"
@@ -1283,21 +1291,42 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Phone
                             </label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={e => {
-                                    const val = e.target.value.replace(/\D/g, '');
-                                    setFormData(prev => ({ ...prev, phone: val }));
-                                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                                }}
-                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${errors.phone ? 'border-red-400' : 'border-blue-200'}`}
-                                placeholder="Enter phone number (digits only)"
-                                maxLength={15}
-                            />
+                            <div className="flex gap-2">
+                                <select
+                                    name="country_code"
+                                    value={formData.country_code || ''}
+                                    onChange={e => {
+                                        setFormData(prev => ({ ...prev, country_code: e.target.value }));
+                                        if (errors.country_code) setErrors(prev => ({ ...prev, country_code: '' }));
+                                    }}
+                                    className={`px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 font-medium shadow-sm transition ${errors.country_code ? 'border-red-400' : 'border-blue-200'}`}
+                                >
+                                    <option value="">Code</option>
+                                    {countryCodes.map((cc) => (
+                                        <option key={cc.code} value={cc.code}>
+                                            {cc.code}
+                                        </option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        setFormData(prev => ({ ...prev, phone: val }));
+                                        if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                                    }}
+                                    className={`flex-1 px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder:text-blue-400 font-medium shadow-sm transition ${errors.phone ? 'border-red-400' : 'border-blue-200'}`}
+                                    placeholder="Enter phone number (digits only)"
+                                    maxLength={15}
+                                />
+                            </div>
                             {errors.phone && (
                                 <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                            )}
+                            {errors.country_code && (
+                                <p className="text-red-500 text-sm mt-1">{errors.country_code}</p>
                             )}
                         </div>
 

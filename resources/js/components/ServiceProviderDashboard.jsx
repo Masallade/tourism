@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import ServiceForm from './ServiceForm';
 import StaticMap from './StaticMap';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
+import { countryCodes } from '../utils/countryCodes';
 
 // Fix Leaflet default icon issue
 if (typeof window !== 'undefined') {
@@ -179,6 +180,7 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
         name: provider.name || '',
         email: provider.email || '',
         phone: provider.phone || '',
+        country_code: provider.country_code || '',
         website: provider.website || '',
         description: provider.description || '',
         country_id: provider.country_id || '',
@@ -320,6 +322,7 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
       form.append('name', editFormData.name);
       form.append('email', editFormData.email || '');
       form.append('phone', editFormData.phone || '');
+      form.append('country_code', editFormData.country_code || '');
       form.append('website', editFormData.website || '');
       form.append('description', editFormData.description || '');
       form.append('country_id', editFormData.country_id);
@@ -1088,7 +1091,7 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
                         }}
                         className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-500 file:text-white hover:file:bg-green-600 transition"
                       />
-                      <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 2MB</p>
+                      <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 5MB</p>
                     </div>
                   </div>
                 </div>
@@ -1118,13 +1121,28 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={editFormData.phone || ''}
-                      onChange={handleEditFormChange}
-                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        name="country_code"
+                        value={editFormData.country_code || ''}
+                        onChange={handleEditFormChange}
+                        className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                      >
+                        <option value="">Code</option>
+                        {countryCodes.map((cc) => (
+                          <option key={cc.code} value={cc.code}>
+                            {cc.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={editFormData.phone || ''}
+                        onChange={handleEditFormChange}
+                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Website</label>
@@ -1324,7 +1342,10 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <label className="text-sm font-semibold text-green-700 block mb-1">Phone</label>
-                    <p className="text-gray-800">{provider?.phone || 'N/A'}</p>
+                    <p className="text-gray-800">
+                      {provider?.country_code ? `${provider.country_code} ` : ''}
+                      {provider?.phone || 'N/A'}
+                    </p>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <label className="text-sm font-semibold text-blue-700 block mb-1">Website</label>

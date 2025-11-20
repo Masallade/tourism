@@ -29,9 +29,17 @@ Route::get('/country/{countryId}/services', function ($countryId) {
 
 // Get all services for a theme
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    return \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
-        ->where('theme_id', $themeId)
+    // Get services that have this theme either through theme_id or through the many-to-many relationship
+    $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
+        ->where(function($query) use ($themeId) {
+            $query->where('theme_id', $themeId)
+                  ->orWhereHas('themes', function($q) use ($themeId) {
+                      $q->where('themes.id', $themeId);
+                  });
+        })
         ->get();
+    
+    return $services;
 });
 
 // Get a single country by ID with provider count
@@ -240,11 +248,12 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
             'website' => 'nullable|url|unique:service_providers,website',
             'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email'],
             'phone' => 'nullable|string|unique:service_providers,phone',
+            'country_code' => 'nullable|string|max:10',
             'is_approved' => 'boolean',
             'themes' => 'array',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'documents' => 'nullable|array',
-            'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+            'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:10240',
         ], [
             'email.unique' => 'This email is already registered.',
             'phone.unique' => 'This phone number is already registered.',
@@ -419,10 +428,11 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
         'website' => 'nullable|url|unique:service_providers,website,' . $serviceProvider->id,
         'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email,' . $serviceProvider->id],
         'phone' => 'nullable|string|unique:service_providers,phone,' . $serviceProvider->id,
+        'country_code' => 'nullable|string|max:10',
         'is_approved' => 'boolean',
         'themes' => 'array',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:10240',
     ], [
         'email.unique' => 'This email is already registered.',
         'phone.unique' => 'This phone number is already registered.',
@@ -505,10 +515,11 @@ Route::post('/service-providers/{serviceProvider}/update', function (\App\Models
         'website' => 'nullable|url|unique:service_providers,website,' . $serviceProvider->id,
         'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email,' . $serviceProvider->id],
         'phone' => 'nullable|string|unique:service_providers,phone,' . $serviceProvider->id,
+        'country_code' => 'nullable|string|max:10',
         'is_approved' => 'boolean',
         'themes' => 'array',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:4096',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+        'documents.*' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:10240',
         'lat' => 'nullable|numeric|between:-90,90',
         'lng' => 'nullable|numeric|between:-180,180',
     ], [

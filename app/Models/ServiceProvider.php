@@ -30,6 +30,7 @@ class ServiceProvider extends Model
         'website',
         'email',
         'phone',
+        'country_code',
         'is_approved',
         'image',
         'documents',
