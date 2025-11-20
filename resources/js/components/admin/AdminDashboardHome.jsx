@@ -566,7 +566,7 @@ const AdminDashboardHome = () => {
                                         {userGrowthData.length > 0 && (() => {
                                             const maxNewUsers = Math.max(...userGrowthData.map(d => d.newUsers), 1);
                                             const maxCumulative = Math.max(...userGrowthData.map(d => d.cumulativeUsers), 1);
-                                            const maxValue = Math.max(maxNewUsers, maxCumulative);
+                                        const maxValue = Math.max(maxNewUsers, maxCumulative);
                                             const chartData = userGrowthData.slice(-30);
                                             const pointSpacing = 1000 / (chartData.length - 1 || 1);
                                             
