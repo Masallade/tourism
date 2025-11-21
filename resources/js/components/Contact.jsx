@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Contact = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,10 +40,10 @@ const Contact = () => {
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
-            Get in Touch
+            {t('get_in_touch')}
           </h1>
           <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto">
-            We'd love to hear from you. Let's plan your next eco-adventure together!
+            {t('contact_subtitle')}
           </p>
         </div>
       </div>
@@ -51,18 +53,18 @@ const Contact = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Send us a Message</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">{t('send_message')}</h2>
             
             {success && (
               <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                <p className="font-medium">✓ Message sent successfully! We'll get back to you soon.</p>
+                <p className="font-medium">✓ {t('message_sent')}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
+                  {t('full_name')} *
                 </label>
                 <input
                   type="text"
@@ -78,7 +80,7 @@ const Contact = () => {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
+                  {t('email_address')} *
                 </label>
                 <input
                   type="email"
@@ -94,7 +96,7 @@ const Contact = () => {
 
               <div>
                 <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                  Subject *
+                  {t('subject')} *
                 </label>
                 <input
                   type="text"
@@ -110,7 +112,7 @@ const Contact = () => {
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message *
+                  {t('message')} *
                 </label>
                 <textarea
                   id="message"
@@ -129,7 +131,7 @@ const Contact = () => {
                 disabled={loading}
                 className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg font-bold text-lg hover:from-green-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Send Message'}
+                {loading ? t('sending') : t('send_message_btn')}
               </button>
             </form>
           </div>
@@ -138,7 +140,7 @@ const Contact = () => {
           <div className="space-y-8">
             {/* Contact Details */}
             <div className="bg-gradient-to-br from-green-500 to-blue-500 text-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-3xl font-bold mb-6">Contact Information</h2>
+              <h2 className="text-3xl font-bold mb-6">{t('contact_information')}</h2>
               <div className="space-y-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -150,7 +152,7 @@ const Contact = () => {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold mb-1">Visit Us</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t('visit_us')}</h3>
                     <p className="text-green-100">123 Eco Street, Green City</p>
                     <p className="text-green-100">Sustainable District, EC 12345</p>
                   </div>
@@ -165,7 +167,7 @@ const Contact = () => {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold mb-1">Email Us</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t('email_us')}</h3>
                     <p className="text-green-100">info@unisontour.com</p>
                     <p className="text-green-100">support@unisontour.com</p>
                   </div>
@@ -180,7 +182,7 @@ const Contact = () => {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold mb-1">Call Us</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t('call_us')}</h3>
                     <p className="text-green-100">+1 (555) 123-4567</p>
                     <p className="text-green-100">+1 (555) 987-6543</p>
                   </div>
@@ -195,7 +197,7 @@ const Contact = () => {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold mb-1">Working Hours</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t('working_hours')}</h3>
                     <p className="text-green-100">Mon - Fri: 9:00 AM - 6:00 PM</p>
                     <p className="text-green-100">Sat - Sun: 10:00 AM - 4:00 PM</p>
                   </div>
@@ -205,7 +207,7 @@ const Contact = () => {
 
             {/* Social Media */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Follow Us</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('follow_us')}</h2>
               <div className="flex space-x-4">
                 <a href="#" className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg flex items-center justify-center hover:shadow-lg transition">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -232,25 +234,25 @@ const Contact = () => {
 
             {/* Quick Links */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Links</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('quick_links')}</h2>
               <div className="space-y-3">
                 <a href="/" className="flex items-center text-gray-600 hover:text-green-600 transition">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Home
+                  {t('home')}
                 </a>
                 <a href="/about" className="flex items-center text-gray-600 hover:text-green-600 transition">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  About Us
+                  {t('about_us')}
                 </a>
                 <a href="/ai-assistance" className="flex items-center text-gray-600 hover:text-green-600 transition">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  AI Assistant
+                  {t('ai_assistance')}
                 </a>
               </div>
             </div>

@@ -105,10 +105,33 @@ const ThemesList = () => {
                                 <tr key={theme.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                            <div className="w-10 h-10 bg-green-600 bg-opacity-10 rounded-full flex items-center justify-center mr-3">
-                                                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7z" clipRule="evenodd"></path>
-                                                </svg>
+                                            <div className="w-12 h-12 rounded-lg mr-3 flex-shrink-0 relative">
+                                                {theme.image_url ? (
+                                                    <>
+                                                        <img 
+                                                            src={theme.image_url} 
+                                                            alt={theme.name}
+                                                            className="w-12 h-12 rounded-lg object-cover"
+                                                            onError={(e) => {
+                                                                e.target.style.display = 'none';
+                                                                if (e.target.nextSibling) {
+                                                                    e.target.nextSibling.style.display = 'flex';
+                                                                }
+                                                            }}
+                                                        />
+                                                        <div className="w-12 h-12 bg-green-600 bg-opacity-10 rounded-lg items-center justify-center hidden">
+                                                            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7z" clipRule="evenodd"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-12 h-12 bg-green-600 bg-opacity-10 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7z" clipRule="evenodd"></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900">{theme.name}</div>

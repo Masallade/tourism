@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Values Slider Component
 const ValuesSlider = ({ title, values }) => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesToShow, setSlidesToShow] = useState(3);
   const sliderRef = useRef(null);
@@ -85,7 +87,7 @@ const ValuesSlider = ({ title, values }) => {
     <div className="bg-gradient-to-r from-green-100 to-blue-100 py-16 my-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
-          {title || 'Our Core Values'}
+          {title || t('our_core_values')}
         </h2>
 
         {/* Slider Container */}
@@ -395,6 +397,7 @@ const TeamSlider = ({ title, description, members, getImageUrl }) => {
 };
 
 const About = () => {
+  const { t } = useTranslation();
   const [aboutPage, setAboutPage] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -519,7 +522,7 @@ sustainable tourism initiatives around the globe.`,
           {/* Left Section - Text Content */}
           <div>
             <h2 className="text-4xl font-bold text-gray-800 mb-6">
-              {data.mission_title || 'Our Mission'}
+              {data.mission_title || t('our_mission')}
             </h2>
             {data.mission_description ? (
               <div className="text-lg text-gray-600 leading-relaxed">
@@ -532,16 +535,13 @@ sustainable tourism initiatives around the globe.`,
             ) : (
               <>
                 <p className="text-lg text-gray-600 mb-4 leading-relaxed">
-                  At Unison Tour, we believe that exploring the world shouldn't come at the expense of our planet. 
-                  Our mission is to make sustainable travel accessible, enjoyable, and impactful for everyone.
+                  {t('mission_default')}
                 </p>
                 <p className="text-lg text-gray-600 mb-4 leading-relaxed">
-                  We partner with eco-conscious service providers worldwide to offer authentic experiences that 
-                  respect local communities, preserve natural habitats, and minimize environmental impact.
+                  {t('mission_paragraph_2')}
                 </p>
                 <p className="text-lg text-gray-600 leading-relaxed">
-                  Every journey booked through Unison Tour contributes to conservation efforts and supports 
-                  sustainable tourism initiatives around the globe.
+                  {t('mission_paragraph_3')}
                 </p>
               </>
             )}
@@ -636,7 +636,7 @@ sustainable tourism initiatives around the globe.`,
 
               {/* Heading */}
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-green-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                {data.cta_title || 'Ready to Explore the World?'}
+                {data.cta_title || t('ready_to_explore')}
               </h2>
               
               {/* Description */}

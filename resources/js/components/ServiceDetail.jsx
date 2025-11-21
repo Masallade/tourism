@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import StaticMap from './StaticMap';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
 
 const ServiceDetail = () => {
+  const { t } = useTranslation();
   const { serviceId } = useParams();
   const navigate = useNavigate();
   const [service, setService] = useState(null);
@@ -97,7 +99,7 @@ const ServiceDetail = () => {
             </div>
           </div>
           <Link to="/" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-            &larr; Back to Home
+                &larr; {t('back_to_home')}
           </Link>
         </div>
       </div>
@@ -113,7 +115,7 @@ const ServiceDetail = () => {
             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back
+            {t('back')}
           </Link>
         </div>
         
@@ -183,7 +185,7 @@ const ServiceDetail = () => {
               <div className="border-b">
                 <nav className="flex -mb-px">
                   <button className="text-green-600 border-green-600 py-4 px-6 border-b-2 font-medium text-sm">
-                    About this service
+                    {t('about_service')}
                   </button>
                 </nav>
               </div>
@@ -191,7 +193,7 @@ const ServiceDetail = () => {
               {/* Overview Section */}
               {service.overview && (
                 <div className="p-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-3">Overview</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-3">{t('overview')}</h2>
                   <p className="text-gray-700 whitespace-pre-line">{service.overview}</p>
                 </div>
               )}
@@ -199,7 +201,7 @@ const ServiceDetail = () => {
               {/* Description Section */}
               {service.description && (
                 <div className="p-6 border-t">
-                  <h2 className="text-lg font-medium text-gray-900 mb-3">Description</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-3">{t('description')}</h2>
                   <p className="text-gray-700 whitespace-pre-line">{service.description}</p>
                 </div>
               )}
@@ -207,7 +209,7 @@ const ServiceDetail = () => {
               {/* Details Section */}
               {service.details && (
                 <div className="p-6 border-t">
-                  <h2 className="text-lg font-medium text-gray-900 mb-3">Details</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-3">{t('details')}</h2>
                   <p className="text-gray-700 whitespace-pre-line">{service.details}</p>
                 </div>
               )}
@@ -219,7 +221,7 @@ const ServiceDetail = () => {
             {/* Quick Info Card */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
               <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Service Information</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('service_information')}</h3>
                 
                 <div className="space-y-4">
                   {/* Price */}
@@ -228,7 +230,7 @@ const ServiceDetail = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="font-medium text-gray-900">Price</p>
+                      <p className="font-medium text-gray-900">{t('price')}</p>
                       <p className="text-gray-700">${service.price}</p>
                     </div>
                   </div>
@@ -240,7 +242,7 @@ const ServiceDetail = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                       <div>
-                        <p className="font-medium text-gray-900">Ages</p>
+                        <p className="font-medium text-gray-900">{t('ages')}</p>
                         <p className="text-gray-700">
                           {service.min_age && service.max_age 
                             ? `${service.min_age}-${service.max_age}`
@@ -259,7 +261,7 @@ const ServiceDetail = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div>
-                        <p className="font-medium text-gray-900">Duration</p>
+                        <p className="font-medium text-gray-900">{t('duration')}</p>
                         <p className="text-gray-700">{service.duration}</p>
                       </div>
                     </div>
@@ -338,7 +340,7 @@ const ServiceDetail = () => {
                           <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
                         </svg>
                         <div>
-                          <p className="font-medium text-gray-900">Location (Lat/Lng)</p>
+                          <p className="font-medium text-gray-900">{t('location')} (Lat/Lng)</p>
                           <p className="text-gray-700">
                             {service.lat && (
                               <span>Lat: {parseFloat(service.lat).toFixed(6)}</span>
@@ -363,7 +365,7 @@ const ServiceDetail = () => {
                   className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md font-medium hover:from-green-600 hover:to-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
                   onClick={() => navigate(`/booking/${serviceId}`)}
                 >
-                  Book Now
+                  {t('book_now')}
                 </button>
               </div>
             </div>
@@ -381,7 +383,7 @@ const ServiceDetail = () => {
                   <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 tracking-tight">Book This Service</h2>
                   {/* Progress Stepper - pill/circular modern look */}
                   <div className="flex items-center justify-center mb-8">
-                    {["Contact", "Location", "Payment"].map((label, idx) => (
+                    {[t('contact_details'), t('location'), t('payment_details')].map((label, idx) => (
                       <React.Fragment key={label}>
                         <div className={`flex flex-col items-center transition-all duration-300 ${idx === bookingStep ? 'text-green-600 scale-110' : 'text-gray-400'}`}>
                           <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 font-bold text-lg shadow-sm transition-all duration-300 ${idx === bookingStep ? 'border-green-600 bg-gradient-to-br from-green-100 to-blue-100' : 'border-gray-300 bg-white'}`}>{idx+1}</div>
@@ -396,25 +398,25 @@ const ServiceDetail = () => {
                     <div className={`transition-all duration-500 ${bookingStep === 0 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'} ${stepAnim === 'left' ? 'animate-slideLeft' : stepAnim === 'right' ? 'animate-slideRight' : ''}`}>
                       {bookingStep === 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">Contact Details</h3>
+                          <h3 className="text-lg font-semibold mb-3 text-gray-700">{t('contact_details')}</h3>
                           <div className="grid grid-cols-1 gap-4">
-                            <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Full Name" value={bookingForm.name} onChange={e => setBookingForm(f => ({...f, name: e.target.value}))} />
+                            <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder={t('full_name_placeholder')} value={bookingForm.name} onChange={e => setBookingForm(f => ({...f, name: e.target.value}))} />
                             <div className="flex gap-2">
                               <select
                                 value={bookingForm.country_code || ''}
                                 onChange={e => setBookingForm(f => ({...f, country_code: e.target.value}))}
                                 className="px-4 py-3 border-2 rounded-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all"
                               >
-                                <option value="">Code</option>
+                                <option value="">{t('code')}</option>
                                 {countryCodes.map((cc) => (
                                   <option key={cc.code} value={cc.code}>
                                     {cc.code}
                                   </option>
                                 ))}
                               </select>
-                              <input type="tel" className="flex-1 border-2 rounded-full px-5 py-3 focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Phone Number" value={bookingForm.phone} onChange={e => setBookingForm(f => ({...f, phone: e.target.value}))} />
+                              <input type="tel" className="flex-1 border-2 rounded-full px-5 py-3 focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder={t('phone_number')} value={bookingForm.phone} onChange={e => setBookingForm(f => ({...f, phone: e.target.value}))} />
                             </div>
-                            <input type="email" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder="Email" value={bookingForm.email} onChange={e => setBookingForm(f => ({...f, email: e.target.value}))} />
+                            <input type="email" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all" placeholder={t('email_address')} value={bookingForm.email} onChange={e => setBookingForm(f => ({...f, email: e.target.value}))} />
                           </div>
                         </div>
                       )}
@@ -423,8 +425,8 @@ const ServiceDetail = () => {
                     <div className={`transition-all duration-500 ${bookingStep === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'} ${stepAnim === 'left' ? 'animate-slideLeft' : stepAnim === 'right' ? 'animate-slideRight' : ''}`}>
                       {bookingStep === 1 && (
                         <div>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">Pick Up Location</h3>
-                          <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder="Enter pick up location" value={bookingForm.location} onChange={e => setBookingForm(f => ({...f, location: e.target.value}))} />
+                          <h3 className="text-lg font-semibold mb-3 text-gray-700">{t('pick_up_location')}</h3>
+                          <input type="text" className="border-2 rounded-full px-5 py-3 w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all" placeholder={t('enter_pickup_location')} value={bookingForm.location} onChange={e => setBookingForm(f => ({...f, location: e.target.value}))} />
                         </div>
                       )}
                     </div>
@@ -449,7 +451,7 @@ const ServiceDetail = () => {
                         onClick={() => { setStepAnim('right'); setTimeout(() => { setBookingStep((s) => Math.max(0, s - 1)); setStepAnim(''); }, 200); }}
                         disabled={bookingStep === 0}
                       >
-                        Back
+                        {t('back')}
                       </button>
                       {bookingStep < 2 ? (
                         <button
@@ -457,7 +459,7 @@ const ServiceDetail = () => {
                           className="px-6 py-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium shadow-md hover:from-green-600 hover:to-blue-600 transition-all duration-200"
                           onClick={() => { setStepAnim('left'); setTimeout(() => { setBookingStep((s) => Math.min(2, s + 1)); setStepAnim(''); }, 200); }}
                         >
-                          Next
+                          {t('next')}
                         </button>
                       ) : (
                         <button
@@ -465,7 +467,7 @@ const ServiceDetail = () => {
                           className="px-6 py-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium opacity-60 cursor-not-allowed shadow-md"
                           disabled
                         >
-                          Confirm Booking (Coming Soon)
+                          {t('confirm_booking', { defaultValue: 'Confirm Booking (Coming Soon)' })}
                         </button>
                       )}
                     </div>

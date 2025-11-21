@@ -19,3 +19,12 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="ltr"] {
+  direction: ltr;
+}

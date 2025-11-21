@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ProvidersMap from './ProvidersMap';
 import TripCalculatorModal from './TripCalculatorModal';
 
 
 export default function Home() {
+  const { t } = useTranslation();
   const [countries, setCountries] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTripModal, setShowTripModal] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if we need to scroll to a specific section
@@ -131,28 +134,31 @@ export default function Home() {
           <div className="text-center">
             <div className="mb-4 inline-block">
               <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
-                Eco-Friendly Travel Experiences
+                {t('hero_badge')}
               </div>
             </div>
             <h1 className="text-4xl md:text-7xl font-bold mb-6 text-white drop-shadow-lg">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-green-200">Discover Amazing Destinations</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-green-200">{t('hero_title')}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-95 max-w-3xl mx-auto text-white/90 drop-shadow">
-              Explore the world's most beautiful countries and plan your next adventure with our eco-conscious travel guides
+              {t('hero_subtitle')}
             </p>
             
             {/* Action Buttons */}
             <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <button className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-8 py-3 rounded-full font-medium text-lg transition flex items-center gap-2 border border-white/30">
+              <button 
+                onClick={() => navigate('/destinations')}
+                className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-8 py-3 rounded-full font-medium text-lg transition flex items-center gap-2 border border-white/30"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Discover More
+                {t('discover_more')}
               </button>
               <button 
                 onClick={() => setShowTripModal(true)}
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-3 rounded-full font-medium text-lg hover:from-green-600 hover:to-blue-600 transition shadow-lg flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                Plan Your Trip
+                {t('plan_your_trip')}
               </button>
             </div>
           </div>
@@ -164,16 +170,16 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">
-              EXPLORE OUR NETWORK
+              {t('explore_network')}
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               <span className="relative inline-block">
-                Discover Service Providers Worldwide
+                {t('discover_providers')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Explore our network of verified eco-friendly service providers across the globe. 
+              {t('discover_providers_subtitle')} 
               Click on any marker to learn more about sustainable travel opportunities in that location.
             </p>
           </div>
@@ -583,16 +589,15 @@ export default function Home() {
         
         <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative">
           <div className="text-center mb-16">
-            <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">WHY CHOOSE US</span>
+            <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('why_choose_badge')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               <span className="relative inline-block">
-                Why Choose Unison Tour?
+                {t('why_choose')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              We're committed to sustainable tourism that benefits local communities while providing 
-              unforgettable experiences for our travelers. Discover the Unison Tour difference.
+              {t('why_choose_subtitle')}
             </p>
           </div>
 
@@ -680,15 +685,15 @@ export default function Home() {
       <section id="reviews" className="py-16 bg-gradient-to-br from-green-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">TRAVELER STORIES</span>
+            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('traveler_stories')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               <span className="relative inline-block">
-                What Our Travelers Say
+                {t('what_travelers_say')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600 transform -translate-y-1 rounded-full"></div>
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Real experiences from eco-conscious travelers who explored the world with us.
+              {t('what_travelers_say_subtitle')}
             </p>
           </div>
 

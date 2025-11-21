@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Theme;
+use App\Helpers\ImageProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -18,9 +19,18 @@ class ThemeController extends Controller
                 'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
             ]);
             if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('uploads/themes', 'public');
-                $validated['image_url'] = '/storage/' . $path;
-                \Log::info('Theme image uploaded', ['path' => $path]);
+                try {
+                    $file = $request->file('image');
+                    $path = ImageProcessor::processAndStore($file, 'theme', 'uploads/themes');
+                    $validated['image_url'] = '/storage/' . $path;
+                    \Log::info('Theme image uploaded and processed', ['path' => $path]);
+                } catch (\Exception $e) {
+                    \Log::error('Image processing failed: ' . $e->getMessage());
+                    // Fallback to original upload method
+                    $path = $request->file('image')->store('uploads/themes', 'public');
+                    $validated['image_url'] = '/storage/' . $path;
+                    \Log::info('Theme image uploaded (fallback)', ['path' => $path]);
+                }
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');
                 \Log::info('Theme image set via URL');
@@ -50,9 +60,18 @@ class ThemeController extends Controller
                 'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
             ]);
             if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('uploads/themes', 'public');
-                $validated['image_url'] = '/storage/' . $path;
-                \Log::info('Theme image uploaded', ['path' => $path]);
+                try {
+                    $file = $request->file('image');
+                    $path = ImageProcessor::processAndStore($file, 'theme', 'uploads/themes');
+                    $validated['image_url'] = '/storage/' . $path;
+                    \Log::info('Theme image uploaded and processed', ['path' => $path]);
+                } catch (\Exception $e) {
+                    \Log::error('Image processing failed: ' . $e->getMessage());
+                    // Fallback to original upload method
+                    $path = $request->file('image')->store('uploads/themes', 'public');
+                    $validated['image_url'] = '/storage/' . $path;
+                    \Log::info('Theme image uploaded (fallback)', ['path' => $path]);
+                }
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');
                 \Log::info('Theme image set via URL on update');

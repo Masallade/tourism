@@ -1,10 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const AIAssistance = () => {
+  const { t } = useTranslation();
+  const location = useLocation();
   const [messages, setMessages] = useState([
     {
       type: 'bot',
-      text: 'Hello! 👋 I\'m your Unison Tour AI Assistant. I\'m here to help you plan your perfect eco-friendly adventure. Ask me anything about destinations, sustainable travel tips, or our services!',
+      text: t('ai_assistant_welcome', { defaultValue: 'Hello! 👋 I\'m your Unison Tour AI Assistant. I\'m here to help you plan your perfect eco-friendly adventure. Ask me anything about destinations, sustainable travel tips, or our services!' }),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -16,17 +20,41 @@ const AIAssistance = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Scroll to top immediately when component mounts or route changes
+  useLayoutEffect(() => {
+    // Scroll both window and document element to ensure it works
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
+
+  // Also ensure scroll to top after render (fallback)
+  useEffect(() => {
+    // Immediate scroll
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    // Also try after a tiny delay to catch any late renders
+    const timer = setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 10);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   const quickQuestions = [
-    "🌍 Best eco-friendly destinations",
-    "🏨 Sustainable accommodation options",
-    "🌿 Green travel tips",
-    "🚶 Activities and adventures",
-    "💰 Budget planning",
-    "🗺️ Custom itinerary help"
+    t('best_eco_destinations'),
+    t('sustainable_accommodation'),
+    t('green_travel_tips'),
+    t('activities_adventures'),
+    t('budget_planning'),
+    t('custom_itinerary')
   ];
 
   const handleSendMessage = async (messageText = inputMessage) => {
@@ -134,10 +162,10 @@ const AIAssistance = () => {
             </svg>
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 mb-3">
-            AI Travel Assistant
+            {t('ai_travel_assistant')}
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Your intelligent companion for sustainable travel planning. Powered by advanced AI to help you discover eco-friendly destinations and experiences.
+            {t('ai_assistant_subtitle')}
           </p>
         </div>
 
@@ -150,7 +178,7 @@ const AIAssistance = () => {
                 <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Quick Questions
+                {t('quick_questions')}
               </h3>
               <div className="space-y-2">
                 {quickQuestions.map((question, idx) => (
@@ -167,31 +195,31 @@ const AIAssistance = () => {
 
             {/* Stats Card */}
             <div className="bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl shadow-xl p-6 text-white">
-              <h3 className="text-lg font-bold mb-4">AI Capabilities</h3>
+              <h3 className="text-lg font-bold mb-4">{t('ai_capabilities')}</h3>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm">24/7 Availability</span>
+                  <span className="text-sm">{t('availability_24_7')}</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm">Instant Responses</span>
+                  <span className="text-sm">{t('instant_responses')}</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm">Personalized Advice</span>
+                  <span className="text-sm">{t('personalized_advice')}</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm">Eco-Focused Guidance</span>
+                  <span className="text-sm">{t('eco_focused_guidance')}</span>
                 </div>
               </div>
             </div>
@@ -270,7 +298,7 @@ const AIAssistance = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Ask me anything about eco-travel..."
+                    placeholder={t('ask_anything')}
                     className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-400 transition-colors"
                   />
                   <button
@@ -284,7 +312,7 @@ const AIAssistance = () => {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  💡 Tip: Be specific with your questions for better recommendations!
+                  💡 {t('tip_specific')}
                 </p>
               </div>
             </div>
@@ -300,11 +328,9 @@ const AIAssistance = () => {
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-gray-800 mb-2">About Our AI Assistant</h3>
+              <h3 className="font-bold text-gray-800 mb-2">{t('about_ai_assistant')}</h3>
               <p className="text-gray-600 text-sm">
-                Our AI assistant is trained on sustainable travel best practices, eco-friendly destinations, and responsible tourism guidelines. 
-                While it provides helpful suggestions, always verify important travel details with official sources. 
-                For personalized service and bookings with Unison Tour, our human team is always ready to assist you!
+                {t('ai_assistant_info')}
               </p>
             </div>
           </div>

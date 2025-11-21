@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
+use App\Helpers\ImageProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,20 +23,28 @@ class CountryController extends Controller
         ]);
             
         if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                $path = $file->store('uploads/countries', 'public');
-                
-                // Verify the file was actually saved
-                if (!Storage::disk('public')->exists($path)) {
-                    \Log::error('Image file was not saved', ['path' => $path]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to save image file. Please try again.',
-                        'errors' => ['image' => ['The image file could not be saved. Please check storage permissions.']]
-                    ], 422);
+                try {
+                    $file = $request->file('image');
+                    $path = ImageProcessor::processAndStore($file, 'country', 'uploads/countries');
+                    
+                    // Verify the file was actually saved
+                    if (!Storage::disk('public')->exists($path)) {
+                        \Log::error('Image file was not saved', ['path' => $path]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Failed to save image file. Please try again.',
+                            'errors' => ['image' => ['The image file could not be saved. Please check storage permissions.']]
+                        ], 422);
+                    }
+                    
+                    $validated['image_url'] = '/storage/' . $path;
+                } catch (\Exception $e) {
+                    \Log::error('Image processing failed: ' . $e->getMessage());
+                    // Fallback to original upload method
+                    $file = $request->file('image');
+                    $path = $file->store('uploads/countries', 'public');
+                    $validated['image_url'] = '/storage/' . $path;
                 }
-                
-            $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');
@@ -100,20 +109,28 @@ class CountryController extends Controller
                     }
                 }
                 
-                $file = $request->file('image');
-                $path = $file->store('uploads/countries', 'public');
-                
-                // Verify the file was actually saved
-                if (!Storage::disk('public')->exists($path)) {
-                    \Log::error('Image file was not saved during update', ['path' => $path]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to save image file. Please try again.',
-                        'errors' => ['image' => ['The image file could not be saved. Please check storage permissions.']]
-                    ], 422);
+                try {
+                    $file = $request->file('image');
+                    $path = ImageProcessor::processAndStore($file, 'country', 'uploads/countries');
+                    
+                    // Verify the file was actually saved
+                    if (!Storage::disk('public')->exists($path)) {
+                        \Log::error('Image file was not saved during update', ['path' => $path]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Failed to save image file. Please try again.',
+                            'errors' => ['image' => ['The image file could not be saved. Please check storage permissions.']]
+                        ], 422);
+                    }
+                    
+                    $validated['image_url'] = '/storage/' . $path;
+                } catch (\Exception $e) {
+                    \Log::error('Image processing failed: ' . $e->getMessage());
+                    // Fallback to original upload method
+                    $file = $request->file('image');
+                    $path = $file->store('uploads/countries', 'public');
+                    $validated['image_url'] = '/storage/' . $path;
                 }
-                
-            $validated['image_url'] = '/storage/' . $path;
                 \Log::info('Country image uploaded successfully', ['path' => $path, 'full_path' => storage_path('app/public/' . $path)]);
             } else if ($request->filled('image_url')) {
                 $validated['image_url'] = $request->input('image_url');

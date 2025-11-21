@@ -16,41 +16,23 @@ const createCustomIcon = (html) =>
   L.divIcon({
     className: 'custom-marker-icon',
     html,
-    iconSize: [80, 100],
-    iconAnchor: [40, 90],
-    popupAnchor: [0, -60],
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20],
   });
 
 const buildMarkerHtml = ({ svg, gradient, accent }) => `
-  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Inter',sans-serif;">
-    <div style="display:flex;flex-direction:column;align-items:center;">
-      <div style="
-        width:72px;
-        height:72px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:${accent};
-        filter:drop-shadow(0 18px 22px rgba(15,23,42,0.25));
-      ">
-        ${svg}
-      </div>
-      <div style="
-        width:3px;
-        height:22px;
-        background:${gradient};
-        margin-top:-6px;
-        border-radius:999px;
-        box-shadow:0 8px 14px rgba(15,23,42,0.22);
-      "></div>
-      <div style="
-        width:12px;
-        height:12px;
-        border-radius:50%;
-        background:${gradient};
-        box-shadow:0 10px 18px rgba(15,23,42,0.2);
-        margin-top:3px;
-      "></div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+    <div style="
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:${accent};
+      filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    ">
+      ${svg}
     </div>
   </div>
 `;
@@ -60,79 +42,63 @@ const createPinMarker = ({ svg, gradient, accent }) =>
 
 const svgIcons = {
   provider: `
-    <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="6" y="6" width="5" height="12" rx="0.6" fill="currentColor" opacity="0.15" />
-      <rect x="13" y="3" width="5" height="15" rx="0.6" fill="currentColor" opacity="0.2" />
-      <path d="M4 18h16v3H4z" fill="currentColor" opacity="0.3" />
-      <path d="M8 10h1" />
-      <path d="M8 13h1" />
-      <path d="M15 6h1" />
-      <path d="M15 9h1" />
-      <path d="M15 12h1" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   compass: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="8" />
-      <polygon points="10 14 14 14 14 10" fill="currentColor" opacity="0.2" stroke="none" />
-      <polygon points="10 10 8 16 14 14" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   bed: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 10h18v7H3z" fill="currentColor" opacity="0.12" stroke="none" />
-      <path d="M3 17v4" />
-      <path d="M21 17v4" />
-      <path d="M7 10V7a2 2 0 012-2h6a2 2 0 012 2v3" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   dining: `
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 3v8" />
-      <path d="M10 3v8" />
-      <path d="M6 8h4" />
-      <path d="M14 4h5l-1 7h-3z" />
-      <path d="M12 21v-3" />
-      <path d="M18 21v-3" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   adventure: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 19l7-10 5 7 4-5 2 3" />
-      <path d="M2 19h20" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   transport: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 16l1.5-6a2 2 0 012-1.5h9a2 2 0 012 1.5L20 16" />
-      <path d="M3 16h18" />
-      <circle cx="7" cy="17.5" r="1.6" fill="currentColor" opacity="0.25" stroke="none" />
-      <circle cx="17" cy="17.5" r="1.6" fill="currentColor" opacity="0.25" stroke="none" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   shopping: `
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 7l-1 12a1 1 0 001 1h12a1 1 0 001-1L18 7z" />
-      <path d="M9 7a3 3 0 016 0" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   wellness: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20c4.5-3 6-7 6-10a6 6 0 10-12 0c0 3 1.5 7 6 10z" />
-      <path d="M9 9c0 1.5.75 3 3 5 2.25-2 3-3.5 3-5" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   default: `
-    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
-      <circle cx="12" cy="9" r="2.5" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `,
   service: `
-    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" fill="currentColor" opacity="0.12" stroke="none" />
-      <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
-      <circle cx="12" cy="9" r="2.7" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
     </svg>
   `
 };
@@ -500,7 +466,7 @@ const ProvidersMap = () => {
           transition: transform 0.2s;
         }
         .custom-marker-icon:hover > div {
-          transform: rotate(-45deg) scale(1.1);
+          transform: scale(1.2);
         }
       `}</style>
       {/* Search and Filter Controls */}
@@ -901,21 +867,15 @@ const ProvidersMap = () => {
       <div className="mt-6 bg-white rounded-xl shadow-md p-4">
         <div className="flex flex-wrap items-center justify-center gap-4">
           <div className="flex items-center">
-            <img 
-              src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" 
-              alt="Service Provider" 
-              className="w-8 h-8 mr-2"
-              style={{ width: '32px', height: '32px' }}
-            />
+            <div className="w-8 h-8 mr-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              <div className="w-5 h-5 rounded-full bg-white"></div>
+            </div>
             <span className="text-sm text-gray-700">Service Provider</span>
           </div>
           <div className="flex items-center">
-            <img 
-              src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" 
-              alt="Service" 
-              className="w-8 h-8 mr-2"
-              style={{ width: '32px', height: '32px' }}
-            />
+            <div className="w-8 h-8 mr-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              <div className="w-5 h-5 rounded-full bg-white"></div>
+            </div>
             <span className="text-sm text-gray-700">Service</span>
           </div>
           <div className="flex items-center">

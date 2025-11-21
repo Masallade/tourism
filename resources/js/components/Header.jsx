@@ -1,13 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ServiceProviderForm from './admin/ServiceProviderForm';
 import ServiceProviderLogin from './ServiceProviderLogin';
+import LanguageSwitcher from './LanguageSwitcher';
 import auth from '../utils/auth';
 
 
 
 export default function Header({ onProviderLogin, provider }) {
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
@@ -281,31 +284,34 @@ export default function Header({ onProviderLogin, provider }) {
           <nav className="hidden lg:flex items-center space-x-6">
             {/* Main Navigation Links */}
             <div className="flex items-center space-x-1">
-            <a 
-              href="#destinations" 
+            <Link 
+              to="/destinations" 
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
             >
-              Destinations
-            </a>
+              {t('destinations')}
+            </Link>
             <Link 
               to="/trips" 
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
             >
-              Trips
+              {t('trips')}
             </Link>
             <a 
               href="#reviews" 
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
             >
-              Reviews
+              {t('reviews')}
             </a>
             <Link 
               to="/about" 
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
             >
-              About
+              {t('about')}
             </Link>
             </div>
+
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             {/* AI Assistance Button */}
             <Link 
@@ -315,7 +321,7 @@ export default function Header({ onProviderLogin, provider }) {
               <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
-              AI Assistance
+              {t('ai_assistance')}
             </Link>
             
             {/* Service Provider Button */}
@@ -323,7 +329,7 @@ export default function Header({ onProviderLogin, provider }) {
               onClick={handleJoinClick}
               className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-400 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
             >
-              {provider ? 'Provider Dashboard' : 'Join as Provider'}
+              {provider ? t('provider_dashboard') : t('join_as_provider')}
             </button>
             
             {/* User Authentication Section */}
@@ -400,13 +406,13 @@ export default function Header({ onProviderLogin, provider }) {
                   to="/login"
                   className="px-4 py-2 text-green-700 hover:text-green-500 font-medium transition-all duration-200 hover:bg-green-50 rounded-lg"
                 >
-                  Login
+                  {t('login')}
                 </Link>
                 <Link
                   to="/signup"
                   className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105"
                 >
-                  Sign Up
+                  {t('signup')}
                 </Link>
               </div>
             )}
@@ -434,10 +440,15 @@ export default function Header({ onProviderLogin, provider }) {
           <div className="lg:hidden">
             <div className="px-4 pt-2 pb-3 space-y-1 bg-green-50 rounded-lg mt-2">
               {/* Navigation Links */}
-              <a href="#destinations" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Destinations</a>
+              <Link to="/destinations" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Destinations</Link>
               <Link to="/trips" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Trips</Link>
               <a href="#reviews" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Reviews</a>
               <Link to="/about" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">About</Link>
+              
+              {/* Language Switcher - Mobile */}
+              <div className="px-3 py-2">
+                <LanguageSwitcher />
+              </div>
               
               {/* AI Assistance */}
               <Link to="/ai-assistance" className="flex items-center bg-gradient-to-r from-green-400 to-blue-400 text-white px-3 py-2 rounded-md text-base font-bold shadow-md">

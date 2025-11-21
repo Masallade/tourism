@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
+use App\Helpers\ImageProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -74,9 +75,15 @@ class ServiceController extends Controller
             foreach (['image', 'image_2', 'image_3'] as $field) {
                 $serviceData[$field] = null;
                 if ($request->hasFile($field)) {
-                    $file = $request->file($field);
-                    $filename = time() . '_' . uniqid() . '_' . $field . '.' . $file->getClientOriginalExtension();
-                    $serviceData[$field] = $file->storeAs('uploads/services', $filename, 'public');
+                    try {
+                        $file = $request->file($field);
+                        $serviceData[$field] = ImageProcessor::processAndStore($file, 'service', 'uploads/services');
+                    } catch (\Exception $e) {
+                        \Log::error('Image processing failed for ' . $field . ': ' . $e->getMessage());
+                        // Fallback to original upload method
+                        $filename = time() . '_' . uniqid() . '_' . $field . '.' . $file->getClientOriginalExtension();
+                        $serviceData[$field] = $file->storeAs('uploads/services', $filename, 'public');
+                    }
                 }
             }
 
@@ -145,9 +152,15 @@ class ServiceController extends Controller
                     if ($service->{$field} && Storage::disk('public')->exists($service->{$field})) {
                         Storage::disk('public')->delete($service->{$field});
                     }
-                    $file = $request->file($field);
-                    $filename = time() . '_' . uniqid() . '_' . $field . '.' . $file->getClientOriginalExtension();
-                    $updateData[$field] = $file->storeAs('uploads/services', $filename, 'public');
+                    try {
+                        $file = $request->file($field);
+                        $updateData[$field] = ImageProcessor::processAndStore($file, 'service', 'uploads/services');
+                    } catch (\Exception $e) {
+                        \Log::error('Image processing failed for ' . $field . ': ' . $e->getMessage());
+                        // Fallback to original upload method
+                        $filename = time() . '_' . uniqid() . '_' . $field . '.' . $file->getClientOriginalExtension();
+                        $updateData[$field] = $file->storeAs('uploads/services', $filename, 'public');
+                    }
                 }
             }
 

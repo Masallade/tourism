@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { extractServiceTypes } from '../utils/serviceHelpers';
 
 const Trips = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
@@ -100,7 +102,7 @@ const Trips = () => {
       <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-500 mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading amazing trips...</p>
+          <p className="text-gray-600 text-lg">{t('loading')}...</p>
         </div>
       </div>
     );
@@ -135,10 +137,10 @@ const Trips = () => {
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
-            Explore Eco-Friendly Trips
+            {t('trips')}
           </h1>
           <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto mb-8">
-            Discover sustainable adventures and experiences from verified eco-travel providers
+            {t('discover_providers_subtitle')}
           </p>
           
           {/* Service Types Scrollable Bar with Arrows */}
@@ -165,7 +167,7 @@ const Trips = () => {
                   onClick={() => setSelectedType('all')}
                   className={`flex items-center px-5 py-2 rounded-full transition-all duration-300 focus:outline-none whitespace-nowrap shadow-md ${selectedType === 'all' ? 'bg-gradient-to-r from-green-600 to-blue-600 text-white font-medium scale-105' : 'bg-white/80 text-gray-800 hover:bg-white'}`}
                 >
-                  <span className="text-base">All Types</span>
+                  <span className="text-base">{t('all_types')}</span>
                 </button>
                 {serviceTypes.map(type => (
                   <button
@@ -201,7 +203,7 @@ const Trips = () => {
             {/* Search Bar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Trips
+                {t('search')} {t('trips')}
               </label>
               <div className="relative">
                 <input
@@ -220,14 +222,14 @@ const Trips = () => {
             {/* Country Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Country
+                {t('filter_by_country')}
               </label>
               <select
                 value={selectedCountry}
                 onChange={(e) => setSelectedCountry(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               >
-                <option value="all">All Countries</option>
+                <option value="all">{t('all_countries')}</option>
                 {countries.map(country => (
                   <option key={country.id} value={country.id}>{country.name}</option>
                 ))}
@@ -238,7 +240,7 @@ const Trips = () => {
             <div className="flex items-end">
               <div className="w-full">
                 <p className="text-gray-600">
-                  Showing <span className="font-bold text-green-600">{filteredServices.length}</span> of <span className="font-bold">{services.length}</span> trips
+                  {t('showing_trips', { count: filteredServices.length, total: services.length })}
                 </p>
               </div>
             </div>
@@ -251,13 +253,13 @@ const Trips = () => {
             <svg className="mx-auto w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className="text-2xl font-bold text-gray-700 mb-2">No trips found</h3>
-            <p className="text-gray-500 mb-6">Try adjusting your filters or search query</p>
+            <h3 className="text-2xl font-bold text-gray-700 mb-2">{t('no_services')}</h3>
+            <p className="text-gray-500 mb-6">{t('try_adjusting_filters')}</p>
             <button
               onClick={() => { setSelectedType('all'); setSearchQuery(''); }}
               className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition"
             >
-              Clear Filters
+              {t('clear_filters')}
             </button>
           </div>
         ) : (
@@ -375,28 +377,35 @@ const Trips = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-16 mt-16">
+      <div className="py-16 mt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
             Can't Find What You're Looking For?
           </h2>
-          <p className="text-xl text-green-100 mb-8">
+          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
             Let our AI Assistant help you plan the perfect eco-friendly adventure!
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              to="/ai-assistance" 
-              className="px-8 py-4 bg-white text-green-600 rounded-xl font-bold text-lg hover:bg-green-50 transition-colors shadow-lg"
-            >
-              Talk to AI Assistant
-            </Link>
-            <Link 
-              to="/contact" 
-              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-bold text-lg hover:bg-white hover:text-green-600 transition-colors"
-            >
-              Contact Us
-            </Link>
-          </div>
+          
+          <Link 
+            to="/ai-assistance" 
+            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-semibold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
+          >
+            <svg className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <span>Talk to AI Assistant</span>
+            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Link>
+          
+          {/* Additional info */}
+          <p className="mt-6 text-gray-500 text-sm flex items-center justify-center gap-2">
+            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>Free • Instant • 24/7 Available</span>
+          </p>
         </div>
       </div>
     </div>

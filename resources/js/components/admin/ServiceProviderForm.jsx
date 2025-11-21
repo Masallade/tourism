@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { countryCodes } from '../../utils/countryCodes';
+import { compressImage, compressImages, getCompressionSettings } from '../../utils/imageCompression';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -540,6 +541,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             
             const url = provider ? `/api/service-providers/${provider.id}` : '/api/service-providers';
             
+            // Show compression message if files are large
+            if (image || documents.length > 0) {
+                const totalSize = (image ? image.size : 0) + documents.reduce((sum, doc) => sum + doc.size, 0);
+                if (totalSize > 5 * 1024 * 1024) { // > 5MB
+                    console.log('Large files detected, compressing...');
+                }
+            }
+            
             console.log('Request URL:', url);
             console.log('Provider object:', provider);
             console.log('Provider ID:', provider?.id);
@@ -662,14 +671,37 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 form.append('lng', String(formData.lng));
             }
             
-            // Append image if provided
+            // Compress and append image if provided
             if (image) {
-                form.append('image', image);
+                try {
+                    const compressionSettings = getCompressionSettings('service_provider');
+                    const compressedImage = await compressImage(image, compressionSettings);
+                    form.append('image', compressedImage);
+                    console.log(`Image compressed: ${(image.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedImage.size / 1024 / 1024).toFixed(2)}MB`);
+                } catch (error) {
+                    console.error('Error compressing image, using original:', error);
+                    form.append('image', image);
+                }
             }
             
-            // Append documents if provided
+            // Compress and append documents if provided
             if (documents.length > 0) {
-                documents.forEach((doc) => form.append('documents[]', doc));
+                try {
+                    const compressionSettings = getCompressionSettings('document');
+                    const compressedDocs = await compressImages(documents, compressionSettings);
+                    compressedDocs.forEach((doc) => {
+                        form.append('documents[]', doc);
+                        if (doc.type.startsWith('image/')) {
+                            const originalDoc = documents.find(d => d.name === doc.name);
+                            if (originalDoc) {
+                                console.log(`Document ${doc.name} compressed: ${(originalDoc.size / 1024 / 1024).toFixed(2)}MB -> ${(doc.size / 1024 / 1024).toFixed(2)}MB`);
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error compressing documents, using originals:', error);
+                    documents.forEach((doc) => form.append('documents[]', doc));
+                }
             }
             
             // Debug: Log FormData contents before sending
@@ -730,6 +762,16 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 }
                 onSuccess();
             } catch (error) {
+                // Handle 413 Content Too Large error specifically
+                if (error.response?.status === 413) {
+                    setSummaryError('File size is too large. Please reduce image/document sizes and try again. The system will automatically compress files, but very large files may still exceed server limits.');
+                    setErrors({
+                        general: 'Upload size limit exceeded. Please use smaller files or contact administrator to increase server upload limits.'
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+                
                 const errorData = error.response?.data || {};
                 setErrors(errorData.errors || {});
                 

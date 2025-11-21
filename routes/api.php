@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ServiceProviderPasswordController;
+use App\Helpers\ImageProcessor;
 use Illuminate\Support\Facades\Storage;
 
 // Service Provider Change Password API
@@ -222,6 +223,7 @@ Route::get('/themes/slug/{slug}', function ($slug) {
 });
 Route::post('/themes', [ThemeController::class, 'store'])->middleware('admin.auth');
 Route::put('/themes/{theme}', [ThemeController::class, 'update'])->middleware('admin.auth');
+Route::post('/themes/{theme}/update', [ThemeController::class, 'update'])->middleware('admin.auth'); // For FormData updates
 Route::delete('/themes/{theme}', function (\App\Models\Theme $theme) {
     $theme->delete();
     return response()->json(['message' => 'Theme deleted successfully']);
@@ -267,8 +269,16 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-            $data['image'] = $imagePath;
+            try {
+                $file = $request->file('image');
+                $imagePath = ImageProcessor::processAndStore($file, 'service_provider', 'uploads/service_provider_images');
+                $data['image'] = $imagePath;
+            } catch (\Exception $e) {
+                \Log::error('Service provider image processing failed: ' . $e->getMessage());
+                // Fallback to original upload method
+                $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+                $data['image'] = $imagePath;
+            }
         }
 
         // Handle documents upload
@@ -600,3 +610,27 @@ Route::get('/documents/{filename}', function ($filename) {
 // AI Assistant
 use App\Http\Controllers\AIAssistantController;
 Route::post('/ai-chat', [AIAssistantController::class, 'chat']);
+
+// Destinations - Public routes
+Route::get('/destinations', function () {
+    return \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country'])
+        ->active()
+        ->ordered()
+        ->get();
+});
+
+Route::get('/destinations/{id}', function ($id) {
+    return \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country'])
+        ->active()
+        ->findOrFail($id);
+});
+
+// Destinations - Admin routes
+use App\Http\Controllers\Admin\DestinationController;
+Route::get('/admin/destinations', [DestinationController::class, 'index'])->middleware('admin.auth');
+// IMPORTANT: More specific routes must come BEFORE parameterized routes
+Route::get('/admin/destinations/services', [DestinationController::class, 'getServices'])->middleware('admin.auth');
+Route::get('/admin/destinations/{id}', [DestinationController::class, 'show'])->middleware('admin.auth');
+Route::post('/admin/destinations', [DestinationController::class, 'store'])->middleware('admin.auth');
+Route::put('/admin/destinations/{id}', [DestinationController::class, 'update'])->middleware('admin.auth');
+Route::delete('/admin/destinations/{id}', [DestinationController::class, 'destroy'])->middleware('admin.auth');

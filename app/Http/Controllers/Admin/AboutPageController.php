@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AboutPage;
+use App\Helpers\ImageProcessor;
 use Illuminate\Http\Request;
 
 class AboutPageController extends Controller
@@ -114,8 +115,16 @@ class AboutPageController extends Controller
                     @unlink($oldPath);
                 }
             }
-            $imagePath = $request->file('hero_image')->store('uploads/about_page', 'public');
-            $data['hero_image'] = $imagePath;
+            try {
+                $file = $request->file('hero_image');
+                $imagePath = ImageProcessor::processAndStore($file, 'about_hero', 'uploads/about_page');
+                $data['hero_image'] = $imagePath;
+            } catch (\Exception $e) {
+                \Log::error('Hero image processing failed: ' . $e->getMessage());
+                // Fallback to original upload method
+                $imagePath = $request->file('hero_image')->store('uploads/about_page', 'public');
+                $data['hero_image'] = $imagePath;
+            }
         } else {
             // Preserve existing image if no new file is uploaded
             if ($aboutPage && $aboutPage->hero_image) {
@@ -132,8 +141,16 @@ class AboutPageController extends Controller
                     @unlink($oldPath);
                 }
             }
-            $imagePath = $request->file('mission_image')->store('uploads/about_page', 'public');
-            $data['mission_image'] = $imagePath;
+            try {
+                $file = $request->file('mission_image');
+                $imagePath = ImageProcessor::processAndStore($file, 'about_mission', 'uploads/about_page');
+                $data['mission_image'] = $imagePath;
+            } catch (\Exception $e) {
+                \Log::error('Mission image processing failed: ' . $e->getMessage());
+                // Fallback to original upload method
+                $imagePath = $request->file('mission_image')->store('uploads/about_page', 'public');
+                $data['mission_image'] = $imagePath;
+            }
         } else {
             // Preserve existing image if no new file is uploaded
             if ($aboutPage && $aboutPage->mission_image) {
@@ -153,8 +170,15 @@ class AboutPageController extends Controller
                 // Process each uploaded image with its index
                 foreach ($uploadedImages as $index => $image) {
                     if ($image && isset($teamMembers[$index])) {
-                        $imagePath = $image->store('uploads/about_page/team', 'public');
-                        $teamMembers[$index]['image'] = $imagePath;
+                        try {
+                            $imagePath = ImageProcessor::processAndStore($image, 'about_team', 'uploads/about_page/team');
+                            $teamMembers[$index]['image'] = $imagePath;
+                        } catch (\Exception $e) {
+                            \Log::error('Team member image processing failed: ' . $e->getMessage());
+                            // Fallback to original upload method
+                            $imagePath = $image->store('uploads/about_page/team', 'public');
+                            $teamMembers[$index]['image'] = $imagePath;
+                        }
                     }
                 }
             }

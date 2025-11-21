@@ -13,6 +13,7 @@ import ServiceTypesList from './components/admin/ServiceTypesList';
 import ServiceProvidersList from './components/admin/ServiceProvidersList';
 import AppSettings from './components/admin/AppSettings';
 import AboutPageEditor from './components/admin/AboutPageEditor';
+import DestinationsList from './components/admin/DestinationsList';
 import UserLogin from './components/UserLogin';
 import UserSignup from './components/UserSignup';
 import UserProfile from './components/UserProfile';
@@ -23,14 +24,17 @@ import AIAssistance from './components/AIAssistance';
 import About from './components/About';
 import Contact from './components/Contact';
 import Trips from './components/Trips';
+import Destinations from './components/Destinations';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsAndConditions from './components/TermsAndConditions';
 import '../css/app.css';
 import './bootstrap';
+import './i18n/config';
 
 import ServiceProviderDashboard from './components/ServiceProviderDashboard';
 import ServiceProviderLogin from './components/ServiceProviderLogin';
 import BookingPage from './components/BookingPage';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   const STORAGE_KEY = 'serviceProvider';
@@ -91,6 +95,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -100,6 +105,7 @@ function App() {
           <Route path="themes" element={<ThemesList />} />
           <Route path="service-types" element={<ServiceTypesList />} />
           <Route path="service-providers" element={<ServiceProvidersList />} />
+          <Route path="destinations" element={<DestinationsList />} />
           <Route path="about-page" element={<AboutPageEditor />} />
           <Route path="settings" element={<AppSettings />} />
         </Route>
@@ -175,6 +181,13 @@ function App() {
         <Route path="/trips" element={
           <Layout>
             <Trips />
+          </Layout>
+        } />
+        
+        {/* Destinations page */}
+        <Route path="/destinations" element={
+          <Layout>
+            <Destinations />
           </Layout>
         } />
         

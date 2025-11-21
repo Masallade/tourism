@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Destination;
 
 class Service extends Model
 {
@@ -65,5 +66,11 @@ class Service extends Model
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function destinations()
+    {
+        return $this->belongsToMany(Destination::class, 'destination_service')
+            ->withTimestamps();
     }
 }

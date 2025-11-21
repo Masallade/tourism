@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
@@ -91,23 +93,16 @@ export default function Footer() {
         
         <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative z-10">
           <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready for Your Next Adventure?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('ready_for_adventure')}</h2>
             <p className="text-xl text-white/80 max-w-2xl mx-auto mb-10">
-              Join thousands of eco-conscious travelers exploring the world sustainably. 
-              Plan your next adventure with us today!
+              {t('adventure_description')}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/contact" className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-lg flex items-center justify-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                Contact an Expert
-              </Link>
               <Link to="/signup" className="border-2 border-white hover:border-gray-200 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg flex items-center justify-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                Create Account
+                {t('create_account')}
               </Link>
             </div>
           </div>
@@ -181,14 +176,14 @@ export default function Footer() {
             
             {/* Column 2 - Quick Links */}
             <div>
-              <h3 className="text-xl font-bold mb-5 border-b border-green-500 pb-2">Quick Links</h3>
+              <h3 className="text-xl font-bold mb-5 border-b border-green-500 pb-2">{t('quick_links')}</h3>
               <ul className="space-y-3">
                 <li>
                   <a href="/" onClick={(e) => handleLinkClick(e, '/')} className="hover:text-green-200 transition-colors flex items-center">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
-                    Home
+                    {t('home')}
                   </a>
                 </li>
                 <li>
@@ -196,15 +191,15 @@ export default function Footer() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    About
+                    {t('about')}
                   </a>
                 </li>
                 <li>
-                  <a href="#destinations" onClick={(e) => handleAnchorClick(e, 'destinations')} className="hover:text-green-200 transition-colors flex items-center">
+                  <a href="/destinations" onClick={(e) => handleLinkClick(e, '/destinations')} className="hover:text-green-200 transition-colors flex items-center">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Destinations
+                    {t('destinations')}
                   </a>
                 </li>
                 <li>
@@ -212,7 +207,7 @@ export default function Footer() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                    Trips
+                    {t('trips')}
                   </a>
                 </li>
                 <li>
@@ -220,15 +215,7 @@ export default function Footer() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                     </svg>
-                    Reviews
-                  </a>
-                </li>
-                <li>
-                  <a href="/contact" onClick={(e) => handleLinkClick(e, '/contact')} className="hover:text-green-200 transition-colors flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    Contact
+                    {t('reviews')}
                   </a>
                 </li>
               </ul>
@@ -236,7 +223,7 @@ export default function Footer() {
             
             {/* Column 3 - Contact */}
             <div>
-              <h3 className="text-xl font-bold mb-5 border-b border-green-500 pb-2">Contact Us</h3>
+              <h3 className="text-xl font-bold mb-5 border-b border-green-500 pb-2">{t('contact_us')}</h3>
               <div className="space-y-4">
                 {settings.address && (
                   <p className="flex items-start">
@@ -278,11 +265,11 @@ export default function Footer() {
           
           {/* Footer Bottom - Copyright and Admin Login */}
           <div className="border-t border-green-500 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-sm mb-4 sm:mb-0">© 2025 Unison Tour. All rights reserved.</p>
+            <p className="text-sm mb-4 sm:mb-0">{t('copyright')}</p>
             <div className="flex space-x-6 text-sm">
-              <Link to="/privacy-policy" className="hover:text-green-200 transition-colors">Privacy Policy</Link>
-              <Link to="/terms-and-conditions" className="hover:text-green-200 transition-colors">Terms of Service</Link>
-              <a href="/admin/login" className="hover:text-green-200 transition-colors font-medium bg-green-700 px-3 py-1 rounded-md">Admin Login</a>
+              <Link to="/privacy-policy" className="hover:text-green-200 transition-colors">{t('privacy')}</Link>
+              <Link to="/terms-and-conditions" className="hover:text-green-200 transition-colors">{t('terms')}</Link>
+              <a href="/admin/login" className="hover:text-green-200 transition-colors font-medium bg-green-700 px-3 py-1 rounded-md">{t('admin_login')}</a>
             </div>
           </div>
         </div>
