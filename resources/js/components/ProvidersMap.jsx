@@ -11,139 +11,146 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom green marker icon for service providers
-const greenIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Custom red marker icon for searched locations
-const redIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Custom blue marker icon for services
-const blueIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Custom orange marker icon for services
-const orangeIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Custom purple marker icon for services
-const purpleIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Custom yellow marker icon for services
-const yellowIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
 // Function to create custom HTML div icon
-const createCustomIcon = (html, bgColor, iconColor = 'white') => {
-  return L.divIcon({
+const createCustomIcon = (html) =>
+  L.divIcon({
     className: 'custom-marker-icon',
-    html: html,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40]
+    html,
+    iconSize: [80, 100],
+    iconAnchor: [40, 90],
+    popupAnchor: [0, -60],
   });
+
+const buildMarkerHtml = ({ svg, gradient, accent }) => `
+  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Inter',sans-serif;">
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div style="
+        width:72px;
+        height:72px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:${accent};
+        filter:drop-shadow(0 18px 22px rgba(15,23,42,0.25));
+      ">
+        ${svg}
+      </div>
+      <div style="
+        width:3px;
+        height:22px;
+        background:${gradient};
+        margin-top:-6px;
+        border-radius:999px;
+        box-shadow:0 8px 14px rgba(15,23,42,0.22);
+      "></div>
+      <div style="
+        width:12px;
+        height:12px;
+        border-radius:50%;
+        background:${gradient};
+        box-shadow:0 10px 18px rgba(15,23,42,0.2);
+        margin-top:3px;
+      "></div>
+    </div>
+  </div>
+`;
+
+const createPinMarker = ({ svg, gradient, accent }) =>
+  createCustomIcon(buildMarkerHtml({ svg, gradient, accent }));
+
+const svgIcons = {
+  provider: `
+    <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="6" width="5" height="12" rx="0.6" fill="currentColor" opacity="0.15" />
+      <rect x="13" y="3" width="5" height="15" rx="0.6" fill="currentColor" opacity="0.2" />
+      <path d="M4 18h16v3H4z" fill="currentColor" opacity="0.3" />
+      <path d="M8 10h1" />
+      <path d="M8 13h1" />
+      <path d="M15 6h1" />
+      <path d="M15 9h1" />
+      <path d="M15 12h1" />
+    </svg>
+  `,
+  compass: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8" />
+      <polygon points="10 14 14 14 14 10" fill="currentColor" opacity="0.2" stroke="none" />
+      <polygon points="10 10 8 16 14 14" />
+    </svg>
+  `,
+  bed: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 10h18v7H3z" fill="currentColor" opacity="0.12" stroke="none" />
+      <path d="M3 17v4" />
+      <path d="M21 17v4" />
+      <path d="M7 10V7a2 2 0 012-2h6a2 2 0 012 2v3" />
+    </svg>
+  `,
+  dining: `
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3v8" />
+      <path d="M10 3v8" />
+      <path d="M6 8h4" />
+      <path d="M14 4h5l-1 7h-3z" />
+      <path d="M12 21v-3" />
+      <path d="M18 21v-3" />
+    </svg>
+  `,
+  adventure: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 19l7-10 5 7 4-5 2 3" />
+      <path d="M2 19h20" />
+    </svg>
+  `,
+  transport: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 16l1.5-6a2 2 0 012-1.5h9a2 2 0 012 1.5L20 16" />
+      <path d="M3 16h18" />
+      <circle cx="7" cy="17.5" r="1.6" fill="currentColor" opacity="0.25" stroke="none" />
+      <circle cx="17" cy="17.5" r="1.6" fill="currentColor" opacity="0.25" stroke="none" />
+    </svg>
+  `,
+  shopping: `
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 7l-1 12a1 1 0 001 1h12a1 1 0 001-1L18 7z" />
+      <path d="M9 7a3 3 0 016 0" />
+    </svg>
+  `,
+  wellness: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20c4.5-3 6-7 6-10a6 6 0 10-12 0c0 3 1.5 7 6 10z" />
+      <path d="M9 9c0 1.5.75 3 3 5 2.25-2 3-3.5 3-5" />
+    </svg>
+  `,
+  default: `
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  `,
+  service: `
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" fill="currentColor" opacity="0.12" stroke="none" />
+      <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
+      <circle cx="12" cy="9" r="2.7" />
+    </svg>
+  `
 };
+
+const getProviderIcon = () =>
+  createPinMarker({
+    svg: svgIcons.provider,
+    gradient: 'linear-gradient(135deg, #0f766e, #34d399)',
+    accent: '#0f766e',
+  });
 
 // Function to get icon for service based on service type
 const getServiceIcon = (serviceTypes) => {
-  if (!serviceTypes || serviceTypes.length === 0) {
-    return createCustomIcon(
-      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">📍</div></div>',
-      '#3b82f6'
-    );
-  }
-  
-  // Get the first service type name
-  const typeName = serviceTypes[0]?.name?.toLowerCase() || '';
-  
-  // Assign icons based on service type
-  if (typeName.includes('tour') || typeName.includes('guide')) {
-    // Tour/Guide - Blue with map icon
-    return createCustomIcon(
-      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🗺️</div></div>',
-      '#3b82f6'
-    );
-  } else if (typeName.includes('accommodation') || typeName.includes('hotel') || typeName.includes('lodge')) {
-    // Accommodation - Orange with bed icon
-    return createCustomIcon(
-      '<div style="background: #f97316; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🛏️</div></div>',
-      '#f97316'
-    );
-  } else if (typeName.includes('restaurant') || typeName.includes('food') || typeName.includes('dining')) {
-    // Restaurant/Food - Yellow with fork/knife icon
-    return createCustomIcon(
-      '<div style="background: #eab308; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🍴</div></div>',
-      '#eab308'
-    );
-  } else if (typeName.includes('activity') || typeName.includes('adventure')) {
-    // Activity/Adventure - Purple with hiking icon
-    return createCustomIcon(
-      '<div style="background: #a855f7; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">⛰️</div></div>',
-      '#a855f7'
-    );
-  } else if (typeName.includes('transport') || typeName.includes('vehicle') || typeName.includes('car')) {
-    // Transportation - Cyan with car icon
-    return createCustomIcon(
-      '<div style="background: #06b6d4; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🚗</div></div>',
-      '#06b6d4'
-    );
-  } else if (typeName.includes('shopping') || typeName.includes('market') || typeName.includes('store')) {
-    // Shopping - Pink with shopping bag icon
-    return createCustomIcon(
-      '<div style="background: #ec4899; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">🛍️</div></div>',
-      '#ec4899'
-    );
-  } else if (typeName.includes('spa') || typeName.includes('wellness') || typeName.includes('relaxation')) {
-    // Spa/Wellness - Teal with spa icon
-    return createCustomIcon(
-      '<div style="background: #14b8a6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">💆</div></div>',
-      '#14b8a6'
-    );
-  } else {
-    // Default - Blue with location pin
-    return createCustomIcon(
-      '<div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid white;"><div style="transform: rotate(45deg); color: white; font-size: 20px;">📍</div></div>',
-      '#3b82f6'
-    );
-  }
+  return createPinMarker({
+    svg: svgIcons.service,
+    gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+    accent: '#1d4ed8',
+  });
 };
 
 // Component to fit bounds when providers/services change or zoom to searched location
@@ -718,7 +725,7 @@ const ProvidersMap = () => {
               <Marker
                 key={provider.id}
                 position={[parseFloat(provider.lat), parseFloat(provider.lng)]}
-                icon={greenIcon}
+                icon={getProviderIcon(provider)}
                 eventHandlers={{
                   click: () => handleMarkerClick(provider)
                 }}
@@ -805,7 +812,7 @@ const ProvidersMap = () => {
               <Marker
                 key={`service-${service.id}`}
                 position={[parseFloat(service.lat), parseFloat(service.lng)]}
-                icon={blueIcon}
+                icon={getServiceIcon(service.service_types)}
                 eventHandlers={{
                   click: () => handleServiceClick(service)
                 }}

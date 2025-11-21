@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { countryCodes } from '../utils/countryCodes';
 
 const BookingFlow = ({ service, onClose, onComplete }) => {
   // Early return if service is not available
@@ -521,25 +522,27 @@ const BookingFlow = ({ service, onClose, onComplete }) => {
                       <div className="flex gap-2">
                         <select
                           value={contactForm.phoneCountryCode}
-                          onChange={(e) => setContactForm(prev => ({ ...prev, phoneCountryCode: e.target.value }))}
-                          className="px-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onChange={(e) => handleContactChange('phoneCountryCode', e.target.value)}
+                          className="px-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
-                          <option value="+92">+92</option>
-                          <option value="+1">+1</option>
-                          <option value="+44">+44</option>
-                          <option value="+91">+91</option>
+                          {countryCodes.map((cc) => (
+                            <option key={cc.code} value={cc.code}>
+                              {cc.code} {cc.country ? `(${cc.country})` : ''}
+                            </option>
+                          ))}
                         </select>
                         <div className="relative flex-1">
                           <input
                             type="tel"
                             value={contactForm.phoneNumber}
-                            onChange={(e) => handleContactChange('phoneNumber', e.target.value)}
+                            onChange={(e) => handleContactChange('phoneNumber', e.target.value.replace(/\D/g, ''))}
                             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 ${
                               validation.phoneNumber
                                 ? 'border-green-500 focus:ring-green-500'
                                 : 'border-gray-300 focus:ring-blue-500'
                             }`}
                             placeholder="Phone Number"
+                            maxLength={15}
                           />
                           {validation.phoneNumber && (
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

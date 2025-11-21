@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::table('service_providers', function (Blueprint $table) {
             if (!Schema::hasColumn('service_providers', 'country_code')) {
-                $table->string('country_code', 10)->nullable()->after('phone');
+                $table->string('country_code', 6)
+                    ->nullable()
+                    ->after('phone');
             }
         });
     }
@@ -30,6 +32,3 @@ return new class extends Migration
         });
     }
 };
-
-
-
