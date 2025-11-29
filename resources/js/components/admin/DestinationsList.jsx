@@ -173,3 +173,6 @@ const DestinationsList = () => {
 
 export default DestinationsList;
 
+
+
+
