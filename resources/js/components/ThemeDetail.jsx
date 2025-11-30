@@ -33,7 +33,10 @@ const ThemeDetail = () => {
         const themeId = themeData.id;
         const servicesRes = await fetch(`/api/theme/${themeId}/services`);
         if (!servicesRes.ok) {
-          throw new Error('Failed to fetch services');
+          const errorData = await servicesRes.json().catch(() => ({}));
+          const errorMessage = errorData.error || errorData.message || 'Failed to fetch services';
+          console.error('Error fetching services:', errorMessage, errorData);
+          throw new Error(errorMessage);
         }
         const servicesData = await servicesRes.json();
         setServices(servicesData);
@@ -77,8 +80,8 @@ const ThemeDetail = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-purple-800 font-medium">Loading theme details...</p>
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-green-800 font-medium">Loading theme details...</p>
         </div>
       </div>
     );
@@ -131,7 +134,7 @@ const ThemeDetail = () => {
               : `url(https://source.unsplash.com/1200x600/?${theme.name},travel)`
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/50 to-purple-900/80">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70">
           <div className="container mx-auto px-4 h-full flex flex-col justify-end pb-8">
             <div className="mb-4">
               <Link to="/" className="text-white opacity-80 hover:opacity-100 flex items-center">
@@ -155,7 +158,7 @@ const ThemeDetail = () => {
             <button 
               className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                 selectedType === 'all' 
-                  ? 'bg-purple-600 text-white' 
+                  ? 'bg-green-600 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
               onClick={() => setSelectedType('all')}
@@ -167,7 +170,7 @@ const ThemeDetail = () => {
                 key={type.id}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                   selectedType === type.id.toString() 
-                    ? 'bg-purple-600 text-white' 
+                    ? 'bg-green-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
                 onClick={() => setSelectedType(type.id.toString())}
@@ -186,12 +189,12 @@ const ThemeDetail = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h3 className="text-xl font-semibold text-purple-800 mb-2">No Services Available</h3>
-            <p className="text-purple-700">
+            <h3 className="text-xl font-semibold text-yellow-800 mb-2">No Services Available</h3>
+            <p className="text-yellow-700">
               {selectedType === 'all' 
                 ? `There are no ${theme.name} experiences available yet.` 
                 : `There are no ${serviceTypes.find(t => t.id === parseInt(selectedType))?.name || ''} services with ${theme.name} theme yet.`}

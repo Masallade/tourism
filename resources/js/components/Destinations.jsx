@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 const Destinations = () => {
     const { t } = useTranslation();
+    const location = useLocation();
     const [destinations, setDestinations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedCountry, setSelectedCountry] = useState(null);
 
     useEffect(() => {
-        fetchDestinations();
-    }, []);
+        // Check for country filter from URL query parameter
+        const urlParams = new URLSearchParams(location.search);
+        const countryId = urlParams.get('country');
+        setSelectedCountry(countryId);
+        
+        fetchDestinations(countryId);
+    }, [location.search]);
 
-    const fetchDestinations = async () => {
+    const fetchDestinations = async (countryId = null) => {
         try {
-            const response = await window.apiClient.get('/api/destinations');
+            let url = '/api/destinations';
+            if (countryId) {
+                url += `?country=${countryId}`;
+            }
+            const response = await window.apiClient.get(url);
             setDestinations(response.data);
         } catch (error) {
             console.error('Error fetching destinations:', error);
@@ -52,15 +63,28 @@ const Destinations = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-screen-xl mx-auto px-12 py-16">
                 {/* Page Header */}
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                        {t('explore_destinations')}
+                        {selectedCountry ? `${t('explore_destinations')} in ${destinations[0]?.country?.name || 'Selected Country'}` : t('explore_destinations')}
                     </h1>
                     <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                        {t('explore_destinations_subtitle')}
+                        {selectedCountry ? `Discover amazing destinations and experiences in ${destinations[0]?.country?.name || 'this country'}` : t('explore_destinations_subtitle')}
                     </p>
+                    {selectedCountry && (
+                        <div className="mt-4">
+                            <Link
+                                to="/destinations"
+                                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                View All Destinations
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Destinations List */}
@@ -103,19 +127,102 @@ const DestinationSection = ({ destination }) => {
         return null; // Don't show destination sections with no services
     }
 
+    // Parse images JSON if present
+    let images = [];
+    if (destination.images) {
+        try {
+            images = Array.isArray(destination.images) ? destination.images : JSON.parse(destination.images);
+        } catch {
+            images = [];
+        }
+    }
+
+    // Image slider state
+    const [imgIndex, setImgIndex] = useState(0);
+    const maxImgIndex = images.length > 0 ? images.length - 1 : 0;
+
+    const nextImg = () => setImgIndex((prev) => (prev >= maxImgIndex ? 0 : prev + 1));
+    const prevImg = () => setImgIndex((prev) => (prev <= 0 ? maxImgIndex : prev - 1));
+
     return (
         <section className="mb-16">
-            {/* Title and Subtitle */}
-            <div className="mb-6">
+            {/* Title and Subtitle Centered Above Images */}
+            <div className="mb-6 text-center">
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                     {destination.title}
                 </h2>
                 {destination.subtitle && (
-                    <p className="text-lg text-gray-600">
+                    <p className="text-lg text-gray-600 mb-2">
                         {destination.subtitle}
                     </p>
                 )}
             </div>
+            {/* Images Slider After Title/Subtitle */}
+            {images.length > 0 && (
+                <div className="relative w-full max-w-screen-xl mx-auto mt-4 px-12 mb-8">
+                    <div className="overflow-hidden rounded-2xl">
+                        <img
+                            src={`/storage/${images[imgIndex]}`}
+                            alt={`Destination ${destination.title} Image ${imgIndex + 1}`}
+                            className="w-full h-[32rem] object-cover rounded-2xl shadow-lg transition-all duration-500"
+                        />
+                    </div>
+                    {/* Navigation Arrows */}
+                    {images.length > 1 && (
+                        <>
+                            <button
+                                onClick={prevImg}
+                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 rounded-full p-2 shadow hover:bg-opacity-100"
+                                aria-label="Previous image"
+                            >
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <button
+                                onClick={nextImg}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 rounded-full p-2 shadow hover:bg-opacity-100"
+                                aria-label="Next image"
+                            >
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </>
+                    )}
+                    {/* Dots Indicator */}
+                    {images.length > 1 && (
+                        <div className="flex justify-center mt-3 space-x-2">
+                            {images.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setImgIndex(idx)}
+                                    className={`w-2 h-2 rounded-full transition-all ${imgIndex === idx ? 'bg-green-600 w-6' : 'bg-gray-300 hover:bg-gray-400'}`}
+                                    aria-label={`Go to image ${idx + 1}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+            {/* Country Display Above Description */}
+            {destination.country && (
+                <div className="mb-4 flex items-center text-sm text-green-600 font-medium">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {destination.country.name}
+                </div>
+            )}
+            {/* Description Below Images */}
+            {destination.description && (
+                <div className="mb-6">
+                    <p className="text-base text-gray-700 mt-2 text-left">
+                        {destination.description}
+                    </p>
+                </div>
+            )}
 
             {/* Services Slider */}
             <div className="relative">
@@ -267,4 +374,3 @@ const ServiceCard = ({ service }) => {
 };
 
 export default Destinations;
-

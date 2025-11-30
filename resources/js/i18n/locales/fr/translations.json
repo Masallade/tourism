@@ -169,5 +169,7 @@
   "or_continue_with": "Ou continuer avec",
   "continue_with_google": "Continuer avec Google",
   "sign_up_here": "S'inscrire ici",
-  "confirm_booking": "Confirmer la Réservation (Bientôt Disponible)"
+  "confirm_booking": "Confirmer la Réservation (Bientôt Disponible)",
+  "file_size_kb": "ko",
+  "file_size_mb": "Mo"
 }

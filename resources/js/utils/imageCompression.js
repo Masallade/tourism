@@ -22,11 +22,8 @@ export const compressImage = (file, options = {}) => {
             maxSizeMB = 2
         } = options;
 
-        // If file is already small enough, return as is
-        if (file.size <= maxSizeMB * 1024 * 1024) {
-            resolve(file);
-            return;
-        }
+        // Always compress to ensure consistent sizing, even if file is small
+        // This helps maintain quality and size consistency
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -59,13 +56,72 @@ export const compressImage = (file, options = {}) => {
                             return;
                         }
 
-                        // If still too large, reduce quality further
+                        // If still too large, reduce quality further and resize more aggressively
                         if (blob.size > maxSizeMB * 1024 * 1024) {
                             let currentQuality = quality;
+                            let currentWidth = width;
+                            let currentHeight = height;
                             let attempts = 0;
-                            const maxAttempts = 5;
+                            const maxAttempts = 8; // Increased attempts for better compression
 
                             const tryCompress = () => {
+                                // If still too large after quality reduction, reduce dimensions
+                                if (attempts > 3 && (currentWidth > maxWidth * 0.7 || currentHeight > maxHeight * 0.7)) {
+                                    // Reduce dimensions while maintaining aspect ratio
+                                    const aspectRatio = currentWidth / currentHeight;
+                                    currentWidth = Math.floor(currentWidth * 0.85);
+                                    currentHeight = Math.floor(currentWidth / aspectRatio);
+                                    
+                                    // Ensure dimensions don't go below minimum
+                                    if (currentWidth < 400) {
+                                        currentWidth = 400;
+                                        currentHeight = Math.floor(400 / aspectRatio);
+                                    }
+                                    
+                                    // Recreate canvas with smaller dimensions
+                                    const smallerCanvas = document.createElement('canvas');
+                                    smallerCanvas.width = currentWidth;
+                                    smallerCanvas.height = currentHeight;
+                                    const smallerCtx = smallerCanvas.getContext('2d');
+                                    smallerCtx.drawImage(img, 0, 0, currentWidth, currentHeight);
+                                    
+                                    smallerCanvas.toBlob(
+                                        (compressedBlob) => {
+                                            if (!compressedBlob) {
+                                                const compressedFile = new File(
+                                                    [blob],
+                                                    file.name,
+                                                    {
+                                                        type: file.type,
+                                                        lastModified: Date.now()
+                                                    }
+                                                );
+                                                resolve(compressedFile);
+                                                return;
+                                            }
+
+                                            if (compressedBlob.size <= maxSizeMB * 1024 * 1024 || attempts >= maxAttempts) {
+                                                const compressedFile = new File(
+                                                    [compressedBlob],
+                                                    file.name,
+                                                    {
+                                                        type: file.type,
+                                                        lastModified: Date.now()
+                                                    }
+                                                );
+                                                resolve(compressedFile);
+                                            } else {
+                                                currentQuality = Math.max(0.2, currentQuality - 0.1);
+                                                attempts++;
+                                                tryCompress();
+                                            }
+                                        },
+                                        file.type,
+                                        currentQuality
+                                    );
+                                    return;
+                                }
+                                
                                 canvas.toBlob(
                                     (compressedBlob) => {
                                         if (!compressedBlob) {
@@ -93,7 +149,7 @@ export const compressImage = (file, options = {}) => {
                                             );
                                             resolve(compressedFile);
                                         } else {
-                                            currentQuality = Math.max(0.3, currentQuality - 0.1);
+                                            currentQuality = Math.max(0.2, currentQuality - 0.1);
                                             attempts++;
                                             tryCompress();
                                         }
@@ -171,8 +227,8 @@ export const getCompressionSettings = (imageType) => {
         service_provider: {
             maxWidth: 1920,
             maxHeight: 1080,
-            quality: 0.85,
-            maxSizeMB: 2
+            quality: 0.8,
+            maxSizeMB: 1.5
         },
         service: {
             maxWidth: 1920,
@@ -213,8 +269,8 @@ export const getCompressionSettings = (imageType) => {
         document: {
             maxWidth: 1920,
             maxHeight: 1920,
-            quality: 0.8,
-            maxSizeMB: 2
+            quality: 0.75,
+            maxSizeMB: 1
         }
     };
 

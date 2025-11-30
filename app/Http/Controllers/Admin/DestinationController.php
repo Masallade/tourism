@@ -37,20 +37,43 @@ class DestinationController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-            'display_order' => 'nullable|integer|min:0',
-            'service_ids' => 'nullable|array',
-            'service_ids.*' => 'exists:services,id',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'subtitle' => 'nullable|string|max:255',
+                'is_active' => 'boolean',
+                'display_order' => 'nullable|integer|min:0',
+                'service_ids' => 'nullable|array',
+                'service_ids.*' => 'exists:services,id',
+                'country_id' => 'required|exists:countries,id',
+                'description' => 'required|string|min:500',
+                'images' => 'nullable|array|max:5',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Destination validation failed', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            throw $e;
+        }
+
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $path = \App\Helpers\ImageProcessor::processAndStore($file, 'destination', 'uploads/destinations');
+                $imagePaths[] = $path;
+            }
+        }
 
         $destination = Destination::create([
             'title' => $validated['title'],
             'subtitle' => $validated['subtitle'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
             'display_order' => $validated['display_order'] ?? 0,
+            'country_id' => $validated['country_id'],
+            'description' => $validated['description'],
+            'images' => !empty($imagePaths) ? json_encode($imagePaths) : null,
         ]);
 
         // Attach services if provided
@@ -75,13 +98,28 @@ class DestinationController extends Controller
             'display_order' => 'nullable|integer|min:0',
             'service_ids' => 'nullable|array',
             'service_ids.*' => 'exists:services,id',
+            'country_id' => 'required|exists:countries,id',
+            'description' => 'required|string|min:500',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
+
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $path = \App\Helpers\ImageProcessor::processAndStore($file, 'destination', 'uploads/destinations');
+                $imagePaths[] = $path;
+            }
+        }
 
         $destination->update([
             'title' => $validated['title'],
             'subtitle' => $validated['subtitle'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
             'display_order' => $validated['display_order'] ?? 0,
+            'country_id' => $validated['country_id'],
+            'description' => $validated['description'],
+            'images' => !empty($imagePaths) ? json_encode($imagePaths) : $destination->images,
         ]);
 
         // Sync services
@@ -183,4 +221,3 @@ class DestinationController extends Controller
         }
     }
 }
-

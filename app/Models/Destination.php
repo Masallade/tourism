@@ -14,7 +14,17 @@ class Destination extends Model
         'subtitle',
         'is_active',
         'display_order',
+        'description',
+        'images', // JSON array of image paths
+        'country_id',
     ];
+    /**
+     * Get the country for this destination
+     */
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
 
     protected $casts = [
         'is_active' => 'boolean',
@@ -47,7 +57,3 @@ class Destination extends Model
         return $query->orderBy('display_order', 'asc')->orderBy('created_at', 'desc');
     }
 }
-
-
-
-

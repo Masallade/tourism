@@ -6,8 +6,11 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
         subtitle: '',
         is_active: true,
         display_order: 0,
-        service_ids: []
+        service_ids: [],
+        description: '',
+        country_id: '',
     });
+    const [images, setImages] = useState([]); // For preview and upload
     const [services, setServices] = useState([]);
     const [loadingServices, setLoadingServices] = useState(true);
     const [errors, setErrors] = useState({});
@@ -64,8 +67,18 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                 subtitle: destination.subtitle || '',
                 is_active: destination.is_active !== undefined ? destination.is_active : true,
                 display_order: destination.display_order || 0,
-                service_ids: destination.services ? destination.services.map(s => s.id) : []
+                service_ids: destination.services ? destination.services.map(s => s.id) : [],
+                description: destination.description || '',
+                country_id: destination.country_id || '',
             });
+            if (destination.images) {
+                try {
+                    const imgs = Array.isArray(destination.images) ? destination.images : JSON.parse(destination.images);
+                    setImages(imgs.map(img => ({ url: `/storage/${img}`, file: null })));
+                } catch {
+                    setImages([]);
+                }
+            }
         }
     }, [destination]);
 
@@ -201,12 +214,8 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : (name === 'display_order' ? parseInt(value) || 0 : value)
         }));
-
         if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
+            setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
 
@@ -232,35 +241,39 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!validateForm()) {
-            return;
-        }
-
+        if (!validateForm()) return;
         setIsSubmitting(true);
-
         try {
-            const payload = {
-                title: formData.title.trim(),
-                subtitle: formData.subtitle.trim(),
-                is_active: formData.is_active,
-                display_order: formData.display_order,
-                service_ids: formData.service_ids
-            };
-
+            const payload = new FormData();
+            payload.append('title', formData.title.trim());
+            payload.append('subtitle', formData.subtitle.trim());
+            payload.append('is_active', formData.is_active ? '1' : '0');
+            payload.append('display_order', formData.display_order);
+            payload.append('description', formData.description);
+            payload.append('country_id', formData.country_id);
+            formData.service_ids.forEach(id => payload.append('service_ids[]', id));
+            // Only send new image files (file !== null)
+            images.filter(img => img.file).forEach((img) => {
+                payload.append('images[]', img.file);
+            });
             if (destination) {
-                await window.apiClient.put(`/api/admin/destinations/${destination.id}`, payload);
+                await window.apiClient.put(`/api/admin/destinations/${destination.id}`, payload, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             } else {
-                await window.apiClient.post('/api/admin/destinations', payload);
+                await window.apiClient.post('/api/admin/destinations', payload, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             }
-
             onSuccess();
         } catch (error) {
             console.error('Error saving destination:', error);
-            if (error.response?.data?.errors) {
-                setErrors(error.response.data.errors);
-            } else if (error.response?.data?.message) {
-                setErrors({ general: error.response.data.message });
+            if (error.response) {
+                // Show full error details for debugging
+                setErrors({
+                    ...error.response.data?.errors,
+                    debug: JSON.stringify(error.response.data, null, 2)
+                });
             } else {
                 setErrors({ general: 'An error occurred while saving the destination' });
             }
@@ -311,8 +324,7 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                         </svg>
                     </button>
                 </div>
-
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
                     <div className="space-y-4">
                         {/* Title */}
                         <div>
@@ -334,8 +346,7 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                             )}
                         </div>
 
-                        {/* Subtitle */}
-                        <div>
+                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Subtitle
                             </label>
@@ -348,6 +359,88 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                                 placeholder="e.g., Can't-miss picks near you"
                             />
                         </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Description
+                            </label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="Add a description for this destination"
+                                rows={3}
+                            />
+                            {errors.description && (
+                                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                            )}
+                        </div>
+
+                        {/* Country Dropdown (for destination) */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Country <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="country_id"
+                                value={formData.country_id}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                required
+                            >
+                                <option value="">Select Country</option>
+                                {countries.map(country => (
+                                    <option key={country.id} value={country.id}>{country.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Images Upload */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Images (max 5)
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={e => {
+                                    const files = Array.from(e.target.files);
+                                    let newImages = [...images];
+                                    files.forEach(file => {
+                                        if (newImages.length < 5) {
+                                            newImages.push({ file, url: URL.createObjectURL(file) });
+                                        }
+                                    });
+                                    setImages(newImages.slice(0, 5));
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                disabled={images.length >= 5}
+                            />
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {images.map((img, idx) => (
+                                    <div key={idx} className="relative w-24 h-24 border rounded overflow-hidden">
+                                        <img src={img.url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full" />
+                                        <button
+                                            type="button"
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                            onClick={() => {
+                                                setImages(images.filter((_, i) => i !== idx));
+                                            }}
+                                            title="Remove image"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            {images.length >= 5 && (
+                                <p className="text-xs text-gray-500 mt-1">Maximum 5 images allowed.</p>
+                            )}
+                        </div>
+                       
 
                         {/* Display Order */}
                         <div className="grid grid-cols-2 gap-4">
@@ -627,4 +720,3 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
 };
 
 export default DestinationForm;
-

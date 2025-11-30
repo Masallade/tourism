@@ -30,17 +30,31 @@ Route::get('/country/{countryId}/services', function ($countryId) {
 
 // Get all services for a theme
 Route::get('/theme/{themeId}/services', function ($themeId) {
-    // Get services that have this theme either through theme_id or through the many-to-many relationship
-    $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
-        ->where(function($query) use ($themeId) {
-            $query->where('theme_id', $themeId)
-                  ->orWhereHas('themes', function($q) use ($themeId) {
-                      $q->where('themes.id', $themeId);
-                  });
-        })
-        ->get();
-    
-    return $services;
+    try {
+        \Log::info("Fetching services for theme ID: {$themeId}");
+        
+        // Validate themeId is numeric
+        if (!is_numeric($themeId)) {
+            \Log::error("Invalid theme ID: {$themeId}");
+            return response()->json(['error' => 'Invalid theme ID'], 400);
+        }
+        
+        // Get services that have this theme through the many-to-many relationship
+        $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'themes'])
+            ->whereHas('themes', function($q) use ($themeId) {
+                $q->where('themes.id', $themeId);
+            })
+            ->get();
+        
+        \Log::info("Found {$services->count()} services for theme ID: {$themeId}");
+        
+        return response()->json($services);
+    } catch (\Exception $e) {
+        \Log::error("Error fetching services for theme ID {$themeId}: " . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json(['error' => 'Failed to fetch services', 'message' => $e->getMessage()], 500);
+    }
 });
 
 // Get a single country by ID with provider count
@@ -627,10 +641,17 @@ Route::get('/destinations/{id}', function ($id) {
 
 // Destinations - Admin routes
 use App\Http\Controllers\Admin\DestinationController;
+
 Route::get('/admin/destinations', [DestinationController::class, 'index'])->middleware('admin.auth');
+
 // IMPORTANT: More specific routes must come BEFORE parameterized routes
+
 Route::get('/admin/destinations/services', [DestinationController::class, 'getServices'])->middleware('admin.auth');
+
 Route::get('/admin/destinations/{id}', [DestinationController::class, 'show'])->middleware('admin.auth');
+
 Route::post('/admin/destinations', [DestinationController::class, 'store'])->middleware('admin.auth');
+
 Route::put('/admin/destinations/{id}', [DestinationController::class, 'update'])->middleware('admin.auth');
+
 Route::delete('/admin/destinations/{id}', [DestinationController::class, 'destroy'])->middleware('admin.auth');

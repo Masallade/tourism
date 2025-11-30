@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTranslation } from 'react-i18next';
 import { countryCodes } from '../../utils/countryCodes';
 import { compressImage, compressImages, getCompressionSettings } from '../../utils/imageCompression';
 
@@ -69,6 +70,7 @@ const MapClickHandler = () => {
 
 // Add showApproveCheckbox prop and onBack prop
 const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false, onBack = null }) => {
+    const { t } = useTranslation();
     // Initialize formData synchronously with provider data if available
     const getInitialFormData = () => {
         if (provider) {
@@ -672,36 +674,132 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             }
             
             // Compress and append image if provided
+            let compressedImage = null;
             if (image) {
                 try {
                     const compressionSettings = getCompressionSettings('service_provider');
-                    const compressedImage = await compressImage(image, compressionSettings);
-                    form.append('image', compressedImage);
+                    compressedImage = await compressImage(image, compressionSettings);
                     console.log(`Image compressed: ${(image.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedImage.size / 1024 / 1024).toFixed(2)}MB`);
                 } catch (error) {
                     console.error('Error compressing image, using original:', error);
-                    form.append('image', image);
+                    compressedImage = image;
                 }
             }
             
             // Compress and append documents if provided
+            let compressedDocs = [];
             if (documents.length > 0) {
                 try {
                     const compressionSettings = getCompressionSettings('document');
-                    const compressedDocs = await compressImages(documents, compressionSettings);
-                    compressedDocs.forEach((doc) => {
-                        form.append('documents[]', doc);
-                        if (doc.type.startsWith('image/')) {
-                            const originalDoc = documents.find(d => d.name === doc.name);
-                            if (originalDoc) {
-                                console.log(`Document ${doc.name} compressed: ${(originalDoc.size / 1024 / 1024).toFixed(2)}MB -> ${(doc.size / 1024 / 1024).toFixed(2)}MB`);
+                    compressedDocs = await compressImages(documents, compressionSettings);
+                    
+                    // Verify all documents were processed
+                    if (compressedDocs.length !== documents.length) {
+                        console.error(`Document count mismatch: expected ${documents.length}, got ${compressedDocs.length}`);
+                        setSummaryError('Error processing documents. Please try again.');
+                        setErrors({ documents: 'Error processing documents' });
+                        setIsSubmitting(false);
+                        return;
+                    }
+                    
+                    compressedDocs.forEach((doc, index) => {
+                        const originalDoc = documents[index];
+                        if (originalDoc) {
+                            if (doc.type.startsWith('image/')) {
+                                console.log(`Document ${index + 1} (${doc.name}) compressed: ${(originalDoc.size / 1024 / 1024).toFixed(2)}MB -> ${(doc.size / 1024 / 1024).toFixed(2)}MB`);
+                            } else {
+                                // PDF or other non-image files - not compressed
+                                console.log(`Document ${index + 1} (${doc.name}, ${doc.type}): ${(doc.size / 1024 / 1024).toFixed(2)}MB (not compressed)`);
                             }
+                        } else {
+                            console.warn(`No original document found for index ${index}`);
                         }
                     });
                 } catch (error) {
                     console.error('Error compressing documents, using originals:', error);
-                    documents.forEach((doc) => form.append('documents[]', doc));
+                    compressedDocs = documents;
                 }
+            }
+            
+            // Calculate total size after compression with detailed logging
+            const imageSize = compressedImage ? compressedImage.size : 0;
+            const docsSize = compressedDocs.reduce((sum, doc) => {
+                const docSize = doc.size || 0;
+                console.log(`Document ${doc.name}: ${(docSize / 1024 / 1024).toFixed(2)}MB (type: ${doc.type})`);
+                return sum + docSize;
+            }, 0);
+            const totalSize = imageSize + docsSize;
+            const totalSizeMB = totalSize / 1024 / 1024;
+            const maxSizeMB = 7; // Leave 1MB buffer below 8MB limit
+            
+            console.log(`Size breakdown - Image: ${(imageSize / 1024 / 1024).toFixed(2)}MB, Documents: ${(docsSize / 1024 / 1024).toFixed(2)}MB`);
+            console.log(`Total compressed size: ${totalSizeMB.toFixed(2)}MB`);
+            
+            // If still too large after compression, show error
+            if (totalSizeMB > maxSizeMB) {
+                setSummaryError(`Files are too large even after compression (${totalSizeMB.toFixed(2)}MB). Maximum allowed: ${maxSizeMB}MB. Please use smaller files or fewer documents.`);
+                setErrors({
+                    general: `Total file size (${totalSizeMB.toFixed(2)}MB) exceeds the limit. Please reduce file sizes or remove some documents.`
+                });
+                setIsSubmitting(false);
+                return;
+            }
+            
+            // Validate and append compressed files to form
+            if (compressedImage) {
+                // Validate image file
+                if (!(compressedImage instanceof File) || compressedImage.size === 0) {
+                    setSummaryError('Invalid image file. Please select a valid image.');
+                    setErrors({ image: 'Invalid image file' });
+                    setIsSubmitting(false);
+                    return;
+                }
+                form.append('image', compressedImage, compressedImage.name);
+            }
+            
+            // Validate all documents first before appending
+            for (let index = 0; index < compressedDocs.length; index++) {
+                const doc = compressedDocs[index];
+                
+                // Validate each document file
+                if (!(doc instanceof File)) {
+                    console.error(`Invalid document at index ${index}:`, doc);
+                    setSummaryError(`Document ${index + 1} is invalid. Please check all files and try again.`);
+                    setErrors({ documents: `Document ${index + 1} is invalid` });
+                    setIsSubmitting(false);
+                    return;
+                }
+                
+                if (doc.size === 0) {
+                    console.error(`Empty document at index ${index}:`, doc.name);
+                    setSummaryError(`Document ${index + 1} (${doc.name}) is empty. Please check the file and try again.`);
+                    setErrors({ documents: `Document ${index + 1} is empty` });
+                    setIsSubmitting(false);
+                    return;
+                }
+                
+                // Check file type is allowed
+                const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+                if (!allowedTypes.includes(doc.type)) {
+                    console.error(`Invalid file type at index ${index}:`, doc.type);
+                    setSummaryError(`Document ${index + 1} (${doc.name}) has invalid file type. Only PDF, JPG, and PNG are allowed.`);
+                    setErrors({ documents: `Document ${index + 1} has invalid file type` });
+                    setIsSubmitting(false);
+                    return;
+                }
+                
+                // Check individual file size (max 10MB per file)
+                const docSizeMB = doc.size / 1024 / 1024;
+                if (docSizeMB > 10) {
+                    console.error(`Document ${index + 1} too large:`, docSizeMB.toFixed(2), 'MB');
+                    setSummaryError(`Document ${index + 1} (${doc.name}) is too large (${docSizeMB.toFixed(2)}MB). Maximum size per file is 10MB.`);
+                    setErrors({ documents: `Document ${index + 1} is too large` });
+                    setIsSubmitting(false);
+                    return;
+                }
+                
+                console.log(`Appending document ${index}: ${doc.name} (${(doc.size / 1024 / 1024).toFixed(2)}MB, type: ${doc.type})`);
+                form.append('documents[]', doc, doc.name);
             }
             
             // Debug: Log FormData contents before sending
@@ -921,7 +1019,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                                         {image.name}
                                                     </p>
                                                     <p className="text-xs text-gray-500 mt-1">
-                                                        {(image.size / 1024 / 1024).toFixed(2)} MB
+                                                        {(image.size / 1024 / 1024).toFixed(2)} {t('file_size_mb')}
                                                     </p>
                                                 </div>
                                                 <button
@@ -1152,7 +1250,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                                                     {doc.name}
                                                                 </p>
                                                                 <p className="text-xs text-gray-600">
-                                                                    {(doc.size / 1024).toFixed(1)} KB
+                                                                    {(doc.size / 1024).toFixed(1)} {t('file_size_kb')}
                                                                 </p>
                                                             </div>
                                                             <button

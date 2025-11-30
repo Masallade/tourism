@@ -16,6 +16,8 @@ const LanguageSwitcher = () => {
 
   const changeLanguage = (langCode) => {
     i18n.changeLanguage(langCode);
+    // Explicitly save to localStorage to ensure persistence
+    localStorage.setItem('i18nextLng', langCode);
     setIsOpen(false);
     // All languages are LTR, so always set to ltr
     document.documentElement.setAttribute('dir', 'ltr');

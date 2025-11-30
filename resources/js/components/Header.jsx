@@ -18,6 +18,8 @@ export default function Header({ onProviderLogin, provider }) {
   const [user, setUser] = useState(null);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [isDestinationsDropdownOpen, setIsDestinationsDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   // Check if user is logged in
@@ -45,7 +47,18 @@ export default function Header({ onProviderLogin, provider }) {
       }
     };
     checkAuth();
+    // Fetch countries for destinations dropdown
+    fetchCountries();
   }, []);
+
+  const fetchCountries = async () => {
+    try {
+      const response = await window.apiClient.get('/api/countries');
+      setCountries(response.data);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -249,7 +262,7 @@ export default function Header({ onProviderLogin, provider }) {
         </div>
       )}
       
-      <style jsx>{`
+      <style>{`
         @keyframes slide-in {
           from {
             transform: translateX(100%);
@@ -284,12 +297,59 @@ export default function Header({ onProviderLogin, provider }) {
           <nav className="hidden lg:flex items-center space-x-6">
             {/* Main Navigation Links */}
             <div className="flex items-center space-x-1">
-            <Link 
-              to="/destinations" 
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
-            >
-              {t('destinations')}
-            </Link>
+            {/* Destinations Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
+                onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
+                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm flex items-center"
+              >
+                {t('destinations')}
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isDestinationsDropdownOpen && (
+                <div 
+                  className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-green-100 z-50 backdrop-blur-sm"
+                  onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
+                  onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
+                >
+                  <div className="py-2">
+                    {/* All Destinations */}
+                    <Link
+                      to="/destinations"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                    >
+                      <svg className="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      All Destinations
+                    </Link>
+                    
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 my-1"></div>
+                    
+                    {/* Countries */}
+                    {countries.map((country) => (
+                      <Link
+                        key={country.id}
+                        to={`/destinations?country=${country.id}`}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                      >
+                        <svg className="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {country.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link 
               to="/trips" 
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-4 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm"
@@ -440,7 +500,17 @@ export default function Header({ onProviderLogin, provider }) {
           <div className="lg:hidden">
             <div className="px-4 pt-2 pb-3 space-y-1 bg-green-50 rounded-lg mt-2">
               {/* Navigation Links */}
-              <Link to="/destinations" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Destinations</Link>
+              <Link to="/destinations" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">All Destinations</Link>
+              {/* Countries in Mobile */}
+              {countries.slice(0, 5).map((country) => (
+                <Link 
+                  key={country.id} 
+                  to={`/destinations?country=${country.id}`} 
+                  className="text-green-700 hover:text-green-500 block px-6 py-2 rounded-md text-sm font-medium ml-4"
+                >
+                  {country.name}
+                </Link>
+              ))}
               <Link to="/trips" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Trips</Link>
               <a href="#reviews" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">Reviews</a>
               <Link to="/about" className="text-green-700 hover:text-green-500 block px-3 py-2 rounded-md text-base font-medium">About</Link>
