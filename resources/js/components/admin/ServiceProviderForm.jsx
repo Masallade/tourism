@@ -405,7 +405,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         // Debug logging
         console.log('Validating form with data:', {
             name: formData.name,
@@ -497,11 +497,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         }
         // Documents (at least one required for new providers, optional for edits if existing documents exist)
         const hasExistingDocuments = existingDocuments && existingDocuments.length > 0;
+        const maxDocuments = 7;
         if (!provider && documents.length === 0) {
             newErrors.documents = 'At least one document is required';
         } else if (provider && !hasExistingDocuments && documents.length === 0) {
             // Editing but no existing documents and no new documents selected
             newErrors.documents = 'At least one document is required';
+        } else if (documents.length > maxDocuments) {
+            newErrors.documents = `Maximum ${maxDocuments} documents allowed`;
         } else if (documents.length > 0 && documents.some(doc => !allowedDocTypes.includes(doc.type))) {
             newErrors.documents = 'Documents must be PDF, JPG, or PNG';
         }
@@ -680,7 +683,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                     const compressionSettings = getCompressionSettings('service_provider');
                     compressedImage = await compressImage(image, compressionSettings);
                     console.log(`Image compressed: ${(image.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedImage.size / 1024 / 1024).toFixed(2)}MB`);
-                } catch (error) {
+        } catch (error) {
                     console.error('Error compressing image, using original:', error);
                     compressedImage = image;
                 }
@@ -730,16 +733,16 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             }, 0);
             const totalSize = imageSize + docsSize;
             const totalSizeMB = totalSize / 1024 / 1024;
-            const maxSizeMB = 7; // Leave 1MB buffer below 8MB limit
+            const maxSizeMB = 65; // 7 documents × 10MB = 70MB, leave 5MB buffer
             
             console.log(`Size breakdown - Image: ${(imageSize / 1024 / 1024).toFixed(2)}MB, Documents: ${(docsSize / 1024 / 1024).toFixed(2)}MB`);
             console.log(`Total compressed size: ${totalSizeMB.toFixed(2)}MB`);
             
             // If still too large after compression, show error
             if (totalSizeMB > maxSizeMB) {
-                setSummaryError(`Files are too large even after compression (${totalSizeMB.toFixed(2)}MB). Maximum allowed: ${maxSizeMB}MB. Please use smaller files or fewer documents.`);
+                setSummaryError(`Files are too large even after compression (${totalSizeMB.toFixed(2)}MB). Maximum allowed: ${maxSizeMB}MB total (7 documents × 10MB each). Please use smaller files or fewer documents.`);
                 setErrors({
-                    general: `Total file size (${totalSizeMB.toFixed(2)}MB) exceeds the limit. Please reduce file sizes or remove some documents.`
+                    general: `Total file size (${totalSizeMB.toFixed(2)}MB) exceeds the limit. Maximum: 7 documents, 10MB each (65MB total). Please reduce file sizes or remove some documents.`
                 });
                 setIsSubmitting(false);
                 return;
@@ -751,7 +754,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 if (!(compressedImage instanceof File) || compressedImage.size === 0) {
                     setSummaryError('Invalid image file. Please select a valid image.');
                     setErrors({ image: 'Invalid image file' });
-                    setIsSubmitting(false);
+            setIsSubmitting(false);
                     return;
                 }
                 form.append('image', compressedImage, compressedImage.name);
@@ -838,7 +841,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             if (!hasCountryId || !hasName || !hasPriceRange || !hasServiceTypeIds) {
                 console.error('Missing required fields in FormData!');
                 setErrors(prev => ({
-                    ...prev,
+            ...prev,
                     general: 'Required fields are missing. Please check the form and try again.'
                 }));
                 setIsSubmitting(false);
@@ -956,7 +959,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Profile Image <span className="text-red-500">*</span>
-                        </label>
+                            </label>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Image Preview Section */}
@@ -1011,7 +1014,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                                 />
                                                 <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
                                                     New
-                                                </div>
+                        </div>
                                             </div>
                                             <div className="mt-3 flex items-center justify-between">
                                                 <div className="flex-1 min-w-0">
@@ -1043,23 +1046,23 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                 {/* File Input */}
                                 {!imagePreview && (
                                     <div className="relative">
-                                        <input
+                            <input
                                             type="file"
                                             name="image"
                                             accept="image/jpeg,image/png,image/jpg"
-                                            onChange={handleInputChange}
+                                onChange={handleInputChange}
                                             className="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gradient-to-r file:from-green-500 file:to-emerald-600 file:text-white hover:file:from-green-600 hover:file:to-emerald-700 file:cursor-pointer file:transition-all file:shadow-lg file:hover:shadow-xl cursor-pointer"
-                                        />
+                            />
                                         <p className="text-xs text-gray-500 mt-2">JPG or PNG, max 5MB</p>
-                                    </div>
+                        </div>
                                 )}
                                 
                                 {errors.image && (
                                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                                         <p className="text-red-600 text-sm font-medium">{errors.image}</p>
                                     </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
                             {/* Documents Section - Enhanced */}
                             <div className="space-y-4">
                                 <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -1067,7 +1070,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     Documents (PDF, JPG, PNG) <span className="text-red-500">*</span>
-                                </label>
+                            </label>
                                 
                                 {/* Drag and Drop Area - Enhanced */}
                                 <div
@@ -1095,6 +1098,13 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             return validTypes.includes(file.type);
                                         });
                                         if (files.length > 0) {
+                                            const currentCount = documents.length;
+                                            const maxDocuments = 7;
+                                            if (currentCount + files.length > maxDocuments) {
+                                                setSummaryError(`Maximum ${maxDocuments} documents allowed. You have ${currentCount} document(s) and trying to add ${files.length} more.`);
+                                                setErrors({ documents: `Maximum ${maxDocuments} documents allowed` });
+                                                return;
+                                            }
                                             setDocuments(prev => [...prev, ...files]);
                                             if (errors.documents) {
                                                 setErrors(prev => ({ ...prev, documents: '' }));
@@ -1102,13 +1112,20 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         }
                                     }}
                                 >
-                                    <input
-                                        type="file"
+                            <input
+                                type="file"
                                         name="documents"
                                         accept="application/pdf,image/jpeg,image/png,image/jpg"
-                                        multiple
+                                multiple
                                         onChange={(e) => {
                                             const files = Array.from(e.target.files || []);
+                                            const currentCount = documents.length;
+                                            const maxDocuments = 7;
+                                            if (currentCount + files.length > maxDocuments) {
+                                                setSummaryError(`Maximum ${maxDocuments} documents allowed. You have ${currentCount} document(s) and trying to add ${files.length} more.`);
+                                                setErrors({ documents: `Maximum ${maxDocuments} documents allowed` });
+                                                return;
+                                            }
                                             setDocuments(prev => [...prev, ...files]);
                                             if (errors.documents) {
                                                 setErrors(prev => ({ ...prev, documents: '' }));
@@ -1130,7 +1147,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                             Click to browse or drag & drop files here
                                         </p>
                                         <p className="text-sm text-gray-600 mb-4">
-                                            Select multiple files at once (PDF, JPG, PNG) • Max 10MB per file
+                                            Select multiple files at once (PDF, JPG, PNG) • Max 7 documents, 10MB per file
                                         </p>
                                         <button
                                             type="button"
@@ -1255,18 +1272,18 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                                             </div>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => {
+                                            onClick={() => {
                                                                     setDocuments(prev => prev.filter((_, i) => i !== index));
-                                                                }}
+                                            }}
                                                                 className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
                                                                 title="Remove file"
-                                                            >
+                                        >
                                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                                                 </svg>
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                        </button>
+                                    </div>
+                            </div>
                                                 );
                                             })}
                                         </div>
@@ -1279,8 +1296,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                                     These new files will replace the existing documents
                                                 </p>
                                             </div>
-                                        )}
-                                    </div>
+                            )}
+                        </div>
                                 )}
                                 
                                 {errors.documents && (
@@ -1296,12 +1313,12 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                         <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Service Provider Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
+                                </label>
+                                <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
-                                onChange={handleInputChange}
+                                    onChange={handleInputChange}
                                 className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${
                                     errors.name ? 'border-red-400' : 'border-green-200'
                                 }`}
@@ -1310,7 +1327,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             {errors.name && (
                                 <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                             )}
-                        </div>
+                            </div>
 
                         <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-blue-700 mb-2">
@@ -1326,14 +1343,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                     const isChecked = serviceTypeIds.includes(typeId);
                                     return (
                                         <label key={type.id} className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm hover:bg-blue-100 transition cursor-pointer border border-blue-200">
-                                            <input
-                                                type="checkbox"
+                                    <input
+                                        type="checkbox"
                                                 checked={isChecked}
                                                 onChange={() => handleServiceTypeChange(typeId)}
                                                 className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                                             />
                                             <span className="ml-2 text-sm text-blue-900 font-medium">{type.name}</span>
-                                        </label>
+                                </label>
                                     );
                                 })}
                             </div>
@@ -1345,7 +1362,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                         <div>
                             <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Country <span className="text-red-500">*</span>
-                            </label>
+                                </label>
                             <select
                                 name="country_id"
                                 value={formData.country_id !== null && formData.country_id !== undefined ? String(formData.country_id) : ''}
@@ -1363,10 +1380,10 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             </select>
                             {errors.country_id && (
                                 <p className="text-red-500 text-sm mt-1">{errors.country_id}</p>
-                            )}
-                        </div>
-
-                        <div>
+                                )}
+                            </div>
+                            
+                                <div>
                             <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Price Range <span className="text-red-500">*</span>
                             </label>
@@ -1393,7 +1410,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Website
                             </label>
-                            <input
+                                    <input
                                 type="url"
                                 name="website"
                                 value={formData.website}
@@ -1406,9 +1423,9 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             {errors.website && (
                                 <p className="text-red-500 text-sm mt-1">{errors.website}</p>
                             )}
-                        </div>
+                                </div>
 
-                        <div>
+                                <div>
                             <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Email
                             </label>
@@ -1425,14 +1442,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             {errors.email && (
                                 <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                             )}
-                        </div>
+                                </div>
 
-                        <div>
+                                <div>
                             <label className="block text-sm font-semibold text-blue-700 mb-2">
                                 Phone
                             </label>
                             <div className="flex gap-2">
-                                <select
+                                    <select
                                     name="country_code"
                                     value={formData.country_code || ''}
                                     onChange={e => {
@@ -1446,8 +1463,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         <option key={cc.code} value={cc.code}>
                                             {cc.code}
                                         </option>
-                                    ))}
-                                </select>
+                                        ))}
+                                    </select>
                                 <input
                                     type="tel"
                                     name="phone"
@@ -1468,7 +1485,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             {errors.country_code && (
                                 <p className="text-red-500 text-sm mt-1">{errors.country_code}</p>
                             )}
-                        </div>
+                                </div>
 
                         <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-green-700 mb-2">
@@ -1513,12 +1530,12 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                     </LocationContext.Provider>
                                 )}
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs text-gray-600 mb-1">Latitude</label>
-                                    <input
-                                        type="text"
+                                <input
+                                    type="text"
                                         name="lat"
                                         value={formData.lat}
                                         onChange={handleInputChange}
@@ -1528,7 +1545,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         placeholder="Latitude"
                                     />
                                 </div>
-                                <div>
+                                            <div>
                                     <label className="block text-xs text-gray-600 mb-1">Longitude</label>
                                     <input
                                         type="text"
@@ -1540,8 +1557,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         }`}
                                         placeholder="Longitude"
                                     />
-                                </div>
-                            </div>
+                                            </div>
+                                        </div>
                             {errors.location && (
                                 <p className="text-red-500 text-sm mt-1">{errors.location}</p>
                             )}
@@ -1563,14 +1580,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                         <span className="ml-2 text-sm text-green-700 font-medium">{theme.name}</span>
                                     </label>
                                 ))}
-                            </div>
-                        </div>
+                                    </div>
+                                    </div>
 
                         {showApproveCheckbox && (
                             <div className="md:col-span-2 mt-2">
                                 <label className="flex items-center bg-blue-50 rounded-lg px-3 py-2 shadow-sm">
-                                    <input
-                                        type="checkbox"
+                                                    <input
+                                                        type="checkbox"
                                         name="is_approved"
                                         checked={formData.is_approved}
                                         onChange={handleInputChange}
@@ -1578,28 +1595,28 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                                     />
                                     <span className="ml-2 text-sm font-semibold text-blue-700">Approve this service provider</span>
                                 </label>
-                            </div>
-                        )}
-                    </div>
+                                                        </div>
+                                                            )}
+                                                        </div>
 
                     {errors.general && (
                         <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg shadow-sm">
                             {errors.general}
-                        </div>
-                    )}
-
+                                    </div>
+                                )}
+                                
                     <div className="flex justify-between mt-8">
                         {onBack && (
-                            <button
-                                type="button"
+                                        <button
+                                            type="button"
                                 onClick={onBack}
                                 className="px-6 py-2 text-base font-semibold text-blue-700 bg-blue-100 border-2 border-blue-300 rounded-lg hover:bg-blue-200 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition flex items-center gap-2"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
+                                                    </svg>
                                 Go Back
-                            </button>
+                                        </button>
                         )}
                         <div className={`flex space-x-4 ${!onBack ? 'ml-auto' : ''}`}>
                             <button

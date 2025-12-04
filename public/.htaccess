@@ -1,3 +1,13 @@
+# PHP Upload Limits - Increase for large file uploads
+# Note: These may not work in XAMPP if AllowOverride is disabled
+# If this doesn't work, you MUST update php.ini and restart Apache
+php_value upload_max_filesize 512M
+php_value post_max_size 512M
+php_value max_file_uploads 20
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 512M
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
