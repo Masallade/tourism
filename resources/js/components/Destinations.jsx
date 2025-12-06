@@ -18,6 +18,8 @@ const Destinations = () => {
         const countryId = urlParams.get('country');
         setSelectedCountry(countryId);
         
+        // Reset loading state when country changes
+        setLoading(true);
         fetchDestinations(countryId);
     }, [location.search]);
 
@@ -62,31 +64,8 @@ const Destinations = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50" style={{ fontFamily: "'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif" }}>
             <div className="max-w-screen-xl mx-auto px-12 py-16">
-                {/* Page Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                        {selectedCountry ? `${t('explore_destinations')} in ${destinations[0]?.country?.name || 'Selected Country'}` : t('explore_destinations')}
-                    </h1>
-                    <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                        {selectedCountry ? `Discover amazing destinations and experiences in ${destinations[0]?.country?.name || 'this country'}` : t('explore_destinations_subtitle')}
-                    </p>
-                    {selectedCountry && (
-                        <div className="mt-4">
-                            <Link
-                                to="/destinations"
-                                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                View All Destinations
-                            </Link>
-                        </div>
-                    )}
-                </div>
-
                 {/* Destinations List */}
                 {destinations.length === 0 ? (
                     <div className="text-center py-12">
@@ -148,11 +127,11 @@ const DestinationSection = ({ destination }) => {
         <section className="mb-16">
             {/* Title and Subtitle Centered Above Images */}
             <div className="mb-6 text-center">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700 }}>
                     {destination.title}
                 </h2>
                 {destination.subtitle && (
-                    <p className="text-lg text-gray-600 mb-2">
+                    <p className="text-lg text-gray-600 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
                         {destination.subtitle}
                     </p>
                 )}
@@ -225,13 +204,22 @@ const DestinationSection = ({ destination }) => {
             )}
 
             {/* Services Slider */}
-            <div className="relative">
+            <div className="relative mt-8">
+                {/* Background for Services Slider */}
+                <div className="absolute inset-0 bg-gradient-to-br from-green-100 via-green-50 to-blue-100 rounded-2xl shadow-lg -z-10"></div>
+                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-8 border-2 border-green-200 shadow-xl">
+                    {/* Section Title */}
+                    <div className="mb-6 text-center">
+                        <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700 }}>Available Services</h3>
+                        <p className="text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>Explore services in this destination</p>
+                    </div>
+
                 {/* Navigation Arrows */}
                 {services.length > servicesPerView && (
                     <>
                         <button
                             onClick={prevSlide}
-                            className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
                             aria-label="Previous services"
                         >
                             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +228,7 @@ const DestinationSection = ({ destination }) => {
                         </button>
                         <button
                             onClick={nextSlide}
-                            className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
                             aria-label="Next services"
                         >
                             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,6 +274,7 @@ const DestinationSection = ({ destination }) => {
                         ))}
                     </div>
                 )}
+                </div>
             </div>
         </section>
     );

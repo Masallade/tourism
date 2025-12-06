@@ -421,19 +421,12 @@ const About = () => {
     hero_title: 'About Unison Tour',
     hero_subtitle: 'Pioneering sustainable tourism for a better tomorrow',
     hero_image: null,
-    mission_title: 'Our Mission',
-    mission_description: `At Unison Tour, we believe that exploring the world shouldn't come at the expense of our planet. 
-Our mission is to make sustainable travel accessible, enjoyable, and impactful for everyone.
-
-We partner with eco-conscious service providers worldwide to offer authentic experiences that 
-respect local communities, preserve natural habitats, and minimize environmental impact.
-
-Every journey booked through Unison Tour contributes to conservation efforts and supports 
-sustainable tourism initiatives around the globe.`,
+    mission_title: t('our_mission'),
+    mission_description: null, // Will use translation keys if null
     mission_image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&h=600&fit=crop',
     mission_stat_number: '10K+',
     mission_stat_label: 'Eco-Travelers',
-    values_title: 'Our Core Values',
+    values_title: t('our_core_values'),
     values: [
       { title: 'Sustainability', description: 'We prioritize eco-friendly practices in every aspect of travel, from carbon-neutral transportation to zero-waste accommodations.' },
       { title: 'Community', description: 'We support local communities by partnering with indigenous guides, local artisans, and community-owned businesses.' },
@@ -444,8 +437,8 @@ sustainable tourism initiatives around the globe.`,
     impact_stat_2_number: '500+',
     impact_stat_3_number: '10K+',
     impact_stat_4_number: '1M+',
-    team_title: 'Best Team of Ours',
-    team_description: 'A sleek and modern digital platform designed to deliver fast performance, intuitive navigation, and a visually engaging experience. Built with attention to detail, it adapts seamlessly to different devices and provides users with everything they need in a smooth and efficient way.',
+    team_title: t('best_team'),
+    team_description: t('team_description'),
     team_members: [
       { name: 'Sarah Johnson', role: 'Founder & CEO', image: 'https://i.pravatar.cc/300?img=1' },
       { name: 'Michael Chen', role: 'Head of Sustainability', image: 'https://i.pravatar.cc/300?img=13' },
@@ -507,10 +500,10 @@ sustainable tourism initiatives around the globe.`,
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center text-center z-10">
           <div>
             <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-white">
-              {data.hero_title || 'About Unison Tour'}
+              {data.hero_title || t('about_unison_tour')}
             </h1>
             <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto">
-              {data.hero_subtitle || 'Pioneering sustainable tourism for a better tomorrow'}
+              {data.hero_subtitle || t('pioneering_sustainable_tourism')}
             </p>
           </div>
         </div>
@@ -570,7 +563,7 @@ sustainable tourism initiatives around the globe.`,
 
       {/* Values Section with Slider */}
       <ValuesSlider 
-        title={data.values_title || 'Our Core Values'}
+        title={data.values_title || t('our_core_values')}
         values={(data.values && Array.isArray(data.values) && data.values.length > 0 ? data.values : defaultData.values)
           .filter(value => value.title && value.description)}
       />
@@ -578,14 +571,14 @@ sustainable tourism initiatives around the globe.`,
       {/* Impact Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
-          {data.impact_title || 'Our Impact'}
+          {data.impact_title || t('our_impact')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
           {[
-            { number: data.impact_stat_1_number, label: 'Countries Covered', gradient: 'from-green-500 to-green-600' },
-            { number: data.impact_stat_2_number, label: 'Eco-Partners', gradient: 'from-blue-500 to-blue-600' },
-            { number: data.impact_stat_3_number, label: 'Happy Travelers', gradient: 'from-green-600 to-blue-600' },
-            { number: data.impact_stat_4_number, label: 'Trees Planted', gradient: 'from-blue-600 to-green-600' }
+            { number: data.impact_stat_1_number, label: data.impact_stat_1_label || t('countries_covered'), gradient: 'from-green-500 to-green-600' },
+            { number: data.impact_stat_2_number, label: data.impact_stat_2_label || t('eco_partners'), gradient: 'from-blue-500 to-blue-600' },
+            { number: data.impact_stat_3_number, label: data.impact_stat_3_label || t('happy_travelers'), gradient: 'from-green-600 to-blue-600' },
+            { number: data.impact_stat_4_number, label: data.impact_stat_4_label || t('trees_planted'), gradient: 'from-blue-600 to-green-600' }
           ].filter(stat => stat.number).map((stat, idx) => (
             <div key={idx} className={`bg-gradient-to-br ${stat.gradient} text-white rounded-2xl p-8 shadow-lg`}>
               <p className="text-5xl font-bold mb-2">{stat.number}</p>
@@ -597,8 +590,8 @@ sustainable tourism initiatives around the globe.`,
 
       {/* Team Section with Slider */}
       <TeamSlider 
-        title={data.team_title || 'Best Team of Ours'}
-        description={data.team_description || 'A sleek and modern digital platform designed to deliver fast performance, intuitive navigation, and a visually engaging experience. Built with attention to detail, it adapts seamlessly to different devices and provides users with everything they need in a smooth and efficient way.'}
+        title={data.team_title || t('best_team')}
+        description={data.team_description || t('team_description')}
         members={teamMembers.filter(member => member && member.name)}
         getImageUrl={getImageUrl}
       />
@@ -636,15 +629,13 @@ sustainable tourism initiatives around the globe.`,
 
               {/* Heading */}
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-green-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                {data.cta_title || t('ready_to_explore')}
+                {data.cta_title || t('ready_travel_sustainably')}
               </h2>
               
               {/* Description */}
-              {data.cta_description && (
-                <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
-                  {data.cta_description}
-                </p>
-              )}
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
+                {data.cta_description || t('ready_travel_sustainably_description')}
+              </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -655,7 +646,7 @@ sustainable tourism initiatives around the globe.`,
                   <svg className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Explore Destinations
+                  {t('explore_destinations_button')}
                 </a>
                 <a 
                   href="/contact" 
@@ -664,7 +655,7 @@ sustainable tourism initiatives around the globe.`,
                   <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  Get in Touch
+                  {t('get_in_touch')}
                 </a>
               </div>
             </div>

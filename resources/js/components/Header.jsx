@@ -319,8 +319,8 @@ export default function Header({ onProviderLogin, provider }) {
                 >
                   <div className="py-2">
                     {/* All Destinations */}
-                    <Link
-                      to="/destinations"
+            <Link 
+              to="/destinations" 
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                     >
                       <svg className="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,7 +344,7 @@ export default function Header({ onProviderLogin, provider }) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         {country.name}
-                      </Link>
+            </Link>
                     ))}
                   </div>
                 </div>

@@ -320,7 +320,10 @@ const ProvidersMap = () => {
 
     // Filter by country
     if (selectedCountry !== 'all') {
-      filtered = filtered.filter(p => p.country_id === parseInt(selectedCountry));
+      filtered = filtered.filter(p => {
+        const countryId = p.country_id || p.country?.id;
+        return Number(countryId) === Number(selectedCountry);
+      });
       console.log('After country filter:', filtered.length);
     }
 
@@ -388,7 +391,10 @@ const ProvidersMap = () => {
 
     // Filter by country
     if (selectedCountry !== 'all') {
-      filtered = filtered.filter(s => s.country_id === parseInt(selectedCountry));
+      filtered = filtered.filter(s => {
+        const countryId = s.country_id || s.country?.id;
+        return Number(countryId) === Number(selectedCountry);
+      });
     }
 
     // Handle search based on search type

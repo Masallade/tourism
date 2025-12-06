@@ -11,6 +11,7 @@ import CountriesList from './components/admin/CountriesList';
 import ThemesList from './components/admin/ThemesList';
 import ServiceTypesList from './components/admin/ServiceTypesList';
 import ServiceProvidersList from './components/admin/ServiceProvidersList';
+import ServicesList from './components/admin/ServicesList';
 import AppSettings from './components/admin/AppSettings';
 import AboutPageEditor from './components/admin/AboutPageEditor';
 import DestinationsList from './components/admin/DestinationsList';
@@ -105,6 +106,7 @@ function App() {
           <Route path="themes" element={<ThemesList />} />
           <Route path="service-types" element={<ServiceTypesList />} />
           <Route path="service-providers" element={<ServiceProvidersList />} />
+          <Route path="services" element={<ServicesList />} />
           <Route path="destinations" element={<DestinationsList />} />
           <Route path="about-page" element={<AboutPageEditor />} />
           <Route path="settings" element={<AppSettings />} />

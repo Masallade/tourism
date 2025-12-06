@@ -179,8 +179,7 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              {t('discover_providers_subtitle')} 
-              Click on any marker to learn more about sustainable travel opportunities in that location.
+              {t('discover_providers_subtitle')} {t('click_marker_learn_more')}
             </p>
           </div>
 
@@ -192,8 +191,8 @@ export default function Home() {
       {/* Featured Listings Section - Enhanced */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-800 mb-3">Featured Highlights</h2>
-          <p className="text-gray-600 max-w-3xl mx-auto">Discover our most popular destinations and experiences loved by eco-conscious travelers</p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-3">{t('featured_highlights')}</h2>
+          <p className="text-gray-600 max-w-3xl mx-auto">{t('featured_highlights_subtitle')}</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -203,7 +202,7 @@ export default function Home() {
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
                 <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-3">Top Destinations</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('top_destinations')}</h3>
               <ul className="space-y-3">
                 <li className="flex items-center text-gray-700">
                   <span className="bg-green-200 rounded-full p-1 mr-2">
@@ -225,7 +224,7 @@ export default function Home() {
                 </li>
               </ul>
               <button className="mt-5 text-green-700 font-medium hover:text-green-800 flex items-center transition-colors">
-                Explore destinations
+                {t('explore_destinations')}
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
               </button>
             </div>
@@ -237,7 +236,7 @@ export default function Home() {
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
                 <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-3">Popular Stays</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('popular_stays')}</h3>
               <ul className="space-y-3">
                 <li className="flex items-center text-gray-700">
                   <span className="bg-blue-200 rounded-full p-1 mr-2">
@@ -259,7 +258,7 @@ export default function Home() {
                 </li>
               </ul>
               <button className="mt-5 text-blue-700 font-medium hover:text-blue-800 flex items-center transition-colors">
-                Find accommodations
+                {t('find_accommodations')}
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
               </button>
             </div>
@@ -271,7 +270,7 @@ export default function Home() {
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
                 <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-3">Top Experiences</h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('top_experiences')}</h3>
               <ul className="space-y-3">
                 <li className="flex items-center text-gray-700">
                   <span className="bg-amber-200 rounded-full p-1 mr-2">
@@ -313,16 +312,15 @@ export default function Home() {
 
     <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative">
       <div className="text-center mb-12">
-        <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">DISCOVER THE WORLD</span>
+        <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('discover_the_world')}</span>
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
           <span className="relative inline-block">
-            Explore Countries
+            {t('explore_countries')}
             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
           </span>
         </h2>
         <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Discover amazing destinations around the world with our eco-friendly travel guides. 
-          Each country offers unique sustainable experiences curated by local experts.
+          {t('explore_countries_description')}
         </p>
       </div>
 
@@ -462,16 +460,15 @@ export default function Home() {
         
         <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 relative z-10">
           <div className="text-center mb-16">
-            <span className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">FIND YOUR PASSION</span>
+            <span className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('find_your_passion')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
               <span className="relative inline-block">
-                Explore Themes
+                {t('explore_themes')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-green-400 transform -translate-y-1 rounded-full"></div>
               </span>
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Find eco-friendly experiences by interest. Whether you're seeking adventure, relaxation, or cultural immersion,
-              our curated themes connect you with sustainable travel options.
+              {t('explore_themes_description')}
             </p>
           </div>
           
@@ -609,9 +606,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">Eco-Friendly Travel</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">{t('eco_friendly_travel')}</h3>
               <p className="text-gray-600 text-center">
-                Our trips are designed with sustainability in mind, minimizing environmental impact while maximizing authentic experiences.
+                {t('eco_friendly_travel_description')}
               </p>
             </div>
             
@@ -622,9 +619,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">Local Expert Guides</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">{t('local_expert_guides')}</h3>
               <p className="text-gray-600 text-center">
-                Our guides are local experts who share authentic cultural insights and hidden gems you won't find in typical tourist experiences.
+                {t('local_expert_guides_description')}
               </p>
             </div>
             
@@ -635,9 +632,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">Value for Money</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">{t('value_for_money')}</h3>
               <p className="text-gray-600 text-center">
-                Premium experiences at fair prices, with a portion of profits reinvested in local community development projects.
+                {t('value_for_money_description')}
               </p>
             </div>
             
@@ -648,9 +645,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">Unforgettable Memories</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">{t('unforgettable_memories')}</h3>
               <p className="text-gray-600 text-center">
-                Curated experiences designed to create lasting memories, from breathtaking landscapes to authentic cultural exchanges.
+                {t('unforgettable_memories_description')}
               </p>
             </div>
           </div>
@@ -669,11 +666,11 @@ export default function Home() {
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                 </svg>
                 <p className="text-xl text-gray-700 italic mb-4">
-                  "Unison Tour provided us with the perfect balance of adventure and sustainability. Our guide was knowledgeable and passionate, showing us hidden gems while teaching us about conservation efforts. It was the most meaningful travel experience we've ever had!"
+                  "{t('testimonial_quote')}"
                 </p>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Sarah Johnson</h4>
-                  <p className="text-gray-600 text-sm">Adventure enthusiast, traveled to Costa Rica</p>
+                  <h4 className="font-semibold text-gray-900">{t('testimonial_author')}</h4>
+                  <p className="text-gray-600 text-sm">{t('testimonial_role')}</p>
                 </div>
               </div>
             </div>

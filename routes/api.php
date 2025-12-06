@@ -626,11 +626,17 @@ use App\Http\Controllers\AIAssistantController;
 Route::post('/ai-chat', [AIAssistantController::class, 'chat']);
 
 // Destinations - Public routes
-Route::get('/destinations', function () {
-    return \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country'])
+Route::get('/destinations', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country', 'country'])
         ->active()
-        ->ordered()
-        ->get();
+        ->ordered();
+    
+    // Filter by country if provided
+    if ($request->has('country') && $request->country) {
+        $query->where('country_id', $request->country);
+    }
+    
+    return $query->get();
 });
 
 Route::get('/destinations/{id}', function ($id) {
