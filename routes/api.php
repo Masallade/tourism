@@ -627,16 +627,28 @@ Route::post('/ai-chat', [AIAssistantController::class, 'chat']);
 
 // Destinations - Public routes
 Route::get('/destinations', function (\Illuminate\Http\Request $request) {
-    $query = \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country', 'country'])
-        ->active()
-        ->ordered();
-    
-    // Filter by country if provided
-    if ($request->has('country') && $request->country) {
-        $query->where('country_id', $request->country);
+    try {
+        $query = \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country', 'country'])
+            ->active()
+            ->ordered();
+        
+        // Filter by country if provided
+        if ($request->has('country') && $request->country) {
+            $countryId = $request->input('country');
+            // Validate that country_id is numeric
+            if (is_numeric($countryId)) {
+                $query->where('country_id', (int)$countryId);
+            }
+        }
+        
+        return $query->get();
+    } catch (\Exception $e) {
+        \Log::error('Error fetching destinations: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all()
+        ]);
+        return response()->json(['error' => 'Failed to fetch destinations', 'message' => $e->getMessage()], 500);
     }
-    
-    return $query->get();
 });
 
 Route::get('/destinations/{id}', function ($id) {
