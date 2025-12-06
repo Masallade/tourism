@@ -671,5 +671,6 @@ Route::get('/admin/destinations/{id}', [DestinationController::class, 'show'])->
 Route::post('/admin/destinations', [DestinationController::class, 'store'])->middleware('admin.auth');
 
 Route::put('/admin/destinations/{id}', [DestinationController::class, 'update'])->middleware('admin.auth');
+Route::post('/admin/destinations/{id}/update', [DestinationController::class, 'update'])->middleware('admin.auth'); // POST route for FormData updates
 
 Route::delete('/admin/destinations/{id}', [DestinationController::class, 'destroy'])->middleware('admin.auth');

@@ -91,6 +91,19 @@ class DestinationController extends Controller
     {
         $destination = Destination::findOrFail($id);
 
+        // Log what we're receiving for debugging
+        \Log::info('Destination update request', [
+            'id' => $id,
+            'all_input' => $request->all(),
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'country_id' => $request->input('country_id'),
+            'has_title' => $request->has('title'),
+            'has_description' => $request->has('description'),
+            'has_country_id' => $request->has('country_id'),
+            'content_type' => $request->header('Content-Type'),
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',

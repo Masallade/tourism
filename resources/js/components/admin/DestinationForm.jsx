@@ -69,7 +69,7 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                 display_order: destination.display_order || 0,
                 service_ids: destination.services ? destination.services.map(s => s.id) : [],
                 description: destination.description || '',
-                country_id: destination.country_id || '',
+                country_id: destination.country_id || destination.country?.id || '',
             });
             if (destination.images) {
                 try {
@@ -79,6 +79,8 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                     setImages([]);
                 }
             }
+            // Clear any existing errors when loading destination data
+            setErrors({});
         }
     }, [destination]);
 
@@ -214,8 +216,13 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : (name === 'display_order' ? parseInt(value) || 0 : value)
         }));
+        // Clear error for this field when user starts typing
         if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
         }
     };
 
@@ -231,8 +238,20 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.title.trim()) {
-            newErrors.title = 'Title is required';
+        const title = (formData.title || '').toString().trim();
+        if (!title) {
+            newErrors.title = 'The title field is required.';
+        }
+
+        const description = (formData.description || '').toString().trim();
+        if (!description) {
+            newErrors.description = 'The description field is required.';
+        } else if (description.length < 500) {
+            newErrors.description = 'The description must be at least 500 characters.';
+        }
+
+        if (!formData.country_id) {
+            newErrors.country_id = 'The country field is required.';
         }
 
         setErrors(newErrors);
@@ -245,25 +264,28 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
         setIsSubmitting(true);
         try {
             const payload = new FormData();
-            payload.append('title', formData.title.trim());
-            payload.append('subtitle', formData.subtitle.trim());
+            payload.append('title', (formData.title || '').toString().trim());
+            payload.append('subtitle', (formData.subtitle || '').toString().trim());
             payload.append('is_active', formData.is_active ? '1' : '0');
-            payload.append('display_order', formData.display_order);
-            payload.append('description', formData.description);
-            payload.append('country_id', formData.country_id);
-            formData.service_ids.forEach(id => payload.append('service_ids[]', id));
+            payload.append('display_order', formData.display_order || 0);
+            payload.append('description', (formData.description || '').toString().trim());
+            payload.append('country_id', formData.country_id ? formData.country_id.toString() : '');
+            
+            // Add service_ids array
+            if (formData.service_ids && Array.isArray(formData.service_ids)) {
+                formData.service_ids.forEach(id => {
+                    payload.append('service_ids[]', id);
+                });
+            }
             // Only send new image files (file !== null)
             images.filter(img => img.file).forEach((img) => {
                 payload.append('images[]', img.file);
             });
             if (destination) {
-                await window.apiClient.put(`/api/admin/destinations/${destination.id}`, payload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                // Use POST update route for FormData (more reliable than PUT)
+                await window.apiClient.upload(`/api/admin/destinations/${destination.id}/update`, payload);
             } else {
-                await window.apiClient.post('/api/admin/destinations', payload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                await window.apiClient.upload('/api/admin/destinations', payload);
             }
             onSuccess();
         } catch (error) {
