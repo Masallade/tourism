@@ -59,4 +59,12 @@ return [
         'model' => env('OPENROUTER_MODEL', 'google/gemma-2-9b-it:free'),
     ],
 
+    // LibreTranslate configuration
+    'translation' => [
+        'provider' => env('TRANSLATION_PROVIDER', 'libretranslate'),
+        'libretranslate_url' => env('LIBRETRANSLATE_URL', 'https://libretranslate.com/translate'),
+        // Optional: API key if using self-hosted with authentication
+        'api_key' => env('LIBRETRANSLATE_API_KEY'),
+    ],
+
 ];

@@ -29,6 +29,7 @@ class Destination extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'display_order' => 'integer',
+        'images' => 'array', // Automatically cast JSON to array
     ];
 
     /**

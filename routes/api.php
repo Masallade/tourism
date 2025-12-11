@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ServiceProviderPasswordController;
+use App\Http\Controllers\ServiceController;
 use App\Helpers\ImageProcessor;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,47 +16,17 @@ Route::get('/users', function () {
         ->get();
 });
 
-// Get all services for a country
-Route::get('/country/{countryId}/services', function ($countryId) {
-    \Log::info("Fetching services for country ID: {$countryId}");
-    
-    $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
-        ->where('country_id', $countryId)
-        ->get();
-    
-    \Log::info("Found {$services->count()} services for country ID: {$countryId}");
-    
-    return $services;
-});
+// Get all services for a country (with translation)
+Route::get('/country/{countryId}/services', [ServiceController::class, 'getByCountry']);
 
-// Get all services for a theme
-Route::get('/theme/{themeId}/services', function ($themeId) {
-    try {
-        \Log::info("Fetching services for theme ID: {$themeId}");
+// Get all services for a theme (with translation)
+Route::get('/theme/{themeId}/services', [ServiceController::class, 'getByTheme']);
         
-        // Validate themeId is numeric
-        if (!is_numeric($themeId)) {
-            \Log::error("Invalid theme ID: {$themeId}");
-            return response()->json(['error' => 'Invalid theme ID'], 400);
-        }
-        
-        // Get services that have this theme through the many-to-many relationship
-        $services = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'themes'])
-            ->whereHas('themes', function($q) use ($themeId) {
-                $q->where('themes.id', $themeId);
-            })
-            ->get();
-        
-        \Log::info("Found {$services->count()} services for theme ID: {$themeId}");
-        
-        return response()->json($services);
-    } catch (\Exception $e) {
-        \Log::error("Error fetching services for theme ID {$themeId}: " . $e->getMessage(), [
-            'trace' => $e->getTraceAsString()
-        ]);
-        return response()->json(['error' => 'Failed to fetch services', 'message' => $e->getMessage()], 500);
-    }
-});
+// Get all services (must be before /services/{id} to avoid route conflict)
+Route::get('/services/all', [ServiceController::class, 'all']);
+
+// Get single service (with translation)
+Route::get('/services/{id}', [ServiceController::class, 'show']);
 
 // Get a single country by ID with provider count
 Route::get('/countries/{id}', function ($id) {
@@ -100,19 +71,10 @@ Route::get('/theme/{themeId}/service-type/{typeId}/services', function ($themeId
 
 
 // Service management for providers (no auth for local testing)
-use App\Http\Controllers\ServiceController;
-Route::get('/services/all', [ServiceController::class, 'all']); // Get all services from all providers
 Route::get('/provider/services', [ServiceController::class, 'index']);
 Route::post('/provider/services', [ServiceController::class, 'store']);
 Route::put('/provider/services/{id}', [ServiceController::class, 'update']);
 Route::delete('/provider/services/{id}', [ServiceController::class, 'destroy']);
-
-// Service detail endpoint
-Route::get('/services/{id}', function($id) {
-    $service = \App\Models\Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
-        ->findOrFail($id);
-    return $service;
-});
 
 Route::post('/services/{service}/bookings', [BookingController::class, 'store']);
 
@@ -140,7 +102,16 @@ Route::post('/service-provider-login', function (\Illuminate\Http\Request $reque
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // Service Types (all)
-Route::get('/service-types', function () {
+// Import controllers
+use App\Http\Controllers\ServiceTypeController;
+use App\Http\Controllers\Admin\ServiceTypeController as AdminServiceTypeController;
+
+// Public Service Type routes with translation
+Route::get('/service-types', [ServiceTypeController::class, 'index']);
+Route::get('/service-types/{id}', [ServiceTypeController::class, 'show']);
+
+// Old route (keeping for backward compatibility, but will use controller)
+Route::get('/service-types-old', function () {
     return \App\Models\ServiceType::withCount('serviceProviders')->get();
 });
 
@@ -151,9 +122,8 @@ Route::get('/provider/{providerId}/service-types', function ($providerId) {
 });
 
 // Service Types CRUD for admin
-use App\Http\Controllers\Admin\ServiceTypeController;
-Route::post('/service-types', [ServiceTypeController::class, 'store'])->middleware('admin.auth');
-Route::put('/service-types/{serviceType}', [ServiceTypeController::class, 'update'])->middleware('admin.auth');
+Route::post('/service-types', [AdminServiceTypeController::class, 'store'])->middleware('admin.auth');
+Route::put('/service-types/{serviceType}', [AdminServiceTypeController::class, 'update'])->middleware('admin.auth');
 Route::delete('/service-types/{serviceType}', function (\App\Models\ServiceType $serviceType) {
     $serviceType->delete();
     return response()->json(['message' => 'Service Type deleted successfully']);
@@ -171,39 +141,22 @@ Route::post('/about-page', [AboutPageController::class, 'store'])->middleware('a
 
 // API Routes for React Admin
 // Countries
-use App\Http\Controllers\Admin\CountryController;
-use App\Http\Controllers\Admin\ThemeController;
+use App\Http\Controllers\Admin\CountryController as AdminCountryController;
+use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
+use App\Http\Controllers\CountryController;
+use App\Http\Controllers\ThemeController;
+use App\Http\Controllers\ServiceProviderController;
+use App\Http\Controllers\DestinationController;
 use App\Http\Middleware\AdminAuth;
 
-Route::get('/countries', function () {
-    $countries = \App\Models\Country::withCount('serviceProviders')->get();
-    
-    // Log the first country's data to verify image_url is present
-    if ($countries->isNotEmpty()) {
-        \Log::info('First country data from list endpoint', [
-            'id' => $countries[0]->id,
-            'name' => $countries[0]->name,
-            'image_url' => $countries[0]->image_url,
-        ]);
-    }
-    
-    return $countries;
-});
-
-// Get country by ID
-Route::get('/countries/{id}', function ($id) {
-    $country = \App\Models\Country::withCount('serviceProviders')->findOrFail($id);
-    return $country;
-});
-
-// Get country by slug
-Route::get('/countries/slug/{slug}', function ($slug) {
-    $country = \App\Models\Country::withCount('serviceProviders')->where('slug', $slug)->firstOrFail();
-    return $country;
-});
-Route::post('/countries', [CountryController::class, 'store'])->middleware('admin.auth');
-Route::put('/countries/{country}', [CountryController::class, 'update'])->middleware('admin.auth');
-Route::post('/countries/{country}/update', [CountryController::class, 'update'])->middleware('admin.auth'); // For FormData updates
+// Public Country routes with translation
+Route::get('/countries', [CountryController::class, 'index']);
+Route::get('/countries/{id}', [CountryController::class, 'show']);
+Route::get('/countries/slug/{slug}', [CountryController::class, 'showBySlug']);
+// Admin Country routes
+Route::post('/countries', [AdminCountryController::class, 'store'])->middleware('admin.auth');
+Route::put('/countries/{country}', [AdminCountryController::class, 'update'])->middleware('admin.auth');
+Route::post('/countries/{country}/update', [AdminCountryController::class, 'update'])->middleware('admin.auth'); // For FormData updates
 Route::delete('/countries/{country}', function (\App\Models\Country $country) {
     // Check if country has any service providers
     $serviceProviderCount = $country->serviceProviders()->count();
@@ -219,34 +172,23 @@ Route::delete('/countries/{country}', function (\App\Models\Country $country) {
     return response()->json(['message' => 'Country deleted successfully']);
 })->middleware('admin.auth');
 
-// Themes
-Route::get('/themes', function () {
-    return \App\Models\Theme::withCount('serviceProviders')->get();
-});
+// Public Theme routes with translation
+Route::get('/themes', [ThemeController::class, 'index']);
+Route::get('/themes/{id}', [ThemeController::class, 'show']);
+Route::get('/themes/slug/{slug}', [ThemeController::class, 'showBySlug']);
 
-// Get theme by ID
-Route::get('/themes/{id}', function ($id) {
-    $theme = \App\Models\Theme::withCount('serviceProviders')->findOrFail($id);
-    return $theme;
-});
-
-// Get theme by slug
-Route::get('/themes/slug/{slug}', function ($slug) {
-    $theme = \App\Models\Theme::withCount('serviceProviders')->where('slug', $slug)->firstOrFail();
-    return $theme;
-});
-Route::post('/themes', [ThemeController::class, 'store'])->middleware('admin.auth');
-Route::put('/themes/{theme}', [ThemeController::class, 'update'])->middleware('admin.auth');
-Route::post('/themes/{theme}/update', [ThemeController::class, 'update'])->middleware('admin.auth'); // For FormData updates
+// Admin Theme routes
+Route::post('/themes', [AdminThemeController::class, 'store'])->middleware('admin.auth');
+Route::put('/themes/{theme}', [AdminThemeController::class, 'update'])->middleware('admin.auth');
+Route::post('/themes/{theme}/update', [AdminThemeController::class, 'update'])->middleware('admin.auth'); // For FormData updates
 Route::delete('/themes/{theme}', function (\App\Models\Theme $theme) {
     $theme->delete();
     return response()->json(['message' => 'Theme deleted successfully']);
 })->middleware('admin.auth');
 
-// Service Providers
-Route::get('/service-providers', function () {
-    return \App\Models\ServiceProvider::with(['country', 'themes', 'serviceTypes'])->get();
-});
+// Public Service Provider routes with translation
+Route::get('/service-providers', [ServiceProviderController::class, 'index']);
+Route::get('/service-providers/{id}', [ServiceProviderController::class, 'show']);
 Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
     \Log::info('ServiceProvider create request', $request->all());
     try {
@@ -589,10 +531,10 @@ Route::delete('/service-providers/{serviceProvider}', function (\App\Models\Serv
     $serviceProvider->delete();
     return response()->json(['message' => 'Service Provider deleted successfully']);
 });
-use App\Http\Controllers\Admin\ServiceProviderController;
+use App\Http\Controllers\Admin\ServiceProviderController as AdminServiceProviderController;
 
-Route::patch('/service-providers/{serviceProvider}/approve', [ServiceProviderController::class, 'approve']);
-Route::patch('/service-providers/{serviceProvider}/reject', [ServiceProviderController::class, 'reject']);
+Route::patch('/service-providers/{serviceProvider}/approve', [AdminServiceProviderController::class, 'approve']);
+Route::patch('/service-providers/{serviceProvider}/reject', [AdminServiceProviderController::class, 'reject']);
 
 // Document view route (placed BEFORE download route to avoid greedy match)
 Route::get('/documents/view/{filename}', function ($filename) {
@@ -625,52 +567,24 @@ Route::get('/documents/{filename}', function ($filename) {
 use App\Http\Controllers\AIAssistantController;
 Route::post('/ai-chat', [AIAssistantController::class, 'chat']);
 
-// Destinations - Public routes
-Route::get('/destinations', function (\Illuminate\Http\Request $request) {
-    try {
-        $query = \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country', 'country'])
-            ->active()
-            ->ordered();
-        
-        // Filter by country if provided
-        if ($request->has('country') && $request->country) {
-            $countryId = $request->input('country');
-            // Validate that country_id is numeric
-            if (is_numeric($countryId)) {
-                $query->where('country_id', (int)$countryId);
-            }
-        }
-        
-        return $query->get();
-    } catch (\Exception $e) {
-        \Log::error('Error fetching destinations: ' . $e->getMessage(), [
-            'trace' => $e->getTraceAsString(),
-            'request' => $request->all()
-        ]);
-        return response()->json(['error' => 'Failed to fetch destinations', 'message' => $e->getMessage()], 500);
-    }
-});
-
-Route::get('/destinations/{id}', function ($id) {
-    return \App\Models\Destination::with(['services.serviceTypes', 'services.themes', 'services.provider', 'services.country'])
-        ->active()
-        ->findOrFail($id);
-});
+// Destinations - Public routes with translation
+Route::get('/destinations', [DestinationController::class, 'index']);
+Route::get('/destinations/{id}', [DestinationController::class, 'show']);
 
 // Destinations - Admin routes
-use App\Http\Controllers\Admin\DestinationController;
+use App\Http\Controllers\Admin\DestinationController as AdminDestinationController;
 
-Route::get('/admin/destinations', [DestinationController::class, 'index'])->middleware('admin.auth');
+Route::get('/admin/destinations', [AdminDestinationController::class, 'index'])->middleware('admin.auth');
 
 // IMPORTANT: More specific routes must come BEFORE parameterized routes
 
-Route::get('/admin/destinations/services', [DestinationController::class, 'getServices'])->middleware('admin.auth');
+Route::get('/admin/destinations/services', [AdminDestinationController::class, 'getServices'])->middleware('admin.auth');
 
-Route::get('/admin/destinations/{id}', [DestinationController::class, 'show'])->middleware('admin.auth');
+Route::post('/admin/destinations', [AdminDestinationController::class, 'store'])->middleware('admin.auth');
 
-Route::post('/admin/destinations', [DestinationController::class, 'store'])->middleware('admin.auth');
+// POST update route must come BEFORE the GET/{id} route to avoid route conflicts
+Route::post('/admin/destinations/{id}/update', [AdminDestinationController::class, 'update'])->middleware('admin.auth'); // POST route for FormData updates
 
-Route::put('/admin/destinations/{id}', [DestinationController::class, 'update'])->middleware('admin.auth');
-Route::post('/admin/destinations/{id}/update', [DestinationController::class, 'update'])->middleware('admin.auth'); // POST route for FormData updates
-
-Route::delete('/admin/destinations/{id}', [DestinationController::class, 'destroy'])->middleware('admin.auth');
+Route::get('/admin/destinations/{id}', [AdminDestinationController::class, 'show'])->middleware('admin.auth');
+Route::put('/admin/destinations/{id}', [AdminDestinationController::class, 'update'])->middleware('admin.auth');
+Route::delete('/admin/destinations/{id}', [AdminDestinationController::class, 'destroy'])->middleware('admin.auth');

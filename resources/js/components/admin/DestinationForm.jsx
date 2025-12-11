@@ -1,4 +1,185 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { compressImage } from '../../utils/imageCompression';
+
+// Simple Rich Text Editor Component compatible with React 19
+const SimpleRichTextEditor = ({ value, onChange, placeholder, error }) => {
+    const editorRef = useRef(null);
+    const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => {
+        if (editorRef.current && value !== editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = value || '';
+        }
+    }, [value]);
+
+    const handleInput = (e) => {
+        const html = e.target.innerHTML;
+        onChange(html);
+    };
+
+    const execCommand = (command, value = null) => {
+        document.execCommand(command, false, value);
+        editorRef.current?.focus();
+    };
+
+    const ToolbarButton = ({ onClick, children, title, active = false }) => (
+        <button
+            type="button"
+            onClick={onClick}
+            title={title}
+            className={`px-2 py-1 text-sm rounded hover:bg-gray-200 ${active ? 'bg-gray-300' : ''}`}
+        >
+            {children}
+        </button>
+    );
+
+    return (
+        <div className={`border rounded-md ${error ? 'border-red-500' : 'border-gray-300'} ${isFocused ? 'ring-2 ring-green-500' : ''}`}>
+            {/* Toolbar */}
+            <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b border-gray-200 rounded-t-md">
+                <div className="flex gap-1">
+                    <ToolbarButton onClick={() => execCommand('bold')} title="Bold">
+                        <strong>B</strong>
+                    </ToolbarButton>
+                    <ToolbarButton onClick={() => execCommand('italic')} title="Italic">
+                        <em>I</em>
+                    </ToolbarButton>
+                    <ToolbarButton onClick={() => execCommand('underline')} title="Underline">
+                        <u>U</u>
+                    </ToolbarButton>
+                </div>
+                <div className="border-l border-gray-300 mx-1"></div>
+                <div className="flex gap-1">
+                    <ToolbarButton onClick={() => execCommand('insertUnorderedList')} title="Bullet List">
+                        •
+                    </ToolbarButton>
+                    <ToolbarButton onClick={() => execCommand('insertOrderedList')} title="Numbered List">
+                        1.
+                    </ToolbarButton>
+                </div>
+                <div className="border-l border-gray-300 mx-1"></div>
+                <div className="flex gap-1">
+                    <ToolbarButton onClick={() => execCommand('justifyLeft')} title="Align Left">
+                        ⬅
+                    </ToolbarButton>
+                    <ToolbarButton onClick={() => execCommand('justifyCenter')} title="Align Center">
+                        ⬌
+                    </ToolbarButton>
+                    <ToolbarButton onClick={() => execCommand('justifyRight')} title="Align Right">
+                        ➡
+                    </ToolbarButton>
+                </div>
+                <div className="border-l border-gray-300 mx-1"></div>
+                <div className="flex gap-1">
+                    <ToolbarButton onClick={() => {
+                        const url = prompt('Enter URL:');
+                        if (url) execCommand('createLink', url);
+                    }} title="Insert Link">
+                        🔗
+                    </ToolbarButton>
+                </div>
+            </div>
+            {/* Editor */}
+            <div
+                ref={editorRef}
+                contentEditable
+                onInput={handleInput}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="min-h-[200px] p-3 focus:outline-none rich-text-editor-content"
+                style={{
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                }}
+                data-placeholder={placeholder}
+                suppressContentEditableWarning
+            />
+            <style>{`
+                .rich-text-editor-content[data-placeholder]:empty:before {
+                    content: attr(data-placeholder);
+                    color: #9ca3af;
+                    pointer-events: none;
+                }
+                .rich-text-editor-content {
+                    outline: none;
+                }
+                .rich-text-editor-content p {
+                    margin: 0.5em 0;
+                }
+                .rich-text-editor-content ul, 
+                .rich-text-editor-content ol {
+                    margin: 0.5em 0;
+                    padding-left: 2em;
+                }
+                /* Make formatting visible in editor */
+                .rich-text-editor-content strong,
+                .rich-text-editor-content b {
+                    font-weight: 700 !important;
+                }
+                .rich-text-editor-content em,
+                .rich-text-editor-content i {
+                    font-style: italic !important;
+                }
+                .rich-text-editor-content u {
+                    text-decoration: underline !important;
+                }
+                .rich-text-editor-content a {
+                    color: #10b981 !important;
+                    text-decoration: underline !important;
+                    cursor: pointer;
+                }
+                .rich-text-editor-content a:hover {
+                    color: #059669 !important;
+                }
+                .rich-text-editor-content h1 {
+                    font-size: 2rem !important;
+                    font-weight: 700 !important;
+                    margin: 0.5em 0 !important;
+                }
+                .rich-text-editor-content h2 {
+                    font-size: 1.75rem !important;
+                    font-weight: 700 !important;
+                    margin: 0.5em 0 !important;
+                }
+                .rich-text-editor-content h3 {
+                    font-size: 1.5rem !important;
+                    font-weight: 700 !important;
+                    margin: 0.5em 0 !important;
+                }
+                .rich-text-editor-content h4 {
+                    font-size: 1.25rem !important;
+                    font-weight: 700 !important;
+                    margin: 0.5em 0 !important;
+                }
+                .rich-text-editor-content ul {
+                    list-style-type: disc !important;
+                    margin: 0.5em 0 !important;
+                    padding-left: 2em !important;
+                }
+                .rich-text-editor-content ol {
+                    list-style-type: decimal !important;
+                    margin: 0.5em 0 !important;
+                    padding-left: 2em !important;
+                }
+                .rich-text-editor-content li {
+                    margin: 0.25em 0 !important;
+                }
+                .rich-text-editor-content div[style*="text-align: center"],
+                .rich-text-editor-content[style*="text-align: center"] {
+                    text-align: center !important;
+                }
+                .rich-text-editor-content div[style*="text-align: right"],
+                .rich-text-editor-content[style*="text-align: right"] {
+                    text-align: right !important;
+                }
+                .rich-text-editor-content div[style*="text-align: left"],
+                .rich-text-editor-content[style*="text-align: left"] {
+                    text-align: left !important;
+                }
+            `}</style>
+        </div>
+    );
+};
 
 const DestinationForm = ({ destination, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -74,8 +255,15 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             if (destination.images) {
                 try {
                     const imgs = Array.isArray(destination.images) ? destination.images : JSON.parse(destination.images);
-                    setImages(imgs.map(img => ({ url: `/storage/${img}`, file: null })));
-                } catch {
+                    // Store both the URL for display and the original path for submission
+                    setImages(imgs.map(img => ({ 
+                        url: `/storage/${img}`, 
+                        file: null,
+                        originalPath: img // Store original path for easier extraction
+                    })));
+                    console.log('Loaded existing images:', imgs);
+                } catch (error) {
+                    console.error('Error loading existing images:', error);
                     setImages([]);
                 }
             }
@@ -83,6 +271,18 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             setErrors({});
         }
     }, [destination]);
+    
+    // Cleanup: revoke object URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            images.forEach(img => {
+                if (img.url && img.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(img.url);
+                }
+            });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const fetchFilterOptions = async () => {
         try {
@@ -243,10 +443,17 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             newErrors.title = 'The title field is required.';
         }
 
-        const description = (formData.description || '').toString().trim();
-        if (!description) {
+        const subtitle = (formData.subtitle || '').toString().trim();
+        if (!subtitle) {
+            newErrors.subtitle = 'The subtitle field is required.';
+        }
+
+        // Strip HTML tags for validation length check
+        const descriptionText = (formData.description || '').toString().trim();
+        const textOnly = descriptionText.replace(/<[^>]*>/g, '').trim();
+        if (!textOnly) {
             newErrors.description = 'The description field is required.';
-        } else if (description.length < 500) {
+        } else if (textOnly.length < 500) {
             newErrors.description = 'The description must be at least 500 characters.';
         }
 
@@ -254,7 +461,52 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
             newErrors.country_id = 'The country field is required.';
         }
 
+        if (!formData.service_ids || formData.service_ids.length === 0) {
+            newErrors.service_ids = 'At least one service must be selected.';
+        }
+
+        if (!images || images.length === 0) {
+            newErrors.images = 'At least one image is required.';
+        }
+
         setErrors(newErrors);
+        
+        // Scroll to first error field
+        if (Object.keys(newErrors).length > 0) {
+            const firstErrorField = Object.keys(newErrors)[0];
+            setTimeout(() => {
+                // Try to find the field by name attribute first
+                let errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+                
+                // If not found, try data-field attribute (for services and images)
+                if (!errorElement) {
+                    errorElement = document.querySelector(`[data-field="${firstErrorField}"]`);
+                }
+                
+                // If still not found, try to find the error message and scroll to its parent
+                if (!errorElement) {
+                    const errorMessage = document.querySelector(`[data-error="${firstErrorField}"]`);
+                    if (errorMessage) {
+                        errorElement = errorMessage.closest('div');
+                    }
+                }
+                
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Focus the element if it's an input/select/textarea
+                    if (errorElement.tagName === 'INPUT' || errorElement.tagName === 'SELECT' || errorElement.tagName === 'TEXTAREA') {
+                        setTimeout(() => errorElement.focus(), 300);
+                    } else {
+                        // For complex fields like services/images, try to find an input within
+                        const inputWithin = errorElement.querySelector('input, select, textarea');
+                        if (inputWithin) {
+                            setTimeout(() => inputWithin.focus(), 300);
+                        }
+                    }
+                }
+            }, 100);
+        }
+        
         return Object.keys(newErrors).length === 0;
     };
 
@@ -277,15 +529,86 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                     payload.append('service_ids[]', id);
                 });
             }
-            // Only send new image files (file !== null)
-            images.filter(img => img.file).forEach((img) => {
+            // For updates: Send existing_images[] with paths of images to keep
+            let existingPaths = [];
+            if (destination) {
+                // Get existing images (images without file property = old images from database)
+                // Also exclude blob URLs (temporary preview URLs for new images being compressed)
+                const existingImages = images.filter(img => {
+                    const isExisting = !img.file && img.url && !img.url.startsWith('blob:');
+                    console.log('Image filter check:', {
+                        hasFile: !!img.file,
+                        url: img.url?.substring(0, 50),
+                        originalPath: img.originalPath,
+                        isExisting: isExisting
+                    });
+                    return isExisting;
+                });
+                
+                console.log('Found existing images to send:', existingImages.length);
+                
+                existingImages.forEach((img) => {
+                    // Use originalPath if available (set when loading destination), otherwise extract from URL
+                    let path = img.originalPath || img.url;
+                    if (path.startsWith('/storage/')) {
+                        path = path.replace('/storage/', '');
+                    } else if (path.startsWith('http://') || path.startsWith('https://')) {
+                        // For full URLs, extract the path after /storage/
+                        const match = path.match(/\/storage\/(.+)$/);
+                        path = match ? match[1] : path;
+                    }
+                    // Remove leading slash if present
+                    path = path.replace(/^\//, '');
+                    // Only add if path is not empty
+                    if (path) {
+                        existingPaths.push(path);
+                        payload.append('existing_images[]', path);
+                        console.log('Added existing image path:', path);
+                    } else {
+                        console.warn('Skipped empty path for image:', img);
+                    }
+                });
+            }
+            
+            // Send new image files (file !== null)
+            const newImages = images.filter(img => img.file);
+            newImages.forEach((img) => {
                 payload.append('images[]', img.file);
             });
+            
+            console.log('Submitting images:', {
+                existing: existingPaths,
+                existingCount: existingPaths.length,
+                newCount: newImages.length,
+                total: images.length,
+                allImages: images.map(img => ({
+                    hasFile: !!img.file,
+                    url: img.url?.substring(0, 50),
+                    originalPath: img.originalPath
+                }))
+            });
+            let response;
             if (destination) {
                 // Use POST update route for FormData (more reliable than PUT)
-                await window.apiClient.upload(`/api/admin/destinations/${destination.id}/update`, payload);
+                response = await window.apiClient.upload(`/api/admin/destinations/${destination.id}/update`, payload);
+                // Update local state with response data to show updated images immediately
+                if (response.data && response.data.images) {
+                    try {
+                        const updatedImgs = Array.isArray(response.data.images) 
+                            ? response.data.images 
+                            : JSON.parse(response.data.images);
+                        setImages(updatedImgs.map(img => ({ 
+                            url: `/storage/${img}`, 
+                            file: null,
+                            originalPath: img
+                        })));
+                        console.log('Updated images from response:', updatedImgs);
+                    } catch (error) {
+                        console.error('Error parsing updated images:', error);
+                    }
+                }
             } else {
-                await window.apiClient.upload('/api/admin/destinations', payload);
+                response = await window.apiClient.upload('/api/admin/destinations', payload);
             }
             onSuccess();
         } catch (error) {
@@ -370,34 +693,52 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
 
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Subtitle
+                                Subtitle <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 name="subtitle"
                                 value={formData.subtitle}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                                    errors.subtitle ? 'border-red-500' : 'border-gray-300'
+                                }`}
                                 placeholder="e.g., Can't-miss picks near you"
                             />
+                            {errors.subtitle && (
+                                <p className="text-red-500 text-sm mt-1" data-error="subtitle">{errors.subtitle}</p>
+                            )}
                         </div>
 
                         {/* Description */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Description
+                                Description <span className="text-red-500">*</span>
                             </label>
-                            <textarea
-                                name="description"
+                            <SimpleRichTextEditor
                                 value={formData.description}
-                                onChange={handleInputChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
-                                placeholder="Add a description for this destination"
-                                rows={3}
+                                onChange={(value) => {
+                                    setFormData(prev => ({ ...prev, description: value }));
+                                    // Clear error when user types
+                                    if (errors.description) {
+                                        setErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            delete newErrors.description;
+                                            return newErrors;
+                                        });
+                                    }
+                                }}
+                                placeholder="Add a description for this destination (minimum 500 characters)"
+                                error={errors.description}
                             />
+                            <div className="mt-1">
                             {errors.description && (
-                                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                                    <p className="text-red-500 text-sm">{errors.description}</p>
                             )}
+                                <p className="text-xs text-gray-500">
+                                    {formData.description ? formData.description.replace(/<[^>]*>/g, '').trim().length : 0} / 500 characters (minimum)
+                                </p>
+                            </div>
                         </div>
 
                         {/* Country Dropdown (for destination) */}
@@ -420,22 +761,56 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                         </div>
 
                         {/* Images Upload */}
-                        <div>
+                        <div data-field="images">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Images (max 5)
+                                Images <span className="text-red-500">*</span> (max 5)
                             </label>
                             <input
                                 type="file"
                                 accept="image/*"
                                 multiple
-                                onChange={e => {
+                                onChange={async e => {
                                     const files = Array.from(e.target.files);
+                                    if (files.length === 0) return;
+                                    
+                                    // Show loading state
+                                    const loadingImages = files.map(file => ({
+                                        file: null,
+                                        url: URL.createObjectURL(file),
+                                        compressing: true
+                                    }));
+                                    setImages([...images, ...loadingImages].slice(0, 5));
+                                    
+                                    // Compress each image
                                     let newImages = [...images];
-                                    files.forEach(file => {
-                                        if (newImages.length < 5) {
-                                            newImages.push({ file, url: URL.createObjectURL(file) });
+                                    for (const file of files) {
+                                        if (newImages.length >= 5) break;
+                                        
+                                        try {
+                                            // Compress image with destination settings (max 2MB, 1920x1080)
+                                            const compressedFile = await compressImage(file, {
+                                                maxWidth: 1920,
+                                                maxHeight: 1080,
+                                                quality: 0.85,
+                                                maxSizeMB: 2
+                                            });
+                                            
+                                            newImages.push({
+                                                file: compressedFile,
+                                                url: URL.createObjectURL(compressedFile),
+                                                compressing: false
+                                            });
+                                        } catch (error) {
+                                            console.error('Error compressing image:', error);
+                                            // If compression fails, use original file
+                                            newImages.push({
+                                                file: file,
+                                                url: URL.createObjectURL(file),
+                                                compressing: false
+                                            });
                                         }
-                                    });
+                                    }
+                                    
                                     setImages(newImages.slice(0, 5));
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -444,14 +819,25 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {images.map((img, idx) => (
                                     <div key={idx} className="relative w-24 h-24 border rounded overflow-hidden">
+                                        {img.compressing ? (
+                                            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                                <div className="text-xs text-gray-500">Compressing...</div>
+                                            </div>
+                                        ) : (
                                         <img src={img.url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full" />
+                                        )}
                                         <button
                                             type="button"
-                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700"
                                             onClick={() => {
+                                                // Revoke object URL to free memory
+                                                if (img.url && img.url.startsWith('blob:')) {
+                                                    URL.revokeObjectURL(img.url);
+                                                }
                                                 setImages(images.filter((_, i) => i !== idx));
                                             }}
                                             title="Remove image"
+                                            disabled={img.compressing}
                                         >
                                             &times;
                                         </button>
@@ -460,6 +846,9 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                             </div>
                             {images.length >= 5 && (
                                 <p className="text-xs text-gray-500 mt-1">Maximum 5 images allowed.</p>
+                            )}
+                            {errors.images && (
+                                <p className="text-red-500 text-sm mt-1" data-error="images">{errors.images}</p>
                             )}
                         </div>
                        
@@ -497,10 +886,10 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                         </div>
 
                         {/* Services Selection */}
-                        <div>
+                        <div data-field="service_ids">
                             <div className="flex items-center justify-between mb-2">
                                 <label className="block text-sm font-medium text-gray-700">
-                                    Select Services 
+                                    Select Services <span className="text-red-500">*</span>
                                     <span className="text-gray-500 text-xs ml-2">
                                         ({formData.service_ids.length} selected
                                         {!loadingServices && pagination.total > 0 && ` • ${filteredServices.length} of ${pagination.total} shown`})
@@ -710,6 +1099,9 @@ const DestinationForm = ({ destination, onClose, onSuccess }) => {
                                     </div>
                                 )}
                             </div>
+                            {errors.service_ids && (
+                                <p className="text-red-500 text-sm mt-2" data-error="service_ids">{errors.service_ids}</p>
+                            )}
                         </div>
 
                         {errors.general && (

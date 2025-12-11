@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +85,9 @@ const Destinations = () => {
 
 const DestinationSection = ({ destination }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const [needsTruncation, setNeedsTruncation] = useState(false);
+    const descriptionRef = useRef(null);
     const services = destination.services || [];
     const servicesPerView = 3; // Desktop: 3, Tablet: 2, Mobile: 1 (handled by CSS)
 
@@ -122,6 +125,23 @@ const DestinationSection = ({ destination }) => {
 
     const nextImg = () => setImgIndex((prev) => (prev >= maxImgIndex ? 0 : prev + 1));
     const prevImg = () => setImgIndex((prev) => (prev <= 0 ? maxImgIndex : prev - 1));
+
+    // Check if description needs truncation
+    useEffect(() => {
+        if (destination.description && descriptionRef.current) {
+            // Wait for content to render
+            setTimeout(() => {
+                const element = descriptionRef.current;
+                if (element) {
+                    const scrollHeight = element.scrollHeight;
+                    const clientHeight = element.clientHeight;
+                    // Max height is approximately 3-4 lines of text (around 200-250px)
+                    const maxHeight = 250;
+                    setNeedsTruncation(scrollHeight > maxHeight);
+                }
+            }, 100);
+        }
+    }, [destination.description]);
 
     return (
         <section className="mb-16">
@@ -197,9 +217,100 @@ const DestinationSection = ({ destination }) => {
             {/* Description Below Images */}
             {destination.description && (
                 <div className="mb-6">
-                    <p className="text-base text-gray-700 mt-2 text-left">
-                        {destination.description}
-                    </p>
+                    <div className="relative">
+                        <div 
+                            ref={descriptionRef}
+                            className={`text-base text-gray-700 mt-2 text-left destination-description transition-all duration-300 overflow-hidden ${
+                                needsTruncation && !isDescriptionExpanded ? 'max-h-[250px]' : ''
+                            }`}
+                            dangerouslySetInnerHTML={{ __html: destination.description }}
+                            style={{
+                                fontFamily: "'Inter', sans-serif",
+                                lineHeight: '1.7'
+                            }}
+                        />
+                        {needsTruncation && !isDescriptionExpanded && (
+                            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                        )}
+                    </div>
+                    {needsTruncation && (
+                        <button
+                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                            className="mt-3 text-green-600 hover:text-green-700 font-medium flex items-center gap-2 transition-colors"
+                        >
+                            {isDescriptionExpanded ? (
+                                <>
+                                    <span>Show Less</span>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Show More</span>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </>
+                            )}
+                        </button>
+                    )}
+                    <style>{`
+                        .destination-description {
+                            font-family: 'Inter', sans-serif;
+                            line-height: 1.7;
+                        }
+                        .destination-description p {
+                            margin-bottom: 1rem;
+                            color: #374151;
+                        }
+                        .destination-description h1,
+                        .destination-description h2,
+                        .destination-description h3,
+                        .destination-description h4,
+                        .destination-description h5,
+                        .destination-description h6 {
+                            font-weight: 700;
+                            margin-top: 1.5rem;
+                            margin-bottom: 1rem;
+                            color: #111827;
+                            font-family: 'Poppins', sans-serif;
+                        }
+                        .destination-description h1 { font-size: 2rem; }
+                        .destination-description h2 { font-size: 1.75rem; }
+                        .destination-description h3 { font-size: 1.5rem; }
+                        .destination-description h4 { font-size: 1.25rem; }
+                        .destination-description ul,
+                        .destination-description ol {
+                            margin: 1rem 0;
+                            padding-left: 2rem;
+                        }
+                        .destination-description ul {
+                            list-style-type: disc;
+                        }
+                        .destination-description ol {
+                            list-style-type: decimal;
+                        }
+                        .destination-description li {
+                            margin: 0.5rem 0;
+                        }
+                        .destination-description a {
+                            color: #10b981;
+                            text-decoration: underline;
+                        }
+                        .destination-description a:hover {
+                            color: #059669;
+                        }
+                        .destination-description strong {
+                            font-weight: 700;
+                        }
+                        .destination-description em {
+                            font-style: italic;
+                        }
+                        .destination-description u {
+                            text-decoration: underline;
+                        }
+                    `}</style>
                 </div>
             )}
 

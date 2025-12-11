@@ -22,13 +22,24 @@ if (import.meta.env.PROD) {
     window.axios.defaults.baseURL = window.location.origin;
 }
 
-// Add request interceptor to include CSRF token and auth token for window.axios (backward compatibility)
+// Add request interceptor to include CSRF token, locale, and auth token for window.axios (backward compatibility)
 window.axios.interceptors.request.use(
     (config) => {
         // Get CSRF token from meta tag
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         if (csrfToken) {
             config.headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+        
+        // Add locale to headers and params for translation
+        // Get locale from localStorage or default to 'en'
+        const storedLocale = localStorage.getItem('i18nextLng');
+        const locale = (storedLocale && ['en', 'es', 'fr'].includes(storedLocale)) ? storedLocale : 'en';
+        config.headers['Accept-Language'] = locale;
+        if (config.params) {
+            config.params.locale = locale;
+        } else {
+            config.params = { locale: locale };
         }
         
         // Check for token-based auth (for service providers or API tokens)

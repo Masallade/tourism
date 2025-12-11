@@ -4,15 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use App\Helpers\ImageProcessor;
+use App\Traits\TranslatableResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
+    use TranslatableResponse;
     // List all services for a provider
     public function index(Request $request)
     {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+        
         $providerId = $request->input('provider_id') ?? $request->query('provider_id');
 
         if (!$providerId) {
@@ -23,17 +33,141 @@ class ServiceController extends Controller
             ->with(['serviceTypes', 'themes', 'country'])
             ->get();
 
-        return response()->json($services);
+        // Translate translatable fields
+        $translated = $this->translateCollection($services, [
+            'name',
+            'description',
+            'overview',
+            'details'
+        ]);
+
+        return response()->json($translated);
+    }
+    
+    // Get services for a country
+    public function getByCountry($countryId, Request $request)
+    {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+        
+        \Log::info("Fetching services for country ID: {$countryId}");
+        
+        $services = Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])
+            ->where('country_id', $countryId)
+            ->get();
+        
+        \Log::info("Found {$services->count()} services for country ID: {$countryId}");
+        
+        // Translate translatable fields
+        $translated = $this->translateCollection($services, [
+            'name',
+            'description',
+            'overview',
+            'details'
+        ]);
+        
+        return response()->json($translated);
+    }
+    
+    // Get services for a theme
+    public function getByTheme($themeId, Request $request)
+    {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+        
+        try {
+            \Log::info("Fetching services for theme ID: {$themeId}");
+            
+            // Validate themeId is numeric
+            if (!is_numeric($themeId)) {
+                \Log::error("Invalid theme ID: {$themeId}");
+                return response()->json(['error' => 'Invalid theme ID'], 400);
+            }
+            
+            // Get services that have this theme through the many-to-many relationship
+            $services = Service::with(['provider', 'serviceTypes', 'country', 'themes'])
+                ->whereHas('themes', function($q) use ($themeId) {
+                    $q->where('themes.id', $themeId);
+                })
+                ->get();
+            
+            \Log::info("Found {$services->count()} services for theme ID: {$themeId}");
+            
+            // Translate translatable fields
+            $translated = $this->translateCollection($services, [
+                'name',
+                'description',
+                'overview',
+                'details'
+            ]);
+            
+            return response()->json($translated);
+        } catch (\Exception $e) {
+            \Log::error("Error fetching services for theme ID {$themeId}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Failed to fetch services', 'message' => $e->getMessage()], 500);
+        }
+    }
+    
+    // Get single service
+    public function show($id, Request $request)
+    {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+        
+        $service = Service::with(['provider', 'serviceTypes', 'country', 'theme', 'themes'])->findOrFail($id);
+        
+        // Translate translatable fields
+        $translated = $this->translateModel($service, [
+            'name',
+            'description',
+            'overview',
+            'details'
+        ]);
+        
+        return response()->json($translated);
     }
 
     // List all services from all providers (for public trips page)
     public function all(Request $request)
     {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+        
         $services = Service::with(['serviceTypes', 'themes', 'country', 'provider'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($services);
+        // Translate translatable fields
+        $translated = $this->translateCollection($services, [
+            'name',
+            'description',
+            'overview',
+            'details'
+        ]);
+        
+        return response()->json($translated);
     }
 
     // Store a new service

@@ -29,24 +29,20 @@ const Trips = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/services/all');
-      if (!response.ok) throw new Error('Failed to fetch services');
-      const data = await response.json();
-      setServices(data);
-      setFilteredServices(data);
+      const response = await window.apiClient.get('/api/services/all');
+      setServices(response.data);
+      setFilteredServices(response.data);
       setLoading(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to fetch services');
       setLoading(false);
     }
   };
 
   const fetchServiceTypes = async () => {
     try {
-      const response = await fetch('/api/service-types');
-      if (!response.ok) throw new Error('Failed to fetch service types');
-      const data = await response.json();
-      setServiceTypes(data);
+      const response = await window.apiClient.get('/api/service-types');
+      setServiceTypes(response.data);
     } catch (err) {
       console.error('Error fetching service types:', err);
     }
@@ -54,10 +50,8 @@ const Trips = () => {
 
   const fetchCountries = async () => {
     try {
-      const response = await fetch('/api/countries');
-      if (!response.ok) throw new Error('Failed to fetch countries');
-      const data = await response.json();
-      setCountries(data);
+      const response = await window.apiClient.get('/api/countries');
+      setCountries(response.data);
     } catch (err) {
       console.error('Error fetching countries:', err);
     }

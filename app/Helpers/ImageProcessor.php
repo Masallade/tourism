@@ -14,6 +14,7 @@ class ImageProcessor
         'service' => ['width' => 1920, 'height' => 1080], // 16:9 ratio
         'country' => ['width' => 1200, 'height' => 800], // 3:2 ratio
         'theme' => ['width' => 800, 'height' => 600], // 4:3 ratio
+        'destination' => ['width' => 1920, 'height' => 1080], // 16:9 ratio for destination images
         'about_hero' => ['width' => 1920, 'height' => 600], // 16:5 ratio
         'about_mission' => ['width' => 800, 'height' => 600], // 4:3 ratio
         'about_team' => ['width' => 400, 'height' => 400], // 1:1 ratio (square)
@@ -27,6 +28,7 @@ class ImageProcessor
         'service' => 3 * 1024 * 1024, // 3MB
         'country' => 1 * 1024 * 1024, // 1MB
         'theme' => 2 * 1024 * 1024, // 2MB
+        'destination' => 2 * 1024 * 1024, // 2MB target after compression (allows 5MB upload, compresses to 2MB)
         'about_hero' => 2 * 1024 * 1024, // 2MB
         'about_mission' => 2 * 1024 * 1024, // 2MB
         'about_team' => 1 * 1024 * 1024, // 1MB

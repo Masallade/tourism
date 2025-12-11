@@ -5,15 +5,28 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AboutPage;
 use App\Helpers\ImageProcessor;
+use App\Traits\TranslatableResponse;
+use App\Services\TranslationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 
 class AboutPageController extends Controller
 {
+    use TranslatableResponse;
+    
     /**
      * Get about page content (single record or create default)
      */
-    public function index()
+    public function index(Request $request)
     {
+        // Set locale from request
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            App::setLocale($locale);
+        }
+        
         $aboutPage = AboutPage::first();
         
         // If no about page exists, return default empty structure
@@ -47,7 +60,51 @@ class AboutPageController extends Controller
             ]);
         }
         
-        return response()->json($aboutPage);
+        // Translate the about page content
+        $data = $aboutPage->toArray();
+        
+        if ($locale !== 'en') {
+            $translationService = app(TranslationService::class);
+            
+            // Translate simple text fields
+            $translatableFields = [
+                'hero_title',
+                'hero_subtitle',
+                'mission_title',
+                'mission_description',
+                'mission_stat_label',
+                'values_title',
+                'impact_title',
+                'impact_stat_1_label',
+                'impact_stat_2_label',
+                'impact_stat_3_label',
+                'impact_stat_4_label',
+                'team_title',
+                'team_description',
+                'cta_title',
+                'cta_description',
+            ];
+            
+            foreach ($translatableFields as $field) {
+                if (!empty($data[$field])) {
+                    $data[$field] = $translationService->translate($data[$field], $locale, 'en');
+                }
+            }
+            
+            // Translate values array (each value has title and description)
+            if (!empty($data['values']) && is_array($data['values'])) {
+                foreach ($data['values'] as &$value) {
+                    if (!empty($value['title'])) {
+                        $value['title'] = $translationService->translate($value['title'], $locale, 'en');
+                    }
+                    if (!empty($value['description'])) {
+                        $value['description'] = $translationService->translate($value['description'], $locale, 'en');
+                    }
+                }
+            }
+        }
+        
+        return response()->json($data);
     }
 
     /**

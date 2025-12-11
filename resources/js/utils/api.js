@@ -1,5 +1,6 @@
 // Centralized API utility for consistent API calls
 import axios from 'axios';
+import i18n from '../i18n/config';
 
 // Create axios instance with proper configuration
 const api = axios.create({
@@ -21,7 +22,7 @@ if (import.meta.env.PROD) {
     api.defaults.baseURL = window.location.origin;
 }
 
-// Add request interceptor to include CSRF token and check for token-based auth (fallback)
+// Add request interceptor to include CSRF token, locale, and check for token-based auth (fallback)
 api.interceptors.request.use(
     (config) => {
         // Remove Content-Type header for FormData - axios will set it automatically with boundary
@@ -34,6 +35,14 @@ api.interceptors.request.use(
         if (csrfToken) {
             config.headers['X-CSRF-TOKEN'] = csrfToken;
         }
+        
+        // Add locale to headers and params for translation
+        const locale = i18n.language || 'en';
+        config.headers['Accept-Language'] = locale;
+        config.params = {
+            ...config.params,
+            locale: locale
+        };
         
         // Check for token-based auth (for service providers or API tokens)
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');

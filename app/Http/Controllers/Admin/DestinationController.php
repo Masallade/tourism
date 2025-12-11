@@ -40,15 +40,26 @@ class DestinationController extends Controller
         try {
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
-                'subtitle' => 'nullable|string|max:255',
+                'subtitle' => 'required|string|max:255',
                 'is_active' => 'boolean',
                 'display_order' => 'nullable|integer|min:0',
-                'service_ids' => 'nullable|array',
+                'service_ids' => 'required|array|min:1',
                 'service_ids.*' => 'exists:services,id',
                 'country_id' => 'required|exists:countries,id',
-                'description' => 'required|string|min:500',
+                'description' => [
+                    'required',
+                    'string',
+                    function ($attribute, $value, $fail) {
+                        $textOnly = strip_tags($value);
+                        if (strlen(trim($textOnly)) < 500) {
+                            $fail('The description must be at least 500 characters (excluding HTML formatting).');
+                        }
+                    },
+                ],
                 'images' => 'nullable|array|max:5',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:15360', // 15MB - will be compressed client-side to ~2MB
+                'existing_images' => 'nullable|array',
+                'existing_images.*' => 'string',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Destination validation failed', [
@@ -56,6 +67,14 @@ class DestinationController extends Controller
                 'input' => $request->all()
             ]);
             throw $e;
+        }
+
+        // Validate that we have at least one image for new destinations
+        $hasNewImages = $request->hasFile('images') && count($request->file('images')) > 0;
+        if (!$hasNewImages) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'images' => ['At least one image is required.']
+            ]);
         }
 
         $imagePaths = [];
@@ -94,36 +113,151 @@ class DestinationController extends Controller
         // Log what we're receiving for debugging
         \Log::info('Destination update request', [
             'id' => $id,
-            'all_input' => $request->all(),
             'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'country_id' => $request->input('country_id'),
-            'has_title' => $request->has('title'),
-            'has_description' => $request->has('description'),
-            'has_country_id' => $request->has('country_id'),
+            'has_existing_images' => $request->has('existing_images'),
+            'existing_images_count' => $request->has('existing_images') ? count($request->input('existing_images', [])) : 0,
+            'existing_images' => $request->input('existing_images', []),
+            'has_new_images' => $request->hasFile('images'),
+            'new_images_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
             'content_type' => $request->header('Content-Type'),
         ]);
 
+        // Custom validation for description (strip HTML tags for length check)
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
+            'subtitle' => 'required|string|max:255',
             'is_active' => 'boolean',
             'display_order' => 'nullable|integer|min:0',
-            'service_ids' => 'nullable|array',
+            'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'exists:services,id',
             'country_id' => 'required|exists:countries,id',
-            'description' => 'required|string|min:500',
+            'description' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $textOnly = strip_tags($value);
+                    if (strlen(trim($textOnly)) < 500) {
+                        $fail('The description must be at least 500 characters (excluding HTML formatting).');
+                    }
+                },
+            ],
             'images' => 'nullable|array|max:5',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:15360', // 15MB - will be compressed client-side to ~2MB
+            'existing_images' => 'nullable|array',
+            'existing_images.*' => 'string',
         ]);
-
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                $path = \App\Helpers\ImageProcessor::processAndStore($file, 'destination', 'uploads/destinations');
-                $imagePaths[] = $path;
+        
+        // Validate that we have at least one image (either new or existing)
+        $hasNewImages = $request->hasFile('images') && count($request->file('images')) > 0;
+        $hasExistingImages = $request->has('existing_images') && is_array($request->existing_images) && count($request->existing_images) > 0;
+        if (!$hasNewImages && !$hasExistingImages) {
+            // Check if destination already has images in database
+            if ($destination->images) {
+                try {
+                    $existingImgs = is_array($destination->images) 
+                        ? $destination->images 
+                        : json_decode($destination->images, true);
+                    if (is_array($existingImgs) && count($existingImgs) > 0) {
+                        // Destination already has images, so it's okay
+                        $hasExistingImages = true;
+                    }
+                } catch (\Exception $e) {
+                    // Ignore parsing errors
+                }
+            }
+            if (!$hasExistingImages) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'images' => ['At least one image is required.']
+                ]);
             }
         }
+
+        // Start with existing images from request
+        // IMPORTANT: If new images are uploaded AND existing_images is empty/not sent,
+        // it means user wants to REPLACE all old images with new ones
+        $imagePaths = [];
+        $hasNewImages = $request->hasFile('images') && count($request->file('images')) > 0;
+        $existingImagesInRequest = $request->input('existing_images', null);
+        
+        // Check if existing_images was explicitly sent (even if empty array)
+        $existingImagesExplicitlySent = $request->has('existing_images');
+        
+        if ($existingImagesExplicitlySent) {
+            // existing_images key exists in request (could be empty array)
+            if (is_array($existingImagesInRequest)) {
+                $imagePaths = array_values(array_filter($existingImagesInRequest, function($path) {
+                    return !empty($path) && is_string($path);
+                }));
+                \Log::info('Using existing images from REQUEST', [
+                    'count' => count($imagePaths), 
+                    'paths' => $imagePaths,
+                    'raw_input' => $existingImagesInRequest,
+                    'has_new_images' => $hasNewImages
+                ]);
+            }
+        } else {
+            // existing_images key was NOT sent in request at all
+            // If new images are being uploaded, user wants to REPLACE all images
+            // If no new images, keep current database images (user didn't modify images)
+            if ($hasNewImages) {
+                // User is uploading new images but didn't send existing_images key
+                // This means: REPLACE all old images with new ones
+                $imagePaths = [];
+                \Log::info('REPLACING all images - new images uploaded but existing_images key not in request');
+            } else {
+                // No new images, no existing_images key - keep database images
+                if ($destination->images) {
+                    try {
+                        $existingImgs = is_array($destination->images) 
+                            ? $destination->images 
+                            : json_decode($destination->images, true);
+                        if (is_array($existingImgs)) {
+                            $imagePaths = array_values(array_filter($existingImgs, function($path) {
+                                return !empty($path) && is_string($path);
+                            }));
+                            \Log::info('Using existing images from DATABASE (no changes)', [
+                                'count' => count($imagePaths), 
+                                'paths' => $imagePaths
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Failed to parse existing images from database', ['error' => $e->getMessage()]);
+                    }
+                }
+            }
+        }
+        
+        // SPECIAL CASE: If existing_images was sent as empty array AND new images are uploaded
+        // This means user wants to REPLACE all old images with new ones
+        if ($existingImagesExplicitlySent && is_array($existingImagesInRequest) && count($imagePaths) === 0 && $hasNewImages) {
+            \Log::info('REPLACING all images - existing_images sent as empty array with new images');
+            $imagePaths = []; // Already empty, but log it
+        }
+
+        // Add new uploaded images
+        $newImageCount = 0;
+        if ($hasNewImages) {
+            $uploadedFiles = $request->file('images');
+            \Log::info('Processing new images', ['count' => count($uploadedFiles), 'current_image_count' => count($imagePaths)]);
+            foreach ($uploadedFiles as $file) {
+                // Only add if we haven't reached the limit of 5
+                if (count($imagePaths) < 5) {
+                    $path = \App\Helpers\ImageProcessor::processAndStore($file, 'destination', 'uploads/destinations');
+                    $imagePaths[] = $path;
+                    $newImageCount++;
+                }
+            }
+        }
+
+        // Ensure we don't exceed 5 images total
+        $imagePaths = array_slice($imagePaths, 0, 5);
+        
+        \Log::info('Final image paths', [
+            'total' => count($imagePaths),
+            'existing' => count($imagePaths) - $newImageCount,
+            'new' => $newImageCount,
+            'paths' => $imagePaths
+        ]);
 
         $destination->update([
             'title' => $validated['title'],
@@ -132,7 +266,7 @@ class DestinationController extends Controller
             'display_order' => $validated['display_order'] ?? 0,
             'country_id' => $validated['country_id'],
             'description' => $validated['description'],
-            'images' => !empty($imagePaths) ? json_encode($imagePaths) : $destination->images,
+            'images' => !empty($imagePaths) ? json_encode($imagePaths) : null,
         ]);
 
         // Sync services

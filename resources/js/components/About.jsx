@@ -633,9 +633,9 @@ const About = () => {
               </h2>
               
               {/* Description */}
-              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
+                <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
                 {data.cta_description || t('ready_travel_sustainably_description')}
-              </p>
+                </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
