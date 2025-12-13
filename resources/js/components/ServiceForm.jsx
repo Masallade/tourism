@@ -292,7 +292,7 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   };
 
   const handleCustomMinChange = (value) => {
-    const numericValue = Math.max(1, Number(value) || 1);
+    const numericValue = Math.max(1, Math.min(100, Number(value) || 1));
     setCustomMinTravelers(numericValue);
     if (capacityOption === 'custom') {
       setMinTravelers(numericValue);
@@ -300,7 +300,7 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   };
 
   const handleCustomMaxChange = (value) => {
-    const numericValue = Math.max(1, Number(value) || 1);
+    const numericValue = Math.max(1, Math.min(100, Number(value) || 1));
     setCustomMaxTravelers(numericValue);
     if (capacityOption === 'custom') {
       setMaxTravelers(numericValue);
@@ -365,8 +365,11 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     formData.append('provider_id', provider?.id);
     formData.append('lat', lat);
     formData.append('lng', lng);
-    formData.append('min_travelers', minTravelers || 1);
-    formData.append('max_travelers', maxTravelers || 1);
+    // Ensure traveler values are valid integers within range
+    const minTravelersValue = Math.max(1, Math.min(100, Number(minTravelers) || 1));
+    const maxTravelersValue = Math.max(1, Math.min(100, Number(maxTravelers) || 1));
+    formData.append('min_travelers', minTravelersValue);
+    formData.append('max_travelers', Math.max(minTravelersValue, maxTravelersValue));
     selectedServiceTypeIds.forEach(id => formData.append('service_type_ids[]', id));
     selectedThemeIds.forEach(id => formData.append('theme_ids[]', id));
     
@@ -669,6 +672,7 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
             <input
               type="number"
               min="1"
+              max="100"
               className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               value={customMaxTravelers}
               onChange={(e) => handleCustomMaxChange(e.target.value)}
