@@ -18,7 +18,7 @@ class CountryController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:countries,slug',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
         ]);
             
@@ -95,7 +95,7 @@ class CountryController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:countries,slug,' . $country->id,
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'image_url' => ['nullable', 'string', 'max:2048', $this->imageUrlRule()],
         ]);
             

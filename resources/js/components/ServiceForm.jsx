@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
+import { compressImage, getCompressionSettings } from '../utils/imageCompression';
 
 const capacityPresets = [
   { id: '1-2', label: '1 to 2 persons', description: 'Ideal for couples or solo travelers', min: 1, max: 2 },
@@ -69,6 +70,13 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
   const [maxTravelers, setMaxTravelers] = useState(initialCapacity.max);
   const [customMinTravelers, setCustomMinTravelers] = useState(initialCapacity.min);
   const [customMaxTravelers, setCustomMaxTravelers] = useState(initialCapacity.max);
+  
+  // Location search state
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const locationSearchTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (service) {
@@ -136,6 +144,120 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     });
     return null;
   };
+
+  // Map center adjuster component
+  const MapCenterAdjuster = () => {
+    const map = useMap();
+    useEffect(() => {
+      if (position) {
+        map.setView(position, map.getZoom());
+      }
+    }, [position, map]);
+    return null;
+  };
+
+  // Location search functions
+  const fetchLocationSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+      );
+      const data = await response.json();
+      setLocationSuggestions(data || []);
+      setShowLocationSuggestions(true);
+    } catch (error) {
+      console.error('Error fetching location suggestions:', error);
+      setLocationSuggestions([]);
+    }
+  };
+
+  const handleLocationSearchChange = (e) => {
+    const query = e.target.value;
+    setLocationSearchQuery(query);
+    
+    // Clear existing timeout
+    if (locationSearchTimeoutRef.current) {
+      clearTimeout(locationSearchTimeoutRef.current);
+    }
+    
+    // Debounce the search
+    if (query.length >= 2) {
+      locationSearchTimeoutRef.current = setTimeout(() => {
+        fetchLocationSuggestions(query);
+      }, 300);
+    } else {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+    }
+  };
+
+  const handleLocationSelect = async (locationData) => {
+    setShowLocationSuggestions(false);
+    setIsGeocoding(true);
+    
+    try {
+      let location;
+      
+      // If locationData is already an object (from suggestion click)
+      if (typeof locationData === 'object' && locationData.lat) {
+        location = {
+          lat: parseFloat(locationData.lat),
+          lng: parseFloat(locationData.lon),
+          name: locationData.display_name
+        };
+      } else {
+        // If it's a string (from enter key or direct search)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationData)}&limit=1&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const bestResult = data[0];
+          location = {
+            lat: parseFloat(bestResult.lat),
+            lng: parseFloat(bestResult.lon),
+            name: bestResult.display_name
+          };
+        }
+      }
+      
+      if (location) {
+        setLat(location.lat.toFixed(7));
+        setLng(location.lng.toFixed(7));
+        setPosition([location.lat, location.lng]);
+        setLocationSearchQuery(location.name);
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const handleLocationSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && locationSearchQuery.trim()) {
+      e.preventDefault();
+      handleLocationSelect(locationSearchQuery);
+    }
+  };
+
+  // Close location suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.location-search-container')) {
+        setShowLocationSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleServiceType = (id) => {
     setSelectedServiceTypeIds(prev => {
@@ -247,10 +369,37 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
     formData.append('max_travelers', maxTravelers || 1);
     selectedServiceTypeIds.forEach(id => formData.append('service_type_ids[]', id));
     selectedThemeIds.forEach(id => formData.append('theme_ids[]', id));
-    // Append images if they exist
-    if (image) formData.append('image', image);
-    if (image2) formData.append('image_2', image2);
-    if (image3) formData.append('image_3', image3);
+    
+    // Compress and append images if they exist
+    const compressionSettings = getCompressionSettings('service');
+    if (image) {
+      try {
+        const compressedImage = await compressImage(image, compressionSettings);
+        formData.append('image', compressedImage, compressedImage.name);
+      } catch (error) {
+        console.error('Error compressing image, using original:', error);
+        formData.append('image', image);
+      }
+    }
+    if (image2) {
+      try {
+        const compressedImage2 = await compressImage(image2, compressionSettings);
+        formData.append('image_2', compressedImage2, compressedImage2.name);
+      } catch (error) {
+        console.error('Error compressing image_2, using original:', error);
+        formData.append('image_2', image2);
+      }
+    }
+    if (image3) {
+      try {
+        const compressedImage3 = await compressImage(image3, compressionSettings);
+        formData.append('image_3', compressedImage3, compressedImage3.name);
+      } catch (error) {
+        console.error('Error compressing image_3, using original:', error);
+        formData.append('image_3', image3);
+      }
+    }
+    
     // Pass service ID if editing
     if (service) {
       formData.append('_method', 'PUT'); // Laravel method spoofing for FormData
@@ -538,6 +687,66 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
       {/* Location Picker */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Service Location (Pick on map)</label>
+        
+        {/* Location Search Input */}
+        <div className="relative mb-3 location-search-container">
+          <div className="relative">
+            <input
+              type="text"
+              value={locationSearchQuery}
+              onChange={handleLocationSearchChange}
+              onKeyDown={handleLocationSearchKeyDown}
+              placeholder="Search for a location (e.g., city, address, landmark)"
+              className="w-full px-4 py-2 pr-10 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900"
+            />
+            {isGeocoding && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+            {!isGeocoding && locationSearchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationSearchQuery('');
+                  setLocationSuggestions([]);
+                  setShowLocationSuggestions(false);
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          
+          {/* Location Suggestions Dropdown */}
+          {showLocationSuggestions && locationSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {locationSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleLocationSelect(suggestion)}
+                  className="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
+                  {suggestion.address && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {[
+                        suggestion.address.city,
+                        suggestion.address.state,
+                        suggestion.address.country
+                      ].filter(Boolean).join(', ')}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        
         <div className="w-full h-64 border-2 border-blue-200 rounded-lg mb-3 overflow-hidden">
           {typeof window !== 'undefined' && (
             <MapContainer 
@@ -546,13 +755,18 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
               scrollWheelZoom={true}
               style={{ height: '100%', width: '100%' }}
               className="z-0"
+              maxBounds={[[-90, -180], [90, 180]]}
+              maxBoundsViscosity={1.0}
+              minZoom={2}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                noWrap={true}
               />
               <DraggableMarker />
               <MapClickHandler />
+              <MapCenterAdjuster />
             </MapContainer>
           )}
         </div>

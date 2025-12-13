@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
 
 const CountryForm = ({ country, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -115,7 +116,14 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             form.append('slug', formData.slug.trim());
             form.append('description', formData.description.trim());
             if (imageFile) {
-                form.append('image', imageFile);
+                try {
+                    const compressionSettings = getCompressionSettings('country');
+                    const compressedImage = await compressImage(imageFile, compressionSettings);
+                    form.append('image', compressedImage, compressedImage.name);
+                } catch (error) {
+                    console.error('Error compressing image, using original:', error);
+                    form.append('image', imageFile);
+                }
             } else if (formData.image_url) {
                 form.append('image_url', formData.image_url);
             }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
+import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
 
 const AboutPageEditor = () => {
     const [loading, setLoading] = useState(true);
@@ -167,21 +168,42 @@ const AboutPageEditor = () => {
                 }
             });
 
-            // Add image files only if new files are selected
+            // Compress and add image files only if new files are selected
             // Don't send existing image paths as strings - backend will preserve them
             if (heroImageFile) {
-                formData.append('hero_image', heroImageFile);
+                try {
+                    const compressionSettings = getCompressionSettings('about_hero');
+                    const compressedHeroImage = await compressImage(heroImageFile, compressionSettings);
+                    formData.append('hero_image', compressedHeroImage, compressedHeroImage.name);
+                } catch (error) {
+                    console.error('Error compressing hero image, using original:', error);
+                    formData.append('hero_image', heroImageFile);
+                }
             }
             if (missionImageFile) {
-                formData.append('mission_image', missionImageFile);
+                try {
+                    const compressionSettings = getCompressionSettings('about_mission');
+                    const compressedMissionImage = await compressImage(missionImageFile, compressionSettings);
+                    formData.append('mission_image', compressedMissionImage, compressedMissionImage.name);
+                } catch (error) {
+                    console.error('Error compressing mission image, using original:', error);
+                    formData.append('mission_image', missionImageFile);
+                }
             }
             
-            // Add team member images with their indices
-            Object.keys(teamMemberImageFiles).forEach(index => {
+            // Compress and add team member images with their indices
+            for (const index of Object.keys(teamMemberImageFiles)) {
                 if (teamMemberImageFiles[index]) {
-                    formData.append(`team_member_images[${index}]`, teamMemberImageFiles[index]);
+                    try {
+                        const compressionSettings = getCompressionSettings('about_team');
+                        const compressedTeamImage = await compressImage(teamMemberImageFiles[index], compressionSettings);
+                        formData.append(`team_member_images[${index}]`, compressedTeamImage, compressedTeamImage.name);
+                    } catch (error) {
+                        console.error(`Error compressing team member image ${index}, using original:`, error);
+                        formData.append(`team_member_images[${index}]`, teamMemberImageFiles[index]);
+                    }
                 }
-            });
+            }
 
             await window.apiClient.post('/api/about-page', formData, {
                 headers: {

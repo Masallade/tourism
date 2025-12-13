@@ -409,8 +409,16 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
 
     // Handle image upload
     if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-        $data['image'] = $imagePath;
+        try {
+            $file = $request->file('image');
+            $imagePath = ImageProcessor::processAndStore($file, 'service_provider', 'uploads/service_provider_images');
+            $data['image'] = $imagePath;
+        } catch (\Exception $e) {
+            \Log::error('Service provider image processing failed: ' . $e->getMessage());
+            // Fallback to original upload method
+            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+            $data['image'] = $imagePath;
+        }
     }
 
     // Handle documents upload
@@ -498,8 +506,16 @@ Route::post('/service-providers/{serviceProvider}/update', function (\App\Models
 
     // Handle image upload
     if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-        $data['image'] = $imagePath;
+        try {
+            $file = $request->file('image');
+            $imagePath = ImageProcessor::processAndStore($file, 'service_provider', 'uploads/service_provider_images');
+            $data['image'] = $imagePath;
+        } catch (\Exception $e) {
+            \Log::error('Service provider image processing failed: ' . $e->getMessage());
+            // Fallback to original upload method
+            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+            $data['image'] = $imagePath;
+        }
     }
 
     // Handle documents upload

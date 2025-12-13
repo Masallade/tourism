@@ -138,3 +138,5 @@ sudo cat /etc/nginx/sites-available/tourism | grep -A 10 "location ~ \.php"
 
 
 
+
+

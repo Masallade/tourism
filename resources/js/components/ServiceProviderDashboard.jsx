@@ -6,6 +6,7 @@ import ServiceForm from './ServiceForm';
 import StaticMap from './StaticMap';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
+import { compressImage, compressImages, getCompressionSettings } from '../utils/imageCompression';
 
 // Fix Leaflet default icon issue
 if (typeof window !== 'undefined') {
@@ -342,16 +343,32 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
         });
       }
       
-      // Add image if new one is selected
+      // Compress and add image if new one is selected
       if (editImageFile) {
-        form.append('image', editImageFile);
+        try {
+          const compressionSettings = getCompressionSettings('service_provider');
+          const compressedImage = await compressImage(editImageFile, compressionSettings);
+          form.append('image', compressedImage, compressedImage.name);
+        } catch (error) {
+          console.error('Error compressing image, using original:', error);
+          form.append('image', editImageFile);
+        }
       }
       
-      // Add documents if new ones are selected
+      // Compress and add documents if new ones are selected
       if (editDocuments.length > 0) {
-        editDocuments.forEach(doc => {
-          form.append('documents[]', doc);
-        });
+        try {
+          const compressionSettings = getCompressionSettings('document');
+          const compressedDocs = await compressImages(editDocuments, compressionSettings);
+          compressedDocs.forEach(doc => {
+            form.append('documents[]', doc);
+          });
+        } catch (error) {
+          console.error('Error compressing documents, using originals:', error);
+          editDocuments.forEach(doc => {
+            form.append('documents[]', doc);
+          });
+        }
       }
       
       // Add location if provided
