@@ -42,11 +42,26 @@ export default function Header({ onProviderLogin, provider }) {
   // Calculate user dropdown position when opened
   useEffect(() => {
     if (isUserDropdownOpen && userButtonRef.current) {
-      const buttonRect = userButtonRef.current.getBoundingClientRect();
-      setUserDropdownPosition({
-        top: buttonRect.bottom + window.scrollY + 8,
-        right: window.innerWidth - buttonRect.right + window.scrollX,
-      });
+      const updatePosition = () => {
+        if (userButtonRef.current) {
+          const buttonRect = userButtonRef.current.getBoundingClientRect();
+          setUserDropdownPosition({
+            top: buttonRect.bottom + 8,
+            right: window.innerWidth - buttonRect.right,
+          });
+        }
+      };
+      
+      updatePosition();
+      
+      // Update position on scroll and resize
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [isUserDropdownOpen]);
 
@@ -71,6 +86,23 @@ export default function Header({ onProviderLogin, provider }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUserDropdownOpen]);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && !event.target.closest('header')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // Check if user is logged in
   useEffect(() => {
@@ -328,14 +360,14 @@ export default function Header({ onProviderLogin, provider }) {
         }
       `}</style>
       
-      <header className="backdrop-blur-md bg-white/90 shadow-lg border-b border-green-200/50 fixed top-0 left-0 right-0 overflow-x-hidden" style={{ overflowY: 'visible', zIndex: 9998 }}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8" style={{ overflow: 'visible' }}>
-          <div className="flex justify-between items-center py-3 sm:py-4 md:py-5 lg:py-6 min-w-0" style={{ overflow: 'visible' }}>
+      <header className="backdrop-blur-md bg-white/90 shadow-lg border-b border-green-200/50 fixed top-0 left-0 right-0 z-50" style={{ zIndex: 9998 }}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3 sm:py-4 md:py-5 lg:py-6 gap-2 sm:gap-4">
           {/* Logo/Brand */}
-          <div className="flex items-center flex-shrink-0 min-w-0">
+          <div className="flex items-center flex-shrink-0">
             <Link to="/" className="flex-shrink-0">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-green-700 tracking-tight flex items-center gap-1 sm:gap-2 cursor-pointer hover:text-green-600 transition-all duration-300 hover:scale-105">
-                <span className="text-green-500 text-2xl sm:text-3xl md:text-4xl animate-pulse flex-shrink-0">🌿</span> 
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-extrabold text-green-700 tracking-tight flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:text-green-600 transition-all duration-300">
+                <span className="text-green-500 text-xl sm:text-2xl md:text-2xl lg:text-2xl flex-shrink-0">🌿</span> 
                 <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent whitespace-nowrap">
                   <span className="hidden sm:inline">Unison Tour</span>
                   <span className="sm:hidden">UT</span>
@@ -345,18 +377,18 @@ export default function Header({ onProviderLogin, provider }) {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2 xl:space-x-4 2xl:space-x-6 flex-shrink min-w-0" style={{ overflow: 'visible', zIndex: 9999, position: 'relative' }}>
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-3 2xl:gap-4 flex-1 justify-end min-w-0">
             {/* Main Navigation Links */}
-            <div className="flex items-center space-x-1 xl:space-x-2 flex-shrink-0" style={{ zIndex: 9999, position: 'relative' }}>
+            <div className="flex items-center gap-1 xl:gap-2 flex-shrink-0">
             {/* Destinations Dropdown */}
-            <div className="relative flex-shrink-0" style={{ zIndex: 9999 }}>
+            <div className="relative">
               <button
                 onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
                 onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 2xl:px-4 py-2 rounded-lg text-xs xl:text-sm hover:bg-green-50 hover:shadow-sm flex items-center whitespace-nowrap"
+                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm flex items-center whitespace-nowrap"
               >
                 {t('destinations')}
-                <svg className="w-3 h-3 xl:w-4 xl:h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -364,76 +396,80 @@ export default function Header({ onProviderLogin, provider }) {
               {/* Dropdown Menu */}
               {isDestinationsDropdownOpen && (
                 <div 
-                  className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-green-100 backdrop-blur-sm"
-                  style={{ zIndex: 10000 }}
+                  className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-green-100 backdrop-blur-sm z-50"
                   onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
                   onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
                 >
-                  <div className="py-2">
+                  <div className="py-2 max-h-96 overflow-y-auto">
                     {/* All Destinations */}
-            <Link 
-              to="/destinations" 
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                    <Link 
+                      to="/destinations" 
+                      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                      onClick={() => setIsDestinationsDropdownOpen(false)}
                     >
-                      <svg className="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      All Destinations
+                      <span className="font-medium">All Destinations</span>
                     </Link>
                     
                     {/* Divider */}
-                    <div className="border-t border-gray-200 my-1"></div>
+                    <div className="border-t border-gray-200 my-2"></div>
                     
                     {/* Countries */}
-                    {countries.map((country) => (
-                      <Link
-                        key={country.id}
-                        to={`/destinations?country=${country.id}`}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
-                      >
-                        <svg className="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {country.name}
-            </Link>
-                    ))}
+                    {countries.length > 0 ? (
+                      countries.map((country) => (
+                        <Link
+                          key={country.id}
+                          to={`/destinations?country=${country.id}`}
+                          className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                          onClick={() => setIsDestinationsDropdownOpen(false)}
+                        >
+                          <svg className="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="truncate">{country.name}</span>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-500">Loading destinations...</div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
             <Link 
               to="/trips" 
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-1.5 xl:px-3 2xl:px-4 py-2 rounded-lg text-xs xl:text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+              className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap"
             >
               {t('trips')}
             </Link>
             <a 
               href="#reviews" 
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-1.5 xl:px-3 2xl:px-4 py-2 rounded-lg text-xs xl:text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+              className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap"
             >
               {t('reviews')}
             </a>
             <Link 
               to="/about" 
-                className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-1.5 xl:px-3 2xl:px-4 py-2 rounded-lg text-xs xl:text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap flex-shrink-0"
+              className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm whitespace-nowrap"
             >
               {t('about')}
             </Link>
             </div>
 
             {/* Language Switcher */}
-            <div className="flex-shrink-0 relative" style={{ zIndex: 9999, position: 'relative' }}>
-            <LanguageSwitcher />
+            <div className="flex-shrink-0">
+              <LanguageSwitcher />
             </div>
 
             {/* AI Assistance Button */}
             <Link 
               to="/ai-assistance" 
-              className="flex items-center text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-bold transition-all duration-200 px-2 xl:px-3 2xl:px-4 py-2 rounded-xl text-xs xl:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 whitespace-nowrap flex-shrink-0"
-              style={{ zIndex: 9999, position: 'relative' }}
+              className="flex items-center text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-bold transition-all duration-200 px-3 py-2 rounded-xl text-sm shadow-lg hover:shadow-xl transform hover:scale-105 whitespace-nowrap flex-shrink-0"
             >
-              <svg className="w-3 h-3 xl:w-4 xl:h-4 mr-1 xl:mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span className="hidden 2xl:inline">{t('ai_assistance')}</span>
@@ -444,8 +480,7 @@ export default function Header({ onProviderLogin, provider }) {
             {/* Service Provider Button */}
             <button
               onClick={handleJoinClick}
-              className="px-2 xl:px-3 2xl:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-xs xl:text-sm shadow-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-400 transition-all duration-200 transform hover:scale-105 whitespace-nowrap flex-shrink-0"
-              style={{ zIndex: 9999, position: 'relative' }}
+              className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-400 transition-all duration-200 transform hover:scale-105 whitespace-nowrap flex-shrink-0"
             >
               <span className="hidden 2xl:inline">{provider ? t('provider_dashboard') : t('join_as_provider')}</span>
               <span className="hidden xl:inline 2xl:hidden">{provider ? t('dashboard') : t('join')}</span>
@@ -454,33 +489,31 @@ export default function Header({ onProviderLogin, provider }) {
             
             {/* User Authentication Section */}
             {isUserLoggedIn ? (
-              <div className="flex items-center">
-                {/* User Profile Dropdown - Compact Version */}
-                <div className="relative" style={{ zIndex: 9999 }}>
+              <div className="flex items-center flex-shrink-0">
+                {/* User Profile Dropdown */}
+                <div className="relative">
                   <button 
                     ref={userButtonRef}
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                    className="flex items-center text-green-700 hover:text-green-500 transition-all duration-200 hover:bg-green-50 p-2 rounded-full"
+                    className="flex items-center text-green-700 hover:text-green-500 transition-all duration-200 hover:bg-green-50 p-1.5 rounded-full"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ring-2 ring-green-200 hover:ring-green-300 transition-all duration-200">
-                      {user?.name?.charAt(0)?.toUpperCase()}
+                    <div className="w-9 h-9 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ring-2 ring-green-200 hover:ring-green-300 transition-all duration-200">
+                      {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   </button>
-                  
-                  {/* Dropdown Menu - Rendered via portal below */}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-1.5 xl:space-x-2 2xl:space-x-3 flex-shrink-0" style={{ zIndex: 9999, position: 'relative' }}>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Link
                   to="/login"
-                  className="px-2 xl:px-3 2xl:px-4 py-2 text-green-700 hover:text-green-500 font-medium transition-all duration-200 hover:bg-green-50 rounded-lg text-xs xl:text-sm whitespace-nowrap flex-shrink-0"
+                  className="px-3 py-2 text-green-700 hover:text-green-500 font-medium transition-all duration-200 hover:bg-green-50 rounded-lg text-sm whitespace-nowrap"
                 >
                   {t('login')}
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-2 xl:px-3 2xl:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 text-xs xl:text-sm whitespace-nowrap flex-shrink-0"
+                  className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap"
                 >
                   {t('signup')}
                 </Link>
@@ -489,7 +522,7 @@ export default function Header({ onProviderLogin, provider }) {
           </nav>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden flex items-center space-x-2">
+          <div className="lg:hidden flex items-center gap-2">
             {/* Show language switcher on mobile before menu */}
             <div className="hidden sm:block">
               <LanguageSwitcher />
@@ -498,6 +531,7 @@ export default function Header({ onProviderLogin, provider }) {
               onClick={toggleMenu}
               className="text-green-700 hover:text-green-500 focus:outline-none focus:text-green-500 p-2 rounded-lg hover:bg-green-50 transition-colors"
               aria-label="Toggle menu"
+              aria-expanded={isMenuOpen}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isMenuOpen ? (
@@ -512,53 +546,66 @@ export default function Header({ onProviderLogin, provider }) {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-green-200/50 mt-2">
-            <div className="px-3 sm:px-4 pt-3 pb-4 space-y-1 bg-white/95 backdrop-blur-sm">
+          <div className="lg:hidden border-t border-green-200/50 bg-white/95 backdrop-blur-sm">
+            <div className="px-4 pt-4 pb-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
               {/* Navigation Links */}
               <div className="space-y-1">
-                <Link 
-                  to="/destinations" 
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-medium hover:bg-green-50 transition-colors"
-                >
-                  {t('destinations')}
-                </Link>
-              {/* Countries in Mobile */}
-              {countries.slice(0, 5).map((country) => (
-                <Link 
-                  key={country.id} 
-                  to={`/destinations?country=${country.id}`} 
+                <div className="mb-2">
+                  <Link 
+                    to="/destinations" 
                     onClick={() => setIsMenuOpen(false)}
-                    className="text-green-700 hover:text-green-500 block px-6 py-2 rounded-lg text-sm font-medium ml-4 hover:bg-green-50 transition-colors"
-                >
-                  {country.name}
-                </Link>
-              ))}
+                    className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-semibold hover:bg-green-50 transition-colors"
+                  >
+                    {t('destinations')}
+                  </Link>
+                  {/* Countries in Mobile */}
+                  <div className="pl-4 mt-1 space-y-1">
+                    {countries.slice(0, 8).map((country) => (
+                      <Link 
+                        key={country.id} 
+                        to={`/destinations?country=${country.id}`} 
+                        onClick={() => setIsMenuOpen(false)}
+                        className="text-green-600 hover:text-green-500 block px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors"
+                      >
+                        {country.name}
+                      </Link>
+                    ))}
+                    {countries.length > 8 && (
+                      <Link 
+                        to="/destinations" 
+                        onClick={() => setIsMenuOpen(false)}
+                        className="text-green-500 hover:text-green-600 block px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition-colors"
+                      >
+                        View All →
+                      </Link>
+                    )}
+                  </div>
+                </div>
                 <Link 
                   to="/trips" 
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-medium hover:bg-green-50 transition-colors"
+                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-semibold hover:bg-green-50 transition-colors"
                 >
                   {t('trips')}
                 </Link>
                 <a 
                   href="#reviews" 
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-medium hover:bg-green-50 transition-colors"
+                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-semibold hover:bg-green-50 transition-colors"
                 >
                   {t('reviews')}
                 </a>
                 <Link 
                   to="/about" 
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-medium hover:bg-green-50 transition-colors"
+                  className="text-green-700 hover:text-green-500 block px-3 py-2.5 rounded-lg text-base font-semibold hover:bg-green-50 transition-colors"
                 >
                   {t('about')}
                 </Link>
               </div>
               
               {/* Language Switcher - Mobile (only show if not already visible) */}
-              <div className="sm:hidden px-3 py-2 border-t border-green-200 mt-2">
+              <div className="sm:hidden px-3 py-3 border-t border-green-200 mt-3">
                 <LanguageSwitcher />
               </div>
               
@@ -566,7 +613,7 @@ export default function Header({ onProviderLogin, provider }) {
               <Link 
                 to="/ai-assistance" 
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2.5 rounded-lg text-base font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all mt-2"
+                className="flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2.5 rounded-lg text-base font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all mt-3"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />

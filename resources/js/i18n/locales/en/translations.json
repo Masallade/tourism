@@ -172,5 +172,21 @@
   "continue_with_google": "Continue with Google",
   "sign_up_here": "Sign up here",
   "payment_details": "Payment",
-  "confirm_booking": "Confirm Booking (Coming Soon)"
+  "confirm_booking": "Confirm Booking (Coming Soon)",
+  "search_for": "Search for:",
+  "service_provider": "Service Provider",
+  "search_service_providers": "Search Service Providers",
+  "search_location": "Search Location",
+  "search_providers_placeholder": "Search providers and services by name, description, themes...",
+  "search_location_placeholder": "e.g., Lahore, Ichhra Lahore, Ferozepur Road, Pakistan...",
+  "filter_by_country": "Filter by Country",
+  "all_countries": "All Countries",
+  "showing": "Showing",
+  "providers": "providers",
+  "showing_providers_services": "Showing {{providers}} of {{totalProviders}} providers and {{services}} of {{totalServices}} services",
+  "showing_providers": "Showing {{providers}} of {{totalProviders}} providers",
+  "map_zoomed_to": "📍 Map zoomed to:",
+  "searching_for_location": "🔍 Searching for location...",
+  "location_not_found": "⚠️ Location not found. Try: \"Ichhra Lahore\" or \"Ferozepur Road Lahore\"",
+  "loading_suggestions": "Loading suggestions..."
 }

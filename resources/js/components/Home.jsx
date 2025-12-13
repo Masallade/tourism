@@ -173,7 +173,7 @@ export default function Home() {
               {t('explore_network')}
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              <span className="relative inline-block">
+              <span className="relative inline-block pb-2">
                 {t('discover_providers')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
               </span>
@@ -314,7 +314,7 @@ export default function Home() {
       <div className="text-center mb-12">
         <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('discover_the_world')}</span>
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
-          <span className="relative inline-block">
+          <span className="relative inline-block pb-2">
             {t('explore_countries')}
             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
           </span>
@@ -462,7 +462,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <span className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('find_your_passion')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 relative">
-              <span className="relative inline-block">
+              <span className="relative inline-block pb-2">
                 {t('explore_themes')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-green-400 transform -translate-y-1 rounded-full"></div>
               </span>
@@ -588,7 +588,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('why_choose_badge')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              <span className="relative inline-block">
+              <span className="relative inline-block pb-2">
                 {t('why_choose')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500 transform -translate-y-1 rounded-full"></div>
               </span>
@@ -684,7 +684,7 @@ export default function Home() {
           <div className="text-center mb-12">
             <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">{t('traveler_stories')}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              <span className="relative inline-block">
+              <span className="relative inline-block pb-2">
                 {t('what_travelers_say')}
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600 transform -translate-y-1 rounded-full"></div>
               </span>

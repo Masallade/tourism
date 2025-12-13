@@ -217,5 +217,21 @@
   "about_unison_tour": "Acerca de Unison Tour",
   "pioneering_sustainable_tourism": "Pioneros en turismo sostenible para un mañana mejor",
   "our_impact": "Nuestro Impacto",
-  "click_marker_learn_more": "Haz clic en cualquier marcador para obtener más información sobre las oportunidades de viaje sostenible en esa ubicación."
+  "click_marker_learn_more": "Haz clic en cualquier marcador para obtener más información sobre las oportunidades de viaje sostenible en esa ubicación.",
+  "search_for": "Buscar:",
+  "service_provider": "Proveedor de Servicios",
+  "search_service_providers": "Buscar Proveedores de Servicios",
+  "search_location": "Buscar Ubicación",
+  "search_providers_placeholder": "Buscar proveedores y servicios por nombre, descripción, temas...",
+  "search_location_placeholder": "ej., Lahore, Ichhra Lahore, Ferozepur Road, Pakistán...",
+  "filter_by_country": "Filtrar por País",
+  "all_countries": "Todos los Países",
+  "showing": "Mostrando",
+  "providers": "proveedores",
+  "showing_providers_services": "Mostrando {{providers}} de {{totalProviders}} proveedores y {{services}} de {{totalServices}} servicios",
+  "showing_providers": "Mostrando {{providers}} de {{totalProviders}} proveedores",
+  "map_zoomed_to": "📍 Mapa ampliado a:",
+  "searching_for_location": "🔍 Buscando ubicación...",
+  "location_not_found": "⚠️ Ubicación no encontrada. Prueba: \"Ichhra Lahore\" o \"Ferozepur Road Lahore\"",
+  "loading_suggestions": "Cargando sugerencias..."
 }

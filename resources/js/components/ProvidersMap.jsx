@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
 
 // Fix for default marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -150,6 +151,7 @@ function MapBounds({ providers, services, searchedLocation }) {
 }
 
 const ProvidersMap = () => {
+  const { t } = useTranslation();
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
   const [services, setServices] = useState([]);
@@ -479,7 +481,7 @@ const ProvidersMap = () => {
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
         {/* Search Type Toggle */}
         <div className="mb-4 flex items-center justify-center gap-2">
-          <span className="text-sm text-gray-600 font-medium">Search for:</span>
+          <span className="text-sm text-gray-600 font-medium">{t('search_for')}</span>
           <div className="inline-flex rounded-lg border border-gray-300 bg-gray-50 p-1">
             <button
               onClick={() => setSearchType('provider')}
@@ -489,7 +491,7 @@ const ProvidersMap = () => {
                   : 'text-gray-700 hover:text-gray-900'
               }`}
             >
-              🏢 Service Provider
+              🏢 {t('service_provider')}
             </button>
             <button
               onClick={() => setSearchType('location')}
@@ -499,7 +501,7 @@ const ProvidersMap = () => {
                   : 'text-gray-700 hover:text-gray-900'
               }`}
             >
-              📍 Location
+              📍 {t('location')}
             </button>
           </div>
         </div>
@@ -508,15 +510,15 @@ const ProvidersMap = () => {
           {/* Search Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {searchType === 'provider' ? 'Search Service Providers' : 'Search Location'}
+              {searchType === 'provider' ? t('search_service_providers') : t('search_location')}
             </label>
             <div className="relative search-input-container">
               <input
                 type="text"
                 placeholder={
                   searchType === 'provider'
-                    ? 'Search providers and services by name, description, themes...'
-                    : 'e.g., Lahore, Ichhra Lahore, Ferozepur Road, Pakistan...'
+                    ? t('search_providers_placeholder')
+                    : t('search_location_placeholder')
                 }
                 value={searchQuery}
                 onChange={(e) => {
@@ -561,7 +563,7 @@ const ProvidersMap = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <p className="text-xs">Loading suggestions...</p>
+                      <p className="text-xs">{t('loading_suggestions')}</p>
                     </div>
                   ) : (
                     locationSuggestions.map((suggestion, index) => (
@@ -601,14 +603,14 @@ const ProvidersMap = () => {
           {/* Country Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Filter by Country
+              {t('filter_by_country')}
             </label>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
             >
-              <option value="all">All Countries</option>
+              <option value="all">{t('all_countries')}</option>
               {countries.map(country => (
                 <option key={country.id} value={country.id}>{country.name}</option>
               ))}
@@ -620,24 +622,29 @@ const ProvidersMap = () => {
         <div className="mt-4 flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-600">
-              Showing <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} providers
-              {filteredServices.length > 0 && (
-                <span> and <span className="font-bold text-blue-600">{filteredServices.length}</span> of {services.length} services</span>
+              {filteredServices.length > 0 ? (
+                <>
+                  {t('showing')} <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} {t('providers')} and <span className="font-bold text-blue-600">{filteredServices.length}</span> of {services.length} {t('services')}
+                </>
+              ) : (
+                <>
+                  {t('showing')} <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} {t('providers')}
+                </>
               )}
             </p>
             {searchedLocation && (
               <p className="text-sm text-blue-600 mt-1">
-                📍 Map zoomed to: <span className="font-medium">{searchedLocation.name}</span>
+                {t('map_zoomed_to')} <span className="font-medium">{searchedLocation.name}</span>
               </p>
             )}
             {isGeocoding && (
               <p className="text-sm text-gray-500 mt-1">
-                🔍 Searching for location...
+                {t('searching_for_location')}
               </p>
             )}
             {searchType === 'location' && searchQuery && !searchedLocation && !isGeocoding && (
               <p className="text-sm text-orange-600 mt-1">
-                ⚠️ Location not found. Try: "Ichhra Lahore" or "Ferozepur Road Lahore"
+                {t('location_not_found')}
               </p>
             )}
           </div>

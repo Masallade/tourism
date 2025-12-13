@@ -31,11 +31,26 @@ const LanguageSwitcher = () => {
   // Calculate dropdown position when opened
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY + 8,
-        right: window.innerWidth - buttonRect.right + window.scrollX,
-      });
+      const updatePosition = () => {
+        if (buttonRef.current) {
+          const buttonRect = buttonRef.current.getBoundingClientRect();
+          setDropdownPosition({
+            top: buttonRect.bottom + 8,
+            right: window.innerWidth - buttonRect.right,
+          });
+        }
+      };
+      
+      updatePosition();
+      
+      // Update position on scroll and resize
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [isOpen]);
 
