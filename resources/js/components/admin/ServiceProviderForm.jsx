@@ -3,8 +3,12 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n/config';
 import { countryCodes } from '../../utils/countryCodes';
 import { compressImage, compressImages, getCompressionSettings } from '../../utils/imageCompression';
+import SubscriptionSelection from '../SubscriptionSelection';
+import PaymentForm from '../PaymentForm';
+import PaymentSuccess from '../PaymentSuccess';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -71,6 +75,13 @@ const MapClickHandler = () => {
 // Add showApproveCheckbox prop and onBack prop
 const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox = false, onBack = null }) => {
     const { t } = useTranslation();
+    
+    // Subscription & Payment Flow States
+    const [showSubscriptionFlow, setShowSubscriptionFlow] = useState(false);
+    const [flowStep, setFlowStep] = useState('form'); // 'form', 'subscription', 'payment', 'success'
+    const [createdProviderId, setCreatedProviderId] = useState(null);
+    const [selectedSubscription, setSelectedSubscription] = useState(null);
+    const [paymentData, setPaymentData] = useState(null);
     // Initialize formData synchronously with provider data if available
     const getInitialFormData = () => {
         if (provider) {
@@ -177,7 +188,23 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         fetchCountries();
         fetchThemes();
         fetchServiceTypes();
+    }, []);
+
+    // Refetch themes and service types when language changes
+    useEffect(() => {
+        const handleLanguageChange = () => {
+            fetchThemes();
+            fetchServiceTypes();
+        };
         
+        i18n.on('languageChanged', handleLanguageChange);
+        
+        return () => {
+            i18n.off('languageChanged', handleLanguageChange);
+        };
+    }, []);
+
+    useEffect(() => {
         if (provider) {
             // Update position if provider has coordinates
             if (provider.lat && provider.lng) {
@@ -248,9 +275,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
     const fetchCountries = async () => {
         try {
-            const response = await fetch('/api/countries');
-            const data = await response.json();
-            setCountries(data);
+            const response = await window.apiClient.get('/api/countries');
+            setCountries(response.data);
         } catch (error) {
             console.error('Error fetching countries:', error);
         }
@@ -258,9 +284,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
     const fetchThemes = async () => {
         try {
-            const response = await fetch('/api/themes');
-            const data = await response.json();
-            setThemes(data);
+            const response = await window.apiClient.get('/api/themes');
+            setThemes(response.data);
         } catch (error) {
             console.error('Error fetching themes:', error);
         }
@@ -268,9 +293,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
 
     const fetchServiceTypes = async () => {
         try {
-            const response = await fetch('/api/service-types');
-            const data = await response.json();
-            setServiceTypes(data);
+            const response = await window.apiClient.get('/api/service-types');
+            setServiceTypes(response.data);
         } catch (error) {
             console.error('Error fetching service types:', error);
         }
@@ -959,17 +983,28 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             // Use apiClient for authenticated requests with FormData
             // For updates with FormData, use POST to /update endpoint (more reliable for arrays)
             try {
+                let response;
                 if (provider) {
                     // Update request - use POST to /update endpoint for FormData
                     const updateUrl = `/api/service-providers/${provider.id}/update`;
                     console.log('Sending POST request to update endpoint:', updateUrl);
-                    await window.apiClient.post(updateUrl, form);
+                    response = await window.apiClient.post(updateUrl, form);
+                    onSuccess();
                 } else {
                     // Create request
                     console.log('Sending POST request to:', url);
-                    await window.apiClient.post(url, form);
+                    response = await window.apiClient.post(url, form);
+                    
+                    // Check if this is a public signup (no approve checkbox) - trigger subscription flow
+                    if (!showApproveCheckbox && response.data && response.data.id) {
+                        setCreatedProviderId(response.data.id);
+                        setFlowStep('subscription');
+                        setShowSubscriptionFlow(true);
+                    } else {
+                        // Admin creating provider - no subscription needed
+                        onSuccess();
+                    }
                 }
-                onSuccess();
             } catch (error) {
                 // Handle 413 Content Too Large error specifically
                 if (error.response?.status === 413) {
@@ -1037,6 +1072,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     }, [image]);
 
     return (
+    <>
     <div className="fixed inset-0 bg-gradient-to-br from-green-100 via-white to-blue-100 bg-opacity-80 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
             <div className="relative mx-auto p-0 w-full max-w-6xl shadow-2xl rounded-2xl bg-white max-h-[95vh] overflow-y-auto border-0">
                 <div className="flex justify-between items-center px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-t-2xl">
@@ -1809,6 +1845,47 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                 </form>
             </div>
         </div>
+        
+        {/* Subscription & Payment Flow - Only for public signup */}
+        {showSubscriptionFlow && flowStep === 'subscription' && (
+            <SubscriptionSelection
+                serviceProviderId={createdProviderId}
+                onSelect={(subscription) => {
+                    setSelectedSubscription(subscription);
+                    setFlowStep('payment');
+                }}
+                onBack={() => {
+                    setShowSubscriptionFlow(false);
+                    setFlowStep('form');
+                }}
+            />
+        )}
+        
+        {showSubscriptionFlow && flowStep === 'payment' && (
+            <PaymentForm
+                serviceProviderId={createdProviderId}
+                subscription={selectedSubscription}
+                onSuccess={(data) => {
+                    setPaymentData(data);
+                    setFlowStep('success');
+                }}
+                onBack={() => {
+                    setFlowStep('subscription');
+                }}
+            />
+        )}
+        
+        {showSubscriptionFlow && flowStep === 'success' && (
+            <PaymentSuccess
+                paymentData={paymentData}
+                onClose={() => {
+                    setShowSubscriptionFlow(false);
+                    setFlowStep('form');
+                    onSuccess();
+                }}
+            />
+        )}
+    </>
     );
 };
 

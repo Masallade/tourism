@@ -20,14 +20,11 @@ class ServiceTypeController extends Controller
             app()->setLocale($locale);
         }
         
-        $serviceTypes = ServiceType::all();
+        // Include count of service providers for each service type
+        $serviceTypes = ServiceType::withCount('serviceProviders')->get();
         
-        // Translate translatable fields
-        $translated = $this->translateCollection($serviceTypes, [
-            'name'
-        ]);
-        
-        return response()->json($translated);
+        // Models now handle translations directly via getNameAttribute accessor
+        return response()->json($serviceTypes);
     }
     
     public function show($id, Request $request)
@@ -41,11 +38,8 @@ class ServiceTypeController extends Controller
         
         $serviceType = ServiceType::findOrFail($id);
         
-        $translated = $this->translateModel($serviceType, [
-            'name'
-        ]);
-        
-        return response()->json($translated);
+        // Model now handles translation directly via getNameAttribute accessor
+        return response()->json($serviceType);
     }
 }
 
