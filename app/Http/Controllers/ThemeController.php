@@ -22,12 +22,8 @@ class ThemeController extends Controller
         
         $themes = Theme::withCount('serviceProviders')->get();
         
-        // Translate translatable fields
-        $translated = $this->translateCollection($themes, [
-            'name'
-        ]);
-        
-        return response()->json($translated);
+        // Models now handle translations directly via getNameAttribute accessor
+        return response()->json($themes);
     }
     
     public function show($id, Request $request)
@@ -41,11 +37,8 @@ class ThemeController extends Controller
         
         $theme = Theme::withCount('serviceProviders')->findOrFail($id);
         
-        $translated = $this->translateModel($theme, [
-            'name'
-        ]);
-        
-        return response()->json($translated);
+        // Model now handles translation directly via getNameAttribute accessor
+        return response()->json($theme);
     }
     
     public function showBySlug($slug, Request $request)
@@ -61,11 +54,8 @@ class ThemeController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
         
-        $translated = $this->translateModel($theme, [
-            'name'
-        ]);
-        
-        return response()->json($translated);
+        // Model now handles translation directly via getNameAttribute accessor
+        return response()->json($theme);
     }
 }
 

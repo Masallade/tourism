@@ -358,8 +358,8 @@ const ServiceDetail = () => {
               </div>
             </div>
             
-            {/* Book Now Button */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* Book Now Button - COMMENTED OUT */}
+            {/* <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="p-6">
                 <button
                   className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md font-medium hover:from-green-600 hover:to-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
@@ -368,7 +368,7 @@ const ServiceDetail = () => {
                   {t('book_now')}
                 </button>
               </div>
-            </div>
+            </div> */}
             {/* Booking Modal - Multi-step/Stepper UI */}
             {showBookingModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 animate-fadeIn">

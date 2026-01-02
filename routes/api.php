@@ -76,7 +76,8 @@ Route::post('/provider/services', [ServiceController::class, 'store']);
 Route::put('/provider/services/{id}', [ServiceController::class, 'update']);
 Route::delete('/provider/services/{id}', [ServiceController::class, 'destroy']);
 
-Route::post('/services/{service}/bookings', [BookingController::class, 'store']);
+// Booking feature - COMMENTED OUT
+// Route::post('/services/{service}/bookings', [BookingController::class, 'store']);
 
 use Illuminate\Support\Facades\Hash;
 // Service Provider Login
@@ -201,7 +202,7 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
             'service_type_ids' => 'required|array|min:1',
             'service_type_ids.*' => 'exists:service_types,id',
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:10000',
             'price_range' => 'required|in:$,$$,$$$,$$$$',
             'website' => 'nullable|url|unique:service_providers,website',
             'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email'],
@@ -249,7 +250,10 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
         // If is_approved is true, generate password and send approval email
         $password = null;
         if (isset($data['is_approved']) && $data['is_approved']) {
-            $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+            // Generate random 8-character password (letters + numbers) - COMMENTED OUT
+            // $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+            // Fixed password for all service providers
+            $password = '12345678';
             $data['password'] = \Illuminate\Support\Facades\Hash::make($password);
         }
 
@@ -604,3 +608,21 @@ Route::post('/admin/destinations/{id}/update', [AdminDestinationController::clas
 Route::get('/admin/destinations/{id}', [AdminDestinationController::class, 'show'])->middleware('admin.auth');
 Route::put('/admin/destinations/{id}', [AdminDestinationController::class, 'update'])->middleware('admin.auth');
 Route::delete('/admin/destinations/{id}', [AdminDestinationController::class, 'destroy'])->middleware('admin.auth');
+
+// Subscriptions - Admin routes
+use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\SubscriptionController;
+
+Route::get('/admin/subscriptions', [AdminSubscriptionController::class, 'index'])->middleware('admin.auth');
+Route::post('/admin/subscriptions', [AdminSubscriptionController::class, 'store'])->middleware('admin.auth');
+Route::put('/admin/subscriptions/{subscription}', [AdminSubscriptionController::class, 'update'])->middleware('admin.auth');
+Route::delete('/admin/subscriptions/{subscription}', [AdminSubscriptionController::class, 'destroy'])->middleware('admin.auth');
+
+// Subscriptions - Public routes
+Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
+
+// Payment routes
+use App\Http\Controllers\PaymentController;
+Route::post('/payments/process', [PaymentController::class, 'processPayment']);
+Route::get('/payments/history/{serviceProviderId}', [PaymentController::class, 'getPaymentHistory']);

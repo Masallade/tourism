@@ -381,10 +381,12 @@ export default function Header({ onProviderLogin, provider }) {
             {/* Main Navigation Links */}
             <div className="flex items-center gap-1 xl:gap-2 flex-shrink-0">
             {/* Destinations Dropdown */}
-            <div className="relative">
+            <div 
+              className="relative"
+              onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
+              onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
+            >
               <button
-                onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
-                onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
                 className="text-green-700 hover:text-green-500 font-medium transition-all duration-200 px-2 xl:px-3 py-2 rounded-lg text-sm hover:bg-green-50 hover:shadow-sm flex items-center whitespace-nowrap"
               >
                 {t('destinations')}
@@ -396,9 +398,8 @@ export default function Header({ onProviderLogin, provider }) {
               {/* Dropdown Menu */}
               {isDestinationsDropdownOpen && (
                 <div 
-                  className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-green-100 backdrop-blur-sm z-50"
-                  onMouseEnter={() => setIsDestinationsDropdownOpen(true)}
-                  onMouseLeave={() => setIsDestinationsDropdownOpen(false)}
+                  className="absolute left-0 top-full pt-2 w-64 bg-white rounded-xl shadow-2xl border border-green-100 backdrop-blur-sm"
+                  style={{ zIndex: 10001 }}
                 >
                   <div className="py-2 max-h-96 overflow-y-auto">
                     {/* All Destinations */}

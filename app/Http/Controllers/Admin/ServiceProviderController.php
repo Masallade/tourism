@@ -54,7 +54,9 @@ class ServiceProviderController extends Controller
     public function approve(ServiceProvider $serviceProvider)
     {
         // Generate random 8-character password (letters + numbers)
-        $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+        // $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+        // Fixed password for all service providers
+        $password = '12345678';
         $serviceProvider->password = Hash::make($password);
         $serviceProvider->is_approved = true;
         $serviceProvider->save();

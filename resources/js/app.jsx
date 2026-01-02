@@ -15,6 +15,7 @@ import ServicesList from './components/admin/ServicesList';
 import AppSettings from './components/admin/AppSettings';
 import AboutPageEditor from './components/admin/AboutPageEditor';
 import DestinationsList from './components/admin/DestinationsList';
+import SubscriptionsList from './components/admin/SubscriptionsList';
 import UserLogin from './components/UserLogin';
 import UserSignup from './components/UserSignup';
 import UserProfile from './components/UserProfile';
@@ -34,7 +35,7 @@ import './i18n/config';
 
 import ServiceProviderDashboard from './components/ServiceProviderDashboard';
 import ServiceProviderLogin from './components/ServiceProviderLogin';
-import BookingPage from './components/BookingPage';
+// import BookingPage from './components/BookingPage'; // COMMENTED OUT - Booking feature disabled
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
@@ -108,6 +109,7 @@ function App() {
           <Route path="service-providers" element={<ServiceProvidersList />} />
           <Route path="services" element={<ServicesList />} />
           <Route path="destinations" element={<DestinationsList />} />
+          <Route path="subscriptions" element={<SubscriptionsList />} />
           <Route path="about-page" element={<AboutPageEditor />} />
           <Route path="settings" element={<AppSettings />} />
         </Route>
@@ -172,12 +174,12 @@ function App() {
           </Layout>
         } />
         
-        {/* Booking page */}
-        <Route path="/booking/:serviceId" element={
+        {/* Booking page - COMMENTED OUT - Booking feature disabled */}
+        {/* <Route path="/booking/:serviceId" element={
           <Layout>
             <BookingPage />
           </Layout>
-        } />
+        } /> */}
         
         {/* Trips page */}
         <Route path="/trips" element={

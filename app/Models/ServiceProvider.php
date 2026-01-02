@@ -75,4 +75,41 @@ class ServiceProvider extends Model
     {
         return $this->hasMany(Booking::class, 'provider_id');
     }
+
+    /**
+     * Get the subscriptions for this service provider
+     */
+    public function subscriptions()
+    {
+        return $this->belongsToMany(Subscription::class, 'service_provider_subscriptions')
+            ->withPivot('starts_at', 'expires_at', 'status')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the subscription records
+     */
+    public function providerSubscriptions()
+    {
+        return $this->hasMany(ServiceProviderSubscription::class);
+    }
+
+    /**
+     * Get the payments for this service provider
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get active subscription
+     */
+    public function activeSubscription()
+    {
+        return $this->providerSubscriptions()
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->first();
+    }
 } 

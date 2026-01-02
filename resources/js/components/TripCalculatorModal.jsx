@@ -34,15 +34,12 @@ const TripCalculatorModal = ({ onClose, countries }) => {
     try {
       setLoadingData(true);
       const [themesRes, serviceTypesRes] = await Promise.all([
-        fetch('/api/themes'),
-        fetch('/api/service-types')
+        window.apiClient.get('/api/themes'),
+        window.apiClient.get('/api/service-types')
       ]);
       
-      const themesData = await themesRes.json();
-      const serviceTypesData = await serviceTypesRes.json();
-      
-      setThemes(themesData);
-      setServiceTypes(serviceTypesData);
+      setThemes(themesRes.data);
+      setServiceTypes(serviceTypesRes.data);
     } catch (err) {
       console.error('Error fetching themes and service types:', err);
     } finally {

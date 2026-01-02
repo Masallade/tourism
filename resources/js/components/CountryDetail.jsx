@@ -72,11 +72,8 @@ const CountryDetail = () => {
           });
           
           if (serviceTypeIdSet.size) {
-            const typesRes = await fetch('/api/service-types');
-            if (!typesRes.ok) {
-              throw new Error('Failed to fetch service types');
-            }
-            const allTypes = await typesRes.json();
+            const typesRes = await window.apiClient.get('/api/service-types');
+            const allTypes = typesRes.data;
             const filteredTypes = allTypes
               .filter((type) => serviceTypeIdSet.has(Number(type.id)))
               .map((type) => ({ ...type, id: Number(type.id) }));

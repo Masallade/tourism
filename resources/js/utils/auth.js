@@ -49,7 +49,12 @@ export const auth = {
             const data = await response.json();
 
             if (data.success) {
-                localStorage.setItem('adminLoggedIn', 'true');
+                // Only set adminLoggedIn if user is actually an admin
+                if (data.user && data.user.role === 'admin') {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                } else {
+                    localStorage.removeItem('adminLoggedIn');
+                }
                 localStorage.setItem('user', JSON.stringify(data.user));
                 return { success: true, user: data.user };
             } else {
@@ -148,7 +153,12 @@ export const auth = {
             const data = await response.json();
 
             if (data.success) {
-                localStorage.setItem('adminLoggedIn', 'true');
+                // Only set adminLoggedIn if user is actually an admin
+                if (data.user && data.user.role === 'admin') {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                } else {
+                    localStorage.removeItem('adminLoggedIn');
+                }
                 localStorage.setItem('user', JSON.stringify(data.user));
                 return { success: true, user: data.user };
             } else {
@@ -215,10 +225,10 @@ export const auth = {
         localStorage.removeItem('user');
     },
 
-    // Initialize session check
+    // Initialize session check (for regular users)
     async initializeSession() {
         try {
-            // First check if we have admin login
+            // First check if we have admin login flag
             if (localStorage.getItem('adminLoggedIn') === 'true') {
                 const isValid = await this.checkSession();
                 if (!isValid) {
@@ -232,12 +242,41 @@ export const auth = {
             if (user) {
                 // Store user data in localStorage for consistency
                 localStorage.setItem('user', JSON.stringify(user));
+                // Return true for any authenticated user (regular or admin)
                 return true;
             }
             
             return false;
         } catch (error) {
             console.error('Session initialization error:', error);
+            this.clearSession();
+            return false;
+        }
+    },
+
+    // Initialize session check specifically for admin (used by AdminLogin)
+    async initializeAdminSession() {
+        try {
+            // First check if we have admin login flag
+            if (localStorage.getItem('adminLoggedIn') === 'true') {
+                const isValid = await this.checkSession();
+                if (!isValid) {
+                    this.clearSession();
+                }
+                return isValid;
+            }
+            
+            // For regular users checking admin access, verify they're admin
+            const user = await this.getCurrentUser();
+            if (user && user.role === 'admin') {
+                // Store user data in localStorage for consistency
+                localStorage.setItem('user', JSON.stringify(user));
+                return true;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Admin session initialization error:', error);
             this.clearSession();
             return false;
         }
