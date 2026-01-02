@@ -202,7 +202,7 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
             'service_type_ids' => 'required|array|min:1',
             'service_type_ids.*' => 'exists:service_types,id',
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:10000',
             'price_range' => 'required|in:$,$$,$$$,$$$$',
             'website' => 'nullable|url|unique:service_providers,website',
             'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email'],
@@ -420,8 +420,8 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
         } catch (\Exception $e) {
             \Log::error('Service provider image processing failed: ' . $e->getMessage());
             // Fallback to original upload method
-            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-            $data['image'] = $imagePath;
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
         }
     }
 
@@ -517,8 +517,8 @@ Route::post('/service-providers/{serviceProvider}/update', function (\App\Models
         } catch (\Exception $e) {
             \Log::error('Service provider image processing failed: ' . $e->getMessage());
             // Fallback to original upload method
-            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-            $data['image'] = $imagePath;
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
         }
     }
 
