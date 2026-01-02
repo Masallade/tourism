@@ -416,8 +416,8 @@ Route::put('/service-providers/{serviceProvider}', function (\App\Models\Service
         } catch (\Exception $e) {
             \Log::error('Service provider image processing failed: ' . $e->getMessage());
             // Fallback to original upload method
-            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-            $data['image'] = $imagePath;
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
         }
     }
 
@@ -513,8 +513,8 @@ Route::post('/service-providers/{serviceProvider}/update', function (\App\Models
         } catch (\Exception $e) {
             \Log::error('Service provider image processing failed: ' . $e->getMessage());
             // Fallback to original upload method
-            $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
-            $data['image'] = $imagePath;
+        $imagePath = $request->file('image')->store('uploads/service_provider_images', 'public');
+        $data['image'] = $imagePath;
         }
     }
 

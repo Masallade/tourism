@@ -149,7 +149,7 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
     const [errors, setErrors] = useState({});
     const [summaryError, setSummaryError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // Location search state
     const [locationSearchQuery, setLocationSearchQuery] = useState('');
     const [locationSuggestions, setLocationSuggestions] = useState([]);

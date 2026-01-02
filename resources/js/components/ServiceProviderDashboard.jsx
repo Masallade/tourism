@@ -351,7 +351,7 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
           form.append('image', compressedImage, compressedImage.name);
         } catch (error) {
           console.error('Error compressing image, using original:', error);
-          form.append('image', editImageFile);
+        form.append('image', editImageFile);
         }
       }
       
@@ -365,9 +365,9 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
           });
         } catch (error) {
           console.error('Error compressing documents, using originals:', error);
-          editDocuments.forEach(doc => {
-            form.append('documents[]', doc);
-          });
+        editDocuments.forEach(doc => {
+          form.append('documents[]', doc);
+        });
         }
       }
       
