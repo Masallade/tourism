@@ -15,11 +15,18 @@ const AdminLogin = () => {
     useEffect(() => {
         const checkExistingAuth = async () => {
             try {
-                // Initialize and check session
-                const isValid = await auth.initializeSession();
+                // Initialize and check admin session specifically
+                const isValid = await auth.initializeAdminSession();
                 if (isValid) {
-                    window.location.href = '/admin';
-                    return;
+                    // Double-check that the user is actually an admin before redirecting
+                    const user = auth.getUser();
+                    if (user && user.role === 'admin') {
+                        window.location.href = '/admin';
+                        return;
+                    } else {
+                        // User is logged in but not admin - clear their session for admin login
+                        auth.clearSession();
+                    }
                 }
             } catch (error) {
                 console.error('Auth check error:', error);
