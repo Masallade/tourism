@@ -22,6 +22,7 @@ import UserProfile from './components/UserProfile';
 import CountryDetail from './components/CountryDetail';
 import ThemeDetail from './components/ThemeDetail';
 import ServiceDetail from './components/ServiceDetail';
+import ServiceProviderDetail from './components/ServiceProviderDetail';
 import AIAssistance from './components/AIAssistance';
 import About from './components/About';
 import Contact from './components/Contact';
@@ -171,6 +172,12 @@ function App() {
         <Route path="/service/:serviceId" element={
           <Layout>
             <ServiceDetail />
+          </Layout>
+        } />
+        
+        <Route path="/service-provider/:id" element={
+          <Layout>
+            <ServiceProviderDetail />
           </Layout>
         } />
         

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import StaticMap from './StaticMap';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
@@ -9,6 +9,7 @@ const ServiceDetail = () => {
   const { t } = useTranslation();
   const { serviceId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -111,12 +112,51 @@ const ServiceDetail = () => {
       <div className="max-w-7xl mx-auto">
         {/* Back button */}
         <div className="mb-6">
-          <Link to="/" className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors">
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            {t('back')}
-          </Link>
+          {(() => {
+            // Check where we came from
+            const fromProviderId = location.state?.fromProviderId;
+            const fromTrips = location.state?.fromTrips;
+            
+            if (fromProviderId) {
+              // Go back to service provider detail page
+              return (
+                <button
+                  onClick={() => navigate(`/service-provider/${fromProviderId}`)}
+                  className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  {t('back')}
+                </button>
+              );
+            }
+            
+            if (fromTrips) {
+              // Go back to trips page
+              return (
+                <button
+                  onClick={() => navigate('/trips')}
+                  className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  {t('back')}
+                </button>
+              );
+            }
+            
+            // Default: go back to home page
+            return (
+              <Link to="/" className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors">
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                {t('back')}
+              </Link>
+            );
+          })()}
         </div>
         
         {/* Service Title */}

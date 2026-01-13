@@ -205,5 +205,16 @@
   "explore_countries_description": "Discover amazing destinations around the world with our eco-friendly travel guides. Each country offers unique sustainable experiences curated by local experts.",
   "click_marker_learn_more": "Click on any marker to learn more about sustainable travel opportunities at that location.",
   "file_size_kb": "KB",
-  "file_size_mb": "MB"
+  "file_size_mb": "MB",
+  "about_provider": "About Provider",
+  "services_offered": "Services Offered",
+  "provider_not_found": "Provider Not Found",
+  "provider_not_found_message": "The service provider you are looking for does not exist or was removed.",
+  "quick_info": "Quick Info",
+  "location_on_map": "Location on Map",
+  "email": "Email",
+  "website": "Website",
+  "no_services_available": "No Services Available",
+  "no_services_message": "This provider has not added any services yet.",
+  "price_range": "Price Range"
 }

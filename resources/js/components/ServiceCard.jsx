@@ -1,13 +1,34 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 
 const ServiceCard = ({ service }) => {
   const serviceTypes = extractServiceTypes(service);
   const serviceThemes = extractThemes(service);
+  const location = useLocation();
+  
+  // Check if we're on service provider detail page
+  const isFromProviderPage = location.pathname.startsWith('/service-provider/');
+  const providerId = isFromProviderPage ? location.pathname.split('/')[2] : null;
+  
+  // Check if we're on trips page
+  const isFromTripsPage = location.pathname === '/trips' || location.pathname.startsWith('/trips?');
+  
+  // Prepare navigation state
+  const navigationState = {};
+  if (isFromProviderPage && providerId) {
+    navigationState.fromProviderId = providerId;
+  }
+  if (isFromTripsPage) {
+    navigationState.fromTrips = true;
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <Link 
+      to={`/service/${service.id}`} 
+      state={Object.keys(navigationState).length > 0 ? navigationState : null}
+      className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+    >
       <div className="relative h-48 overflow-hidden">
         {service.image ? (
           <img 
@@ -50,9 +71,9 @@ const ServiceCard = ({ service }) => {
               </span>
             )}
           </div>
-          <Link to={`/service/${service.id}`} className="text-xs text-blue-600 hover:underline">
+          <span className="text-xs text-blue-600 hover:underline">
             View Details
-          </Link>
+          </span>
         </div>
         <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
           <span className="flex items-center">
@@ -73,8 +94,8 @@ const ServiceCard = ({ service }) => {
           )}
         </div>
         
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-          {(service.min_age || service.max_age) && (
+        {(service.min_age || service.max_age) && (
+          <div className="mt-2 flex items-center text-xs text-gray-500">
             <span className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -85,17 +106,10 @@ const ServiceCard = ({ service }) => {
                   ? `${service.min_age}+` 
                   : `Up to ${service.max_age}`}
             </span>
-          )}
-          
-          <span className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            {service.provider?.name || 'Unknown Provider'}
-          </span>
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Link>
   );
 };
 

@@ -780,7 +780,7 @@ const ProvidersMap = () => {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(`/trips?provider=${provider.id}`);
+                        navigate(`/service-provider/${provider.id}`);
                       }}
                       className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition cursor-pointer"
                     >
