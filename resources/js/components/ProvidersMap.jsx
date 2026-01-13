@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Link, useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useTranslation } from 'react-i18next';
@@ -152,6 +153,7 @@ function MapBounds({ providers, services, searchedLocation }) {
 
 const ProvidersMap = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
   const [services, setServices] = useState([]);
@@ -775,12 +777,15 @@ const ProvidersMap = () => {
                     )}
                     
                     {/* View Details Button */}
-                    <a
-                      href={`#provider-${provider.id}`}
-                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition"
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/trips?provider=${provider.id}`);
+                      }}
+                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition cursor-pointer"
                     >
                       View Details
-                    </a>
+                    </button>
                   </div>
                 </Popup>
               </Marker>
@@ -862,12 +867,15 @@ const ProvidersMap = () => {
                     )}
                     
                     {/* View Details Button */}
-                    <a
-                      href={`/service/${service.id}`}
-                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition"
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/service/${service.id}`);
+                      }}
+                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition cursor-pointer"
                     >
                       View Service Details
-                    </a>
+                    </button>
                   </div>
                 </Popup>
               </Marker>

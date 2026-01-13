@@ -14,6 +14,7 @@ const Trips = () => {
   const [countries, setCountries] = useState([]);
   const [selectedType, setSelectedType] = useState('all');
   const [selectedCountry, setSelectedCountry] = useState(searchParams.get('country') || 'all');
+  const [selectedProvider, setSelectedProvider] = useState(searchParams.get('provider') || 'all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const Trips = () => {
 
   useEffect(() => {
     filterServices();
-  }, [selectedType, selectedCountry, searchQuery, services]);
+  }, [selectedType, selectedCountry, selectedProvider, searchQuery, services]);
 
   const fetchServices = async () => {
     try {
@@ -75,6 +76,22 @@ const Trips = () => {
       filtered = filtered.filter(service => {
         const countryId = service.country?.id || service.country_id;
         return Number(countryId) === Number(selectedCountry);
+      });
+    }
+
+    // Filter by provider
+    if (selectedProvider !== 'all') {
+      const selectedId = Number(selectedProvider);
+      filtered = filtered.filter(service => {
+        // Try multiple ways to get provider ID
+        const providerId = service.provider?.id || service.provider_id || service.providerId;
+        
+        if (!providerId) {
+          return false; // Service has no provider
+        }
+        
+        const serviceProviderId = Number(providerId);
+        return serviceProviderId === selectedId;
       });
     }
 
