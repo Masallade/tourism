@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { compressImage, getCompressionSettings } from '../utils/imageCompression';
+import RichTextEditor from './RichTextEditor';
 
 const capacityPresets = [
   { id: '1-2', label: '1 to 2 persons', description: 'Ideal for couples or solo travelers', min: 1, max: 2 },
@@ -531,33 +532,33 @@ const ServiceForm = ({ serviceTypes, themes = [], country, provider, onSubmit, o
       {/* Overview Field */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Overview</label>
-        <textarea 
-          className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors min-h-[100px]" 
+        <RichTextEditor
+          value={overview}
+          onChange={(value) => setOverview(value)}
           placeholder="Provide a brief overview of your service..."
-          value={overview} 
-          onChange={e => setOverview(e.target.value)}
+          minHeight={100}
         />
       </div>
       
       {/* Description Field */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Description</label>
-        <textarea 
-          className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors min-h-[100px]" 
+        <RichTextEditor
+          value={description}
+          onChange={(value) => setDescription(value)}
           placeholder="Describe your service..."
-          value={description} 
-          onChange={e => setDescription(e.target.value)}
+          minHeight={100}
         />
       </div>
       
       {/* Details Field */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Details</label>
-        <textarea 
-          className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors min-h-[100px]" 
+        <RichTextEditor
+          value={details}
+          onChange={(value) => setDetails(value)}
           placeholder="Provide detailed information about your service..."
-          value={details} 
-          onChange={e => setDetails(e.target.value)}
+          minHeight={100}
         />
       </div>
       

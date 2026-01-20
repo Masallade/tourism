@@ -9,6 +9,7 @@ import { compressImage, compressImages, getCompressionSettings } from '../../uti
 import SubscriptionSelection from '../SubscriptionSelection';
 import PaymentForm from '../PaymentForm';
 import PaymentSuccess from '../PaymentSuccess';
+import RichTextEditor from '../RichTextEditor';
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -1635,14 +1636,14 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
                             <label className="block text-sm font-semibold text-green-700 mb-2">
                                 Description
                             </label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                rows="3"
-                                maxLength={10000}
-                                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-green-50 text-green-900 placeholder:text-green-400 font-medium shadow-sm transition ${errors.description ? 'border-red-400' : 'border-green-200'}`}
+                            <RichTextEditor
+                                value={formData.description || ''}
+                                onChange={(value) => {
+                                    handleInputChange({ target: { name: 'description', value } });
+                                }}
                                 placeholder="Enter service provider description"
+                                error={errors.description}
+                                minHeight={150}
                             />
                             {errors.description && (
                                 <p className="text-red-500 text-sm mt-1">{errors.description}</p>

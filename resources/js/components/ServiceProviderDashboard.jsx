@@ -7,6 +7,7 @@ import StaticMap from './StaticMap';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
 import { compressImage, compressImages, getCompressionSettings } from '../utils/imageCompression';
+import RichTextEditor from './RichTextEditor';
 
 // Fix Leaflet default icon issue
 if (typeof window !== 'undefined') {
@@ -1213,13 +1214,13 @@ const ServiceProviderDashboard = ({ provider, onLogout, onProviderUpdate }) => {
                 {/* Description - Edit */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                  <textarea
-                    name="description"
+                  <RichTextEditor
                     value={editFormData.description || ''}
-                    onChange={handleEditFormChange}
-                    rows="4"
-                    maxLength={10000}
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                    onChange={(value) => {
+                      handleEditFormChange({ target: { name: 'description', value } });
+                    }}
+                    placeholder="Enter service provider description"
+                    minHeight={150}
                   />
                 </div>
 

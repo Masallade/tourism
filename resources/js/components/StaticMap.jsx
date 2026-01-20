@@ -23,13 +23,13 @@ const StaticMap = ({ lat, lng, height = 180, zoom = 13 }) => {
       <MapContainer
         center={position}
         zoom={zoom}
-        scrollWheelZoom={false}
-        dragging={false}
-        doubleClickZoom={false}
-        zoomControl={false}
+        scrollWheelZoom={true}
+        dragging={true}
+        doubleClickZoom={true}
+        zoomControl={true}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
-        attributionControl={false}
+        attributionControl={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'

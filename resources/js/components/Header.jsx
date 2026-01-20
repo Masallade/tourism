@@ -365,7 +365,18 @@ export default function Header({ onProviderLogin, provider }) {
           <div className="flex justify-between items-center py-3 sm:py-4 md:py-5 lg:py-6 gap-2 sm:gap-4">
           {/* Logo/Brand */}
           <div className="flex items-center flex-shrink-0">
-            <Link to="/" className="flex-shrink-0">
+            <Link 
+              to="/" 
+              className="flex-shrink-0"
+              onClick={(e) => {
+                // If already on home page, prevent navigation and just scroll to top
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                // If on another page, navigate will happen and Home component will scroll to top
+              }}
+            >
               <h1 className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-extrabold text-green-700 tracking-tight flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:text-green-600 transition-all duration-300">
                 <span className="text-green-500 text-xl sm:text-2xl md:text-2xl lg:text-2xl flex-shrink-0">🌿</span> 
                 <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent whitespace-nowrap">

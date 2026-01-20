@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
+import RichTextEditor from '../RichTextEditor';
 
 const AboutPageEditor = () => {
     const [loading, setLoading] = useState(true);
@@ -368,14 +369,13 @@ const AboutPageEditor = () => {
                         <label htmlFor="mission_description" className="block text-sm font-medium text-gray-700 mb-2">
                             Mission Description
                         </label>
-                        <textarea
-                            id="mission_description"
-                            name="mission_description"
-                            value={aboutPage.mission_description}
-                            onChange={handleChange}
-                            rows="5"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        <RichTextEditor
+                            value={aboutPage.mission_description || ''}
+                            onChange={(value) => {
+                                handleChange({ target: { name: 'mission_description', value } });
+                            }}
                             placeholder="At Unison Tour, we believe that exploring the world shouldn't come at the expense of our planet..."
+                            minHeight={150}
                         />
                     </div>
 
@@ -519,12 +519,11 @@ const AboutPageEditor = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Description
                                 </label>
-                                <textarea
+                                <RichTextEditor
                                     value={value.description || ''}
-                                    onChange={(e) => handleValueChange(index, 'description', e.target.value)}
-                                    rows="3"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    onChange={(value) => handleValueChange(index, 'description', value)}
                                     placeholder="Value description..."
+                                    minHeight={100}
                                 />
                             </div>
                         </div>
@@ -601,14 +600,13 @@ const AboutPageEditor = () => {
                         <label htmlFor="team_description" className="block text-sm font-medium text-gray-700 mb-2">
                             Team Description
                         </label>
-                        <textarea
-                            id="team_description"
-                            name="team_description"
-                            value={aboutPage.team_description}
-                            onChange={handleChange}
-                            rows="3"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        <RichTextEditor
+                            value={aboutPage.team_description || ''}
+                            onChange={(value) => {
+                                handleChange({ target: { name: 'team_description', value } });
+                            }}
                             placeholder="Passionate environmental advocates and travel experts..."
+                            minHeight={100}
                         />
                     </div>
 
@@ -744,14 +742,13 @@ const AboutPageEditor = () => {
                         <label htmlFor="cta_description" className="block text-sm font-medium text-gray-700 mb-2">
                             CTA Description
                         </label>
-                        <textarea
-                            id="cta_description"
-                            name="cta_description"
-                            value={aboutPage.cta_description}
-                            onChange={handleChange}
-                            rows="3"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        <RichTextEditor
+                            value={aboutPage.cta_description || ''}
+                            onChange={(value) => {
+                                handleChange({ target: { name: 'cta_description', value } });
+                            }}
                             placeholder="Join thousands of eco-conscious travelers..."
+                            minHeight={100}
                         />
                     </div>
                     <p className="text-sm text-gray-500 italic">

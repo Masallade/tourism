@@ -1,43 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#6b8e23;stop-opacity:1" />
-      <stop offset="30%" style="stop-color:#5a6b3a;stop-opacity:1" />
-      <stop offset="60%" style="stop-color:#6b8e23;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8b9a5b;stop-opacity:1" />
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#16a34a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15803d;stop-opacity:1" />
     </linearGradient>
   </defs>
   
   <!-- White circular background -->
   <circle cx="32" cy="32" r="30" fill="#ffffff"/>
   
-  <!-- Globe - circular shape with landmasses -->
-  <!-- North America (left side, darker olive green) -->
-  <path d="M 16 30 Q 14 34, 16 38 Q 18 40, 20 38 Q 20 34, 18 32 Q 17 30, 16 30 Z" fill="url(#globeGrad)"/>
-  <path d="M 16 30 Q 15 31, 16 32 Q 17 31, 16 30" fill="#5a6b3a" opacity="0.7"/>
+  <!-- Simple leaf shape with black outline -->
+  <path d="M 32 18 
+           Q 26 16, 22 20
+           Q 18 24, 20 30
+           Q 22 36, 28 40
+           Q 32 42, 36 40
+           Q 42 36, 44 30
+           Q 46 24, 42 20
+           Q 38 16, 32 18 Z" 
+        fill="url(#leafGrad)"
+        stroke="#000000"
+        stroke-width="1.5"/>
   
-  <!-- South America (left side, darker olive green) -->
-  <path d="M 18 38 Q 18 42, 20 46 Q 22 48, 22 46 Q 22 42, 20 40 Q 19 38, 18 38 Z" fill="url(#globeGrad)"/>
-  <path d="M 18 38 Q 19 39, 20 40 Q 19 39, 18 38" fill="#5a6b3a" opacity="0.7"/>
+  <!-- Center vein (yellowish-green) -->
+  <path d="M 32 18 
+           Q 32 24, 32 30
+           Q 32 36, 32 42" 
+        stroke="#a3e635" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
   
-  <!-- Africa (center-right, brighter green) -->
-  <path d="M 28 30 Q 30 32, 32 34 Q 32 38, 34 42 Q 34 46, 32 48 Q 30 46, 30 42 Q 29 38, 28 34 Q 28 32, 28 30 Z" fill="url(#globeGrad)"/>
+  <!-- Side veins (yellowish-green) -->
+  <path d="M 28 22 
+           Q 26 24, 24 26" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 36 22 
+           Q 38 24, 40 26" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 26 28 
+           Q 24 30, 22 32" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 38 28 
+           Q 40 30, 42 32" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
   
-  <!-- Europe/Asia (right side, brighter green) -->
-  <path d="M 36 32 Q 38 34, 40 36 Q 40 40, 38 42 Q 36 40, 36 36 Q 36 34, 36 32 Z" fill="url(#globeGrad)"/>
-  
-  <!-- Additional landmass detail -->
-  <path d="M 24 34 Q 26 36, 28 38 Q 28 40, 26 42 Q 24 40, 24 38 Q 24 36, 24 34 Z" fill="url(#globeGrad)" opacity="0.95"/>
-  
-  <!-- Two dark green almond-shaped leaves sprouting from top-right of globe -->
-  <!-- Left leaf (behind, darker) -->
-  <ellipse cx="48" cy="20" rx="4.5" ry="6.5" fill="#2d5016" transform="rotate(-25 48 20)"/>
-  <ellipse cx="48" cy="20" rx="3" ry="5" fill="#1a3d0a" transform="rotate(-25 48 20)"/>
-  
-  <!-- Right leaf (front, darker) -->
-  <ellipse cx="50" cy="18" rx="4.5" ry="6.5" fill="#2d5016" transform="rotate(15 50 18)"/>
-  <ellipse cx="50" cy="18" rx="3" ry="5" fill="#1a3d0a" transform="rotate(15 50 18)"/>
-  
-  <!-- Small inverted V-shaped white space between leaves (where stem would be) -->
-  <path d="M 48 22 Q 49 21, 50 22" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Stem (yellowish-green) -->
+  <path d="M 32 42 
+           L 32 48" 
+        stroke="#a3e635" 
+        stroke-width="3" 
+        fill="none" 
+        stroke-linecap="round"/>
 </svg>

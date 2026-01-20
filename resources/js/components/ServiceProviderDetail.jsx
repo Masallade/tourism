@@ -107,8 +107,65 @@ const ServiceProviderDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section with Provider Image */}
+    <>
+      <style>{`
+        .rich-text-content {
+          font-family: 'Inter', sans-serif;
+          line-height: 1.7;
+        }
+        .rich-text-content p {
+          margin-bottom: 1rem;
+          color: #374151;
+        }
+        .rich-text-content h1,
+        .rich-text-content h2,
+        .rich-text-content h3,
+        .rich-text-content h4,
+        .rich-text-content h5,
+        .rich-text-content h6 {
+          font-weight: 700;
+          margin-top: 1.5rem;
+          margin-bottom: 1rem;
+          color: #111827;
+          font-family: 'Poppins', sans-serif;
+        }
+        .rich-text-content h1 { font-size: 2rem; }
+        .rich-text-content h2 { font-size: 1.75rem; }
+        .rich-text-content h3 { font-size: 1.5rem; }
+        .rich-text-content h4 { font-size: 1.25rem; }
+        .rich-text-content ul,
+        .rich-text-content ol {
+          margin: 1rem 0;
+          padding-left: 2rem;
+        }
+        .rich-text-content ul {
+          list-style-type: disc;
+        }
+        .rich-text-content ol {
+          list-style-type: decimal;
+        }
+        .rich-text-content li {
+          margin: 0.5rem 0;
+        }
+        .rich-text-content a {
+          color: #10b981;
+          text-decoration: underline;
+        }
+        .rich-text-content a:hover {
+          color: #059669;
+        }
+        .rich-text-content strong {
+          font-weight: 700;
+        }
+        .rich-text-content em {
+          font-style: italic;
+        }
+        .rich-text-content u {
+          text-decoration: underline;
+        }
+      `}</style>
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Section with Provider Image */}
       <div 
         className="h-80 bg-cover bg-center relative"
         style={{
@@ -149,7 +206,10 @@ const ServiceProviderDetail = () => {
             {provider.description && (
               <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('about_provider')}</h2>
-                <p className="text-gray-700 whitespace-pre-line leading-relaxed">{provider.description}</p>
+                <div 
+                  className="text-gray-700 leading-relaxed rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: provider.description }}
+                />
               </div>
             )}
 
@@ -301,6 +361,7 @@ const ServiceProviderDetail = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

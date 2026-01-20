@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import RichTextEditor from '../RichTextEditor';
 
 const SubscriptionForm = ({ subscription, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -140,15 +141,14 @@ const SubscriptionForm = ({ subscription, onClose, onSuccess }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Description <span className="text-red-500">*</span>
                         </label>
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={4}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                errors.description ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                        <RichTextEditor
+                            value={formData.description || ''}
+                            onChange={(value) => {
+                                handleChange({ target: { name: 'description', value } });
+                            }}
                             placeholder="Describe what's included in this subscription..."
+                            error={errors.description}
+                            minHeight={150}
                         />
                         {errors.description && (
                             <p className="mt-1 text-sm text-red-600">{errors.description}</p>

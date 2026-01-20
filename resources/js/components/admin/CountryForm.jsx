@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
+import RichTextEditor from '../RichTextEditor';
 
 const CountryForm = ({ country, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -259,13 +260,13 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Description
                             </label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                rows="3"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            <RichTextEditor
+                                value={formData.description || ''}
+                                onChange={(value) => {
+                                    handleInputChange({ target: { name: 'description', value } });
+                                }}
                                 placeholder="Enter country description"
+                                minHeight={150}
                             />
                         </div>
                     </div>
