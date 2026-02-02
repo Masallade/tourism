@@ -7,60 +7,124 @@
     </linearGradient>
   </defs>
   
-  <!-- White circular background -->
-  <circle cx="32" cy="32" r="30" fill="#ffffff"/>
+  <!-- White background -->
+  <rect width="64" height="64" fill="#ffffff"/>
   
-  <!-- Simple leaf shape with black outline -->
-  <path d="M 32 18 
-           Q 26 16, 22 20
-           Q 18 24, 20 30
-           Q 22 36, 28 40
-           Q 32 42, 36 40
-           Q 42 36, 44 30
-           Q 46 24, 42 20
-           Q 38 16, 32 18 Z" 
+  <!-- Leaf shape with black outline -->
+  <path d="M 32 14 
+           Q 22 12, 16 18
+           Q 12 24, 14 30
+           Q 16 36, 22 40
+           Q 32 42, 42 40
+           Q 48 36, 50 30
+           Q 52 24, 48 18
+           Q 42 12, 32 14 Z" 
         fill="url(#leafGrad)"
         stroke="#000000"
         stroke-width="1.5"/>
   
-  <!-- Center vein (yellowish-green) -->
-  <path d="M 32 18 
-           Q 32 24, 32 30
-           Q 32 36, 32 42" 
+  <!-- Center vein (black outline first, then yellowish-green) -->
+  <path d="M 32 14 
+           L 32 42" 
+        stroke="#000000" 
+        stroke-width="3" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 32 14 
+           L 32 42" 
         stroke="#a3e635" 
         stroke-width="2" 
         fill="none" 
         stroke-linecap="round"/>
   
-  <!-- Side veins (yellowish-green) -->
-  <path d="M 28 22 
-           Q 26 24, 24 26" 
-        stroke="#a3e635" 
-        stroke-width="1.2" 
+  <!-- Side veins (black outline first, then yellowish-green) -->
+  <path d="M 28 20 
+           Q 26 22, 24 24" 
+        stroke="#000000" 
+        stroke-width="2" 
         fill="none" 
         stroke-linecap="round"/>
-  <path d="M 36 22 
-           Q 38 24, 40 26" 
-        stroke="#a3e635" 
-        stroke-width="1.2" 
-        fill="none" 
-        stroke-linecap="round"/>
-  <path d="M 26 28 
-           Q 24 30, 22 32" 
-        stroke="#a3e635" 
-        stroke-width="1.2" 
-        fill="none" 
-        stroke-linecap="round"/>
-  <path d="M 38 28 
-           Q 40 30, 42 32" 
+  <path d="M 28 20 
+           Q 26 22, 24 24" 
         stroke="#a3e635" 
         stroke-width="1.2" 
         fill="none" 
         stroke-linecap="round"/>
   
-  <!-- Stem (yellowish-green) -->
+  <path d="M 36 20 
+           Q 38 22, 40 24" 
+        stroke="#000000" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 36 20 
+           Q 38 22, 40 24" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <path d="M 26 26 
+           Q 24 28, 22 30" 
+        stroke="#000000" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 26 26 
+           Q 24 28, 22 30" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <path d="M 38 26 
+           Q 40 28, 42 30" 
+        stroke="#000000" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 38 26 
+           Q 40 28, 42 30" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <path d="M 28 32 
+           Q 26 34, 24 36" 
+        stroke="#000000" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 28 32 
+           Q 26 34, 24 36" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <path d="M 36 32 
+           Q 38 34, 40 36" 
+        stroke="#000000" 
+        stroke-width="2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 36 32 
+           Q 38 34, 40 36" 
+        stroke="#a3e635" 
+        stroke-width="1.2" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Stem (black outline first, then yellowish-green) -->
   <path d="M 32 42 
-           L 32 48" 
+           L 32 50" 
+        stroke="#000000" 
+        stroke-width="4" 
+        fill="none" 
+        stroke-linecap="round"/>
+  <path d="M 32 42 
+           L 32 50" 
         stroke="#a3e635" 
         stroke-width="3" 
         fill="none" 

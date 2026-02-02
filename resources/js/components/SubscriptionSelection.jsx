@@ -117,9 +117,10 @@ const SubscriptionSelection = ({ serviceProviderId, onSelect, onBack }) => {
                                 </div>
 
                                 {/* Description */}
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                                    {subscription.description}
-                                </p>
+                                <p 
+                                  className="text-gray-600 text-sm mb-4 line-clamp-3 rich-text-content"
+                                  dangerouslySetInnerHTML={{ __html: subscription.description }}
+                                />
 
                                 {/* Select Button */}
                                 <button

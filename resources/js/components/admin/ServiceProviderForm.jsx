@@ -619,8 +619,8 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
             newErrors.description = 'Description is required';
         } else if (descriptionValue.length < 10) {
             newErrors.description = 'Description must be at least 10 characters';
-        } else if (descriptionValue.length > 10000) {
-            newErrors.description = 'Description must be less than 10,000 characters';
+        } else if (descriptionValue.length > 20000) {
+            newErrors.description = 'Description must be less than 20,000 characters';
         }
         // Image (required for new, optional for edit)
         if (!provider && !image) {

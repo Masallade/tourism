@@ -175,7 +175,10 @@ const CountryDetail = () => {
               </Link>
             </div>
             <h1 className="text-4xl font-bold text-white">{country.name}</h1>
-            <p className="text-white/80 mt-2 max-w-2xl">{country.description || `Explore travel services in ${country.name}`}</p>
+            <p 
+              className="text-white/80 mt-2 max-w-2xl rich-text-content"
+              dangerouslySetInnerHTML={{ __html: country.description || `Explore travel services in ${country.name}` }}
+            />
           </div>
         </div>
       </div>

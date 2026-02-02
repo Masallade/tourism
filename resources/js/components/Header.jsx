@@ -414,8 +414,8 @@ export default function Header({ onProviderLogin, provider }) {
                 >
                   <div className="py-2 max-h-96 overflow-y-auto">
                     {/* All Destinations */}
-            <Link 
-              to="/destinations" 
+                    <Link 
+                      to="/destinations" 
                       className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                       onClick={() => setIsDestinationsDropdownOpen(false)}
                     >
@@ -431,18 +431,18 @@ export default function Header({ onProviderLogin, provider }) {
                     {/* Countries */}
                     {countries.length > 0 ? (
                       countries.map((country) => (
-                      <Link
-                        key={country.id}
-                        to={`/destinations?country=${country.id}`}
+                        <Link
+                          key={country.id}
+                          to={`/destinations?country=${country.id}`}
                           className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                           onClick={() => setIsDestinationsDropdownOpen(false)}
-                      >
+                        >
                           <svg className="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
                           <span className="truncate">{country.name}</span>
-            </Link>
+                        </Link>
                       ))
                     ) : (
                       <div className="px-4 py-2 text-sm text-gray-500">Loading destinations...</div>
@@ -473,7 +473,7 @@ export default function Header({ onProviderLogin, provider }) {
 
             {/* Language Switcher */}
             <div className="flex-shrink-0">
-            <LanguageSwitcher />
+              <LanguageSwitcher />
             </div>
 
             {/* AI Assistance Button */}
@@ -570,18 +570,18 @@ export default function Header({ onProviderLogin, provider }) {
                   >
                     {t('destinations')}
                   </Link>
-              {/* Countries in Mobile */}
+                  {/* Countries in Mobile */}
                   <div className="pl-4 mt-1 space-y-1">
                     {countries.slice(0, 8).map((country) => (
-                <Link 
-                  key={country.id} 
-                  to={`/destinations?country=${country.id}`} 
+                      <Link 
+                        key={country.id} 
+                        to={`/destinations?country=${country.id}`} 
                         onClick={() => setIsMenuOpen(false)}
                         className="text-green-600 hover:text-green-500 block px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors"
-                >
-                  {country.name}
-                </Link>
-              ))}
+                      >
+                        {country.name}
+                      </Link>
+                    ))}
                     {countries.length > 8 && (
                       <Link 
                         to="/destinations" 

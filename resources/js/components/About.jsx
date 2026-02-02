@@ -153,7 +153,10 @@ const ValuesSlider = ({ title, values }) => {
                       </div>
                       <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{value.title}</h3>
                     </div>
-                    <p className="text-gray-600 leading-relaxed">{value.description}</p>
+                    <div 
+                      className="text-gray-600 leading-relaxed rich-text-content"
+                      dangerouslySetInnerHTML={{ __html: value.description }}
+                    />
                   </div>
                 </div>
               ))}
@@ -278,9 +281,10 @@ const TeamSlider = ({ title, description, members, getImageUrl }) => {
           {title}
         </h2>
         {description && (
-          <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto text-lg leading-relaxed">
-            {description}
-          </p>
+          <div 
+            className="text-center text-gray-600 mb-12 max-w-3xl mx-auto text-lg leading-relaxed rich-text-content"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
         )}
 
         {/* Slider Container */}
@@ -518,13 +522,10 @@ const About = () => {
               {data.mission_title || t('our_mission')}
             </h2>
             {data.mission_description ? (
-              <div className="text-lg text-gray-600 leading-relaxed">
-                {data.mission_description.split('\n\n').map((paragraph, idx) => (
-                  <p key={idx} className="mb-4 last:mb-0">
-                    {paragraph.trim()}
-                  </p>
-                ))}
-              </div>
+              <div 
+                className="text-lg text-gray-600 leading-relaxed rich-text-content"
+                dangerouslySetInnerHTML={{ __html: data.mission_description }}
+              />
             ) : (
               <>
                 <p className="text-lg text-gray-600 mb-4 leading-relaxed">
@@ -633,9 +634,10 @@ const About = () => {
               </h2>
               
               {/* Description */}
-                <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
-                {data.cta_description || t('ready_travel_sustainably_description')}
-                </p>
+                <p 
+                  className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10 rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: data.cta_description || t('ready_travel_sustainably_description') }}
+                />
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

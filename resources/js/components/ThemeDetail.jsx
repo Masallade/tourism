@@ -144,7 +144,10 @@ const ThemeDetail = () => {
               </Link>
             </div>
             <h1 className="text-4xl font-bold text-white">{theme.name}</h1>
-            <p className="text-white/80 mt-2 max-w-2xl">{theme.description || `Explore ${theme.name} travel experiences`}</p>
+            <p 
+              className="text-white/80 mt-2 max-w-2xl rich-text-content"
+              dangerouslySetInnerHTML={{ __html: theme.description || `Explore ${theme.name} travel experiences` }}
+            />
           </div>
         </div>
       </div>

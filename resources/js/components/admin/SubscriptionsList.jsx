@@ -167,9 +167,10 @@ const SubscriptionsList = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-sm text-gray-900 max-w-md truncate">
-                                            {subscription.description}
-                                        </div>
+                                        <div 
+                                          className="text-sm text-gray-900 max-w-md truncate rich-text-content"
+                                          dangerouslySetInnerHTML={{ __html: subscription.description }}
+                                        />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-semibold text-green-600">

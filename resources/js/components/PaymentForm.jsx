@@ -134,7 +134,10 @@ const PaymentForm = ({ serviceProviderId, subscription, onSuccess, onBack }) => 
                         <div className="flex justify-between items-center">
                             <div>
                                 <h3 className="font-semibold text-gray-900">{subscription.heading}</h3>
-                                <p className="text-sm text-gray-600 mt-1">{subscription.description}</p>
+                                <p 
+                                  className="text-sm text-gray-600 mt-1 rich-text-content"
+                                  dangerouslySetInnerHTML={{ __html: subscription.description }}
+                                />
                             </div>
                             <div className="text-right">
                                 <div className="text-2xl font-bold text-blue-600">
