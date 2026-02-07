@@ -4,16 +4,26 @@ import React, { useState, useEffect, useRef } from 'react';
 const RichTextEditor = ({ value, onChange, placeholder, error, minHeight = 200 }) => {
     const editorRef = useRef(null);
     const [isFocused, setIsFocused] = useState(false);
+    const [charCount, setCharCount] = useState(0);
 
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || '';
+            updateCharCount(value);
         }
     }, [value]);
+
+    const updateCharCount = (html) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html || '';
+        const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+        setCharCount(plainText.length);
+    };
 
     const handleInput = (e) => {
         const html = e.target.innerHTML;
         onChange(html);
+        updateCharCount(html);
     };
 
     const execCommand = (command, value = null) => {
@@ -94,6 +104,13 @@ const RichTextEditor = ({ value, onChange, placeholder, error, minHeight = 200 }
                 data-placeholder={placeholder}
                 suppressContentEditableWarning
             />
+            {/* Character Counter */}
+            <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 rounded-b-md flex justify-between items-center text-xs">
+                <span className="text-gray-500">Plain text characters (HTML tags not counted)</span>
+                <span className="font-medium text-gray-600">
+                    {charCount.toLocaleString()}
+                </span>
+            </div>
             <style>{`
                 .rich-text-editor-content[data-placeholder]:empty:before {
                     content: attr(data-placeholder);

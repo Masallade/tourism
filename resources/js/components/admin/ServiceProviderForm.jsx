@@ -613,14 +613,17 @@ const ServiceProviderForm = ({ provider, onClose, onSuccess, showApproveCheckbox
         } else if (!validatePhone(phoneValue)) {
             newErrors.phone = 'Enter a valid phone number';
         }
-        // Description
+        // Description - basic validation only
         const descriptionValue = (formData.description || '').toString().trim();
-        if (!descriptionValue) {
+        // Create a temporary div to strip HTML tags and get plain text length
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = descriptionValue;
+        const plainTextLength = (tempDiv.textContent || tempDiv.innerText || '').trim().length;
+        
+        if (!descriptionValue || plainTextLength === 0) {
             newErrors.description = 'Description is required';
-        } else if (descriptionValue.length < 10) {
+        } else if (plainTextLength < 10) {
             newErrors.description = 'Description must be at least 10 characters';
-        } else if (descriptionValue.length > 20000) {
-            newErrors.description = 'Description must be less than 20,000 characters';
         }
         // Image (required for new, optional for edit)
         if (!provider && !image) {

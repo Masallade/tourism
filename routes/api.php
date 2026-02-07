@@ -202,7 +202,7 @@ Route::post('/service-providers', function (\Illuminate\Http\Request $request) {
             'service_type_ids' => 'required|array|min:1',
             'service_type_ids.*' => 'exists:service_types,id',
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:20000',
+            'description' => 'nullable|string',
             'price_range' => 'required|in:$,$$,$$$,$$$$',
             'website' => 'nullable|url|unique:service_providers,website',
             'email' => ['nullable','email','regex:/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/','unique:service_providers,email'],
