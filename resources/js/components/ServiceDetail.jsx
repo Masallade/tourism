@@ -6,7 +6,7 @@ import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
 
 const ServiceDetail = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { serviceId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,10 +37,11 @@ const ServiceDetail = () => {
   
   useEffect(() => {
     const fetchServiceDetails = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(`/api/services/${serviceId}`);
-        if (!response.ok) throw new Error('Service not found');
-        const data = await response.json();
+        // Use apiClient so Accept-Language and locale are sent → backend returns translated content
+        const response = await window.apiClient.get(`/api/services/${serviceId}`);
+        const data = response.data;
         setService(data);
         
         // Prepare images array for carousel
@@ -52,13 +53,13 @@ const ServiceDetail = () => {
         setImages(serviceImages);
         setLoading(false);
       } catch (err) {
-        setError(err.message);
+        setError(err.response?.status === 404 ? 'Service not found' : (err.message || 'Service not found'));
         setLoading(false);
       }
     };
     
     fetchServiceDetails();
-  }, [serviceId]);
+  }, [serviceId, i18n.language]);
   
   // Move to the next image in the carousel
   const nextImage = () => {
@@ -373,15 +374,23 @@ const ServiceDetail = () => {
                     </div>
                   )}
                   
-                  {/* Provider */}
+                  {/* Provider - clickable link to provider page */}
                   {service.provider && (
                     <div className="flex items-start">
-                      <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <div>
-                        <p className="font-medium text-gray-900">Service Provider</p>
-                        <p className="text-gray-700">{service.provider.name}</p>
+                        <p className="font-medium text-gray-900">{t('service_provider')}</p>
+                        <Link
+                          to={`/service-provider/${service.provider.id}`}
+                          className="text-green-600 hover:text-green-800 hover:underline font-medium transition-colors inline-flex items-center gap-1"
+                        >
+                          {service.provider.name}
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </Link>
                       </div>
                     </div>
                   )}
@@ -393,7 +402,7 @@ const ServiceDetail = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div>
-                        <p className="font-medium text-gray-900">Country</p>
+                        <p className="font-medium text-gray-900">{t('country')}</p>
                         <p className="text-gray-700">{service.country.name}</p>
                       </div>
                     </div>
@@ -406,7 +415,7 @@ const ServiceDetail = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 mb-1">Service Type{extractServiceTypes(service).length > 1 ? 's' : ''}</p>
+                        <p className="font-medium text-gray-900 mb-1">{extractServiceTypes(service).length > 1 ? t('service_types') : t('service_type')}</p>
                         <div className="flex flex-wrap gap-1">
                           {extractServiceTypes(service).map((type) => (
                             <span key={type.id} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
@@ -425,7 +434,7 @@ const ServiceDetail = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                       </svg>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 mb-1">Theme{extractThemes(service).length > 1 ? 's' : ''}</p>
+                        <p className="font-medium text-gray-900 mb-1">{extractThemes(service).length > 1 ? t('themes') : t('theme')}</p>
                         <div className="flex flex-wrap gap-1">
                           {extractThemes(service).map((theme) => (
                             <span key={theme.id} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
