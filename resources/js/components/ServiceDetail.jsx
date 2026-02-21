@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
 import { countryCodes } from '../utils/countryCodes';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
 
 const ServiceDetail = () => {
   const { t, i18n } = useTranslation();
@@ -294,7 +295,7 @@ const ServiceDetail = () => {
                   <h2 className="text-lg font-medium text-gray-900 mb-3">{t('overview')}</h2>
                   <div 
                     className="text-gray-700 rich-text-content"
-                    dangerouslySetInnerHTML={{ __html: service.overview }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.overview) }}
                   />
                 </div>
               )}
@@ -305,7 +306,7 @@ const ServiceDetail = () => {
                   <h2 className="text-lg font-medium text-gray-900 mb-3">{t('description')}</h2>
                   <div 
                     className="text-gray-700 rich-text-content"
-                    dangerouslySetInnerHTML={{ __html: service.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.description) }}
                   />
                 </div>
               )}
@@ -316,7 +317,7 @@ const ServiceDetail = () => {
                   <h2 className="text-lg font-medium text-gray-900 mb-3">{t('details')}</h2>
                   <div 
                     className="text-gray-700 rich-text-content"
-                    dangerouslySetInnerHTML={{ __html: service.details }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.details) }}
                   />
                 </div>
               )}

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
 
 const Destinations = () => {
     const { t } = useTranslation();
@@ -435,9 +436,10 @@ const ServiceCard = ({ service }) => {
                 </h3>
                 
                 {service.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                        {service.description}
-                    </p>
+                    <div
+                        className="text-sm text-gray-600 line-clamp-2 mb-3 [&_strong]:font-bold [&_br]:block"
+                        dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.description) }}
+                    />
                 )}
 
                 {/* Service Types */}

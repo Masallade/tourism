@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useTranslation } from 'react-i18next';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
 
 // Fix for default marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -151,6 +152,191 @@ function MapBounds({ providers, services, searchedLocation }) {
   return null;
 }
 
+// Only render markers in current viewport (with padding) to keep DOM light and map responsive
+const VIEWPORT_CULL_PADDING = 0.15; // extend bounds by 15% so markers don't pop at edges
+const MAX_MARKERS_WITHOUT_CULL = 80; // below this, render all markers for simplicity
+
+function VisibleMarkers({
+  providers,
+  services,
+  getProviderIcon,
+  getServiceIcon,
+  onProviderClick,
+  onServiceClick,
+  navigate,
+}) {
+  const map = useMap();
+  const [inView, setInView] = useState(() => ({ providers, services }));
+
+  useEffect(() => {
+    const update = () => {
+      const total = providers.length + services.length;
+      if (total <= MAX_MARKERS_WITHOUT_CULL) {
+        setInView({ providers, services });
+        return;
+      }
+      const b = map.getBounds();
+      const pad = VIEWPORT_CULL_PADDING;
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      const latSpan = (ne.lat - sw.lat) * pad;
+      const lngSpan = (ne.lng - sw.lng) * pad;
+      const padded = L.latLngBounds(
+        [sw.lat - latSpan, sw.lng - lngSpan],
+        [ne.lat + latSpan, ne.lng + lngSpan]
+      );
+      setInView({
+        providers: providers.filter((p) => p.lat && p.lng && padded.contains([parseFloat(p.lat), parseFloat(p.lng)])),
+        services: services.filter((s) => s.lat && s.lng && padded.contains([parseFloat(s.lat), parseFloat(s.lng)])),
+      });
+    };
+    update();
+    map.on('moveend', update);
+    map.on('zoomend', update);
+    return () => {
+      map.off('moveend', update);
+      map.off('zoomend', update);
+    };
+  }, [map, providers, services]);
+
+  return (
+    <>
+      {inView.providers.map((provider) => (
+        <Marker
+          key={provider.id}
+          position={[parseFloat(provider.lat), parseFloat(provider.lng)]}
+          icon={getProviderIcon(provider)}
+          eventHandlers={{ click: () => onProviderClick(provider) }}
+        >
+          <Popup>
+            <div className="p-2 min-w-[250px]">
+              {provider.image && (
+                <img
+                  src={`/storage/${provider.image}`}
+                  alt={provider.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <h3 className="font-bold text-lg text-gray-800 mb-2">{provider.name}</h3>
+              {provider.country && (
+                <div className="flex items-center text-gray-600 mb-2">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm">{provider.country.name}</span>
+                </div>
+              )}
+              {provider.service_types && provider.service_types.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {provider.service_types.slice(0, 3).map((type) => (
+                      <span key={type.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {type.name}
+                      </span>
+                    ))}
+                    {provider.service_types.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        +{provider.service_types.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {provider.description && (
+                <div
+                  className="text-sm text-gray-600 mb-3 line-clamp-2 [&_strong]:font-bold [&_br]:block"
+                  dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(provider.description) }}
+                />
+              )}
+              {provider.price_range && (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    Price: <span className="text-green-600">{provider.price_range}</span>
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); navigate(`/service-provider/${provider.id}`); }}
+                className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition cursor-pointer"
+              >
+                View Details
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+      {inView.services.map((service) => (
+        <Marker
+          key={`service-${service.id}`}
+          position={[parseFloat(service.lat), parseFloat(service.lng)]}
+          icon={getServiceIcon(service.service_types)}
+          eventHandlers={{ click: () => onServiceClick(service) }}
+        >
+          <Popup>
+            <div className="p-2 min-w-[250px]">
+              {service.image && (
+                <img
+                  src={`/storage/${service.image}`}
+                  alt={service.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <h3 className="font-bold text-lg text-gray-800 mb-2">{service.name}</h3>
+              {service.country && (
+                <div className="flex items-center text-gray-600 mb-2">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm">{service.country.name}</span>
+                </div>
+              )}
+              {service.service_types && service.service_types.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {service.service_types.slice(0, 3).map((type) => (
+                      <span key={type.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {type.name}
+                      </span>
+                    ))}
+                    {service.service_types.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        +{service.service_types.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {service.description && (
+                <div
+                  className="text-sm text-gray-600 mb-3 line-clamp-2 [&_strong]:font-bold [&_br]:block"
+                  dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.description) }}
+                />
+              )}
+              {service.price && (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    Price: <span className="text-blue-600">${service.price}</span>
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); navigate(`/service/${service.id}`); }}
+                className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition cursor-pointer"
+              >
+                View Service Details
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+}
+
 const ProvidersMap = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -169,12 +355,20 @@ const ProvidersMap = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false);
 
   useEffect(() => {
     fetchProviders();
     fetchServices();
     fetchCountries();
   }, []);
+
+  // Defer map mount so page and controls paint first, then map loads (faster perceived load)
+  useEffect(() => {
+    if (loading) return;
+    let timeoutId = setTimeout(() => setMapMounted(true), 80);
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -460,6 +654,9 @@ const ProvidersMap = () => {
         .leaflet-container .leaflet-control-attribution {
           display: none !important;
         }
+        .leaflet-tile-pane {
+          z-index: 1;
+        }
         .leaflet-tile-pane::before,
         .leaflet-tile-pane::after {
           display: none !important;
@@ -680,6 +877,13 @@ const ProvidersMap = () => {
               <p className="text-gray-500">Try adjusting your search filters</p>
             </div>
           </div>
+        ) : !mapMounted ? (
+          <div className="w-full h-[600px] flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-green-500 border-t-transparent mb-3"></div>
+              <p className="text-gray-600 text-sm">Loading map...</p>
+            </div>
+          </div>
         ) : (
           <MapContainer
             center={[25.276987, 55.296249]}
@@ -692,194 +896,28 @@ const ProvidersMap = () => {
             attributionControl={false}
           >
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              subdomains="abcd"
-              maxZoom={20}
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              subdomains={['a', 'b', 'c']}
+              maxZoom={19}
+              minZoom={2}
               noWrap={true}
+              updateWhenIdle={false}
+              keepBuffer={2}
             />
             
             {/* Fit bounds to show all markers or zoom to searched location */}
             <MapBounds providers={filteredProviders} services={filteredServices} searchedLocation={searchedLocation} />
             
-            {/* Markers for each provider */}
-            {filteredProviders.map((provider) => (
-              <Marker
-                key={provider.id}
-                position={[parseFloat(provider.lat), parseFloat(provider.lng)]}
-                icon={getProviderIcon(provider)}
-                eventHandlers={{
-                  click: () => handleMarkerClick(provider)
-                }}
-              >
-                <Popup>
-                  <div className="p-2 min-w-[250px]">
-                    {/* Provider Image */}
-                    {provider.image && (
-                      <img
-                        src={`/storage/${provider.image}`}
-                        alt={provider.name}
-                        className="w-full h-32 object-cover rounded-lg mb-3"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    )}
-                    
-                    {/* Provider Name */}
-                    <h3 className="font-bold text-lg text-gray-800 mb-2">
-                      {provider.name}
-                    </h3>
-                    
-                    {/* Location */}
-                    {provider.country && (
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-sm">{provider.country.name}</span>
-                      </div>
-                    )}
-                    
-                    {/* Service Types */}
-                    {provider.service_types && provider.service_types.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex flex-wrap gap-1">
-                          {provider.service_types.slice(0, 3).map((type) => (
-                            <span
-                              key={type.id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                            >
-                              {type.name}
-                            </span>
-                          ))}
-                          {provider.service_types.length > 3 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                              +{provider.service_types.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Description */}
-                    {provider.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {provider.description}
-                      </p>
-                    )}
-                    
-                    {/* Price Range */}
-                    {provider.price_range && (
-                      <div className="mb-3">
-                        <span className="text-sm font-medium text-gray-700">
-                          Price: <span className="text-green-600">{provider.price_range}</span>
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* View Details Button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(`/service-provider/${provider.id}`);
-                      }}
-                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition cursor-pointer"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            
-            {/* Markers for each service */}
-            {filteredServices.map((service) => (
-              <Marker
-                key={`service-${service.id}`}
-                position={[parseFloat(service.lat), parseFloat(service.lng)]}
-                icon={getServiceIcon(service.service_types)}
-                eventHandlers={{
-                  click: () => handleServiceClick(service)
-                }}
-              >
-                <Popup>
-                  <div className="p-2 min-w-[250px]">
-                    {/* Service Image */}
-                    {service.image && (
-                      <img
-                        src={`/storage/${service.image}`}
-                        alt={service.name}
-                        className="w-full h-32 object-cover rounded-lg mb-3"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    )}
-                    
-                    {/* Service Name */}
-                    <h3 className="font-bold text-lg text-gray-800 mb-2">
-                      {service.name}
-                    </h3>
-                    
-                    {/* Location */}
-                    {service.country && (
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-sm">{service.country.name}</span>
-                      </div>
-                    )}
-                    
-                    {/* Service Types */}
-                    {service.service_types && service.service_types.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex flex-wrap gap-1">
-                          {service.service_types.slice(0, 3).map((type) => (
-                            <span
-                              key={type.id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                            >
-                              {type.name}
-                            </span>
-                          ))}
-                          {service.service_types.length > 3 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                              +{service.service_types.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Description */}
-                    {service.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {service.description}
-                      </p>
-                    )}
-                    
-                    {/* Price */}
-                    {service.price && (
-                      <div className="mb-3">
-                        <span className="text-sm font-medium text-gray-700">
-                          Price: <span className="text-blue-600">${service.price}</span>
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* View Details Button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(`/service/${service.id}`);
-                      }}
-                      className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition cursor-pointer"
-                    >
-                      View Service Details
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {/* Markers (viewport-culled for performance when many markers) */}
+            <VisibleMarkers
+              providers={filteredProviders}
+              services={filteredServices}
+              getProviderIcon={getProviderIcon}
+              getServiceIcon={getServiceIcon}
+              onProviderClick={handleMarkerClick}
+              onServiceClick={handleServiceClick}
+              navigate={navigate}
+            />
           </MapContainer>
         )}
       </div>

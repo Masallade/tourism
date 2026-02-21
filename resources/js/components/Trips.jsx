@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { extractServiceTypes } from '../utils/serviceHelpers';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
 
 const Trips = () => {
   const { t } = useTranslation();
@@ -337,10 +338,15 @@ const Trips = () => {
                     </div>
                   )}
 
-                  {/* Description */}
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {service.description || 'Discover an amazing eco-friendly experience in a beautiful destination.'}
-                  </p>
+                  {/* Description (rich text from editor – render as HTML) */}
+                  <div
+                    className="text-gray-600 text-sm mb-4 line-clamp-3 [&_strong]:font-bold [&_br]:block"
+                    dangerouslySetInnerHTML={{
+                      __html: service.description
+                        ? sanitizeDescriptionHtml(service.description)
+                        : 'Discover an amazing eco-friendly experience in a beautiful destination.',
+                    }}
+                  />
 
                   {/* Additional Info */}
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-4">

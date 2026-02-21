@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
 
 const ServiceCard = ({ service }) => {
   const serviceTypes = extractServiceTypes(service);
@@ -47,7 +48,12 @@ const ServiceCard = ({ service }) => {
       </div>
       <div className="p-4">
         <h3 className="font-bold text-lg text-green-800 mb-1">{service.name}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2 mb-2">{service.description || 'No description provided'}</p>
+        <div
+          className="text-sm text-gray-600 line-clamp-2 mb-2 [&_strong]:font-bold [&_br]:block"
+          dangerouslySetInnerHTML={{
+            __html: service.description ? sanitizeDescriptionHtml(service.description) : 'No description provided',
+          }}
+        />
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1">
             {(serviceTypes.length ? serviceTypes : [{ id: 'fallback', name: 'Service' }]).slice(0, 2).map((type) => (
