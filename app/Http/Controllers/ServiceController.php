@@ -94,10 +94,18 @@ class ServiceController extends Controller
                 return response()->json(['error' => 'Invalid theme ID'], 400);
             }
             
-            // Get services that have this theme through the many-to-many relationship
+            // Get services that have this theme: on the service (service_theme pivot) or on the provider (provider_theme pivot)
+            // Note: services table no longer has theme_id; themes are in service_theme and provider_theme pivots
+            $themeId = (int) $themeId;
             $services = Service::with(['provider', 'serviceTypes', 'country', 'themes'])
-                ->whereHas('themes', function($q) use ($themeId) {
-                    $q->where('themes.id', $themeId);
+                ->where(function ($query) use ($themeId) {
+                    $query
+                        ->whereHas('themes', function ($q) use ($themeId) {
+                            $q->where('themes.id', $themeId);
+                        })
+                        ->orWhereHas('provider.themes', function ($q) use ($themeId) {
+                            $q->where('themes.id', $themeId);
+                        });
                 })
                 ->get();
             
@@ -168,6 +176,50 @@ class ServiceController extends Controller
         ]);
         
         return response()->json($translated);
+    }
+
+    /**
+     * Get featured highlights for the home page (Top Destinations, Popular Stays, Top Experiences).
+     */
+    public function featuredHighlights(Request $request)
+    {
+        $locale = $request->header('Accept-Language', 'en');
+        $locale = $request->query('locale', $locale);
+        if (in_array($locale, ['en', 'es', 'fr'])) {
+            app()->setLocale($locale);
+        }
+
+        $base = Service::with(['serviceTypes', 'themes', 'country', 'provider'])
+            ->orderBy('updated_at', 'desc');
+
+        $topDestinations = (clone $base)->where('is_top_destination', true)->limit(6)->get();
+        $popularStays = (clone $base)->where('is_popular_stay', true)->limit(6)->get();
+        $topExperiences = (clone $base)->where('is_top_experience', true)->limit(6)->get();
+
+        $translate = function ($collection) {
+            return $this->translateCollection($collection, ['name', 'description', 'overview', 'details']);
+        };
+
+        return response()->json([
+            'top_destinations' => $translate($topDestinations),
+            'popular_stays' => $translate($popularStays),
+            'top_experiences' => $translate($topExperiences),
+        ]);
+    }
+
+    /**
+     * Update featured highlight flags for a service (admin).
+     */
+    public function updateHighlights(Request $request, $id)
+    {
+        $service = Service::findOrFail($id);
+        $validated = $request->validate([
+            'is_top_destination' => 'sometimes|boolean',
+            'is_popular_stay' => 'sometimes|boolean',
+            'is_top_experience' => 'sometimes|boolean',
+        ]);
+        $service->update($validated);
+        return response()->json(['message' => 'Highlights updated', 'service' => $service->fresh()]);
     }
 
     // Store a new service

@@ -29,6 +29,9 @@ class Service extends Model
         'details',
         'lat',
         'lng',
+        'is_top_destination',
+        'is_popular_stay',
+        'is_top_experience',
     ];
 
     protected $casts = [
@@ -36,6 +39,9 @@ class Service extends Model
         'lng' => 'decimal:7',
         'min_travelers' => 'integer',
         'max_travelers' => 'integer',
+        'is_top_destination' => 'boolean',
+        'is_popular_stay' => 'boolean',
+        'is_top_experience' => 'boolean',
     ];
 
     public function provider()

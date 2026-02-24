@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ServiceCard from './ServiceCard';
-import { extractServiceTypes, extractThemes } from '../utils/serviceHelpers';
+import { extractThemes } from '../utils/serviceHelpers';
 
 
 const ThemeDetail = () => {
@@ -12,8 +12,8 @@ const ThemeDetail = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [serviceTypes, setServiceTypes] = useState([]);
-  const [selectedType, setSelectedType] = useState('all');
+  const [filterThemes, setFilterThemes] = useState([]); // themes that appear in these services (for filter by theme)
+  const [selectedTheme, setSelectedTheme] = useState('all');
 
   useEffect(() => {
     const fetchThemeAndServices = async () => {
@@ -23,42 +23,27 @@ const ThemeDetail = () => {
         const isNumeric = /^\d+$/.test(id);
         const endpoint = isNumeric ? `/api/themes/${id}` : `/api/themes/slug/${id}`;
         
-        // Fetch theme details
-        const themeRes = await fetch(endpoint);
-        if (!themeRes.ok) {
-          throw new Error('Failed to fetch theme');
-        }
-        const themeData = await themeRes.json();
+        // Fetch theme details (use apiClient for locale header)
+        const themeRes = await window.apiClient.get(endpoint);
+        const themeData = themeRes.data;
         setTheme(themeData);
 
         // Fetch services for this theme using the numeric theme ID
         const themeId = themeData.id;
-        const servicesRes = await fetch(`/api/theme/${themeId}/services`);
-        if (!servicesRes.ok) {
-          const errorData = await servicesRes.json().catch(() => ({}));
-          const errorMessage = errorData.error || errorData.message || 'Failed to fetch services';
-          console.error('Error fetching services:', errorMessage, errorData);
-          throw new Error(errorMessage);
-        }
-        const servicesData = await servicesRes.json();
-        setServices(servicesData);
+        const servicesRes = await window.apiClient.get(`/api/theme/${themeId}/services`);
+        const servicesData = servicesRes.data;
+        setServices(Array.isArray(servicesData) ? servicesData : []);
 
-        const serviceTypeIdSet = new Set();
-        servicesData.forEach((svc) => {
-          extractServiceTypes(svc).forEach((type) => serviceTypeIdSet.add(Number(type.id)));
+        // Collect unique themes from services (for filter-by-theme on this theme page)
+        const themeMap = new Map();
+        (servicesData || []).forEach((svc) => {
+          extractThemes(svc).forEach((th) => {
+            const tid = Number(th.id);
+            if (!themeMap.has(tid)) themeMap.set(tid, { id: tid, name: th.name || '' });
+          });
         });
+        setFilterThemes(Array.from(themeMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || '')));
 
-        if (serviceTypeIdSet.size) {
-          const typesRes = await window.apiClient.get('/api/service-types');
-          const allTypes = typesRes.data;
-          const filteredTypes = allTypes
-            .filter((type) => serviceTypeIdSet.has(Number(type.id)))
-            .map((type) => ({ ...type, id: Number(type.id) }));
-          setServiceTypes(filteredTypes);
-        } else {
-          setServiceTypes([]);
-        }
-        
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -70,10 +55,13 @@ const ThemeDetail = () => {
     fetchThemeAndServices();
   }, [id]);
 
-  // Filter services by selected type
-  const filteredServices = selectedType === 'all' 
+  // Filter services by selected theme (services have many themes via themes array)
+  const filteredServices = selectedTheme === 'all' 
     ? services 
-    : services.filter(service => service.service_type_id === parseInt(selectedType));
+    : services.filter(service => {
+        const themesList = extractThemes(service);
+        return themesList.some(th => Number(th.id) === parseInt(selectedTheme, 10));
+      });
 
   if (loading) {
     return (
@@ -153,31 +141,31 @@ const ThemeDetail = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Service Type Filter */}
+        {/* Theme Filter (filter by theme within this theme page) */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('available_experiences', { theme: theme.name })}</h2>
           <div className="flex flex-wrap gap-2">
             <button 
               className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                selectedType === 'all' 
+                selectedTheme === 'all' 
                   ? 'bg-green-600 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
-              onClick={() => setSelectedType('all')}
+              onClick={() => setSelectedTheme('all')}
             >
               {t('all_experiences')}
             </button>
-            {serviceTypes.map(type => (
+            {filterThemes.map(th => (
               <button 
-                key={type.id}
+                key={th.id}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                  selectedType === type.id.toString() 
+                  selectedTheme === th.id.toString() 
                     ? 'bg-green-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                onClick={() => setSelectedType(type.id.toString())}
+                onClick={() => setSelectedTheme(th.id.toString())}
               >
-                {type.name}
+                {th.name}
               </button>
             ))}
           </div>
@@ -197,10 +185,10 @@ const ThemeDetail = () => {
             </svg>
             <h3 className="text-xl font-semibold text-yellow-800 mb-2">{t('no_services_available')}</h3>
             <p className="text-yellow-700">
-              {selectedType === 'all' 
+              {selectedTheme === 'all' 
                 ? t('no_theme_experiences', { theme: theme.name })
                 : t('no_type_services', { 
-                    type: serviceTypes.find(st => st.id === parseInt(selectedType))?.name || '', 
+                    type: filterThemes.find(ft => Number(ft.id) === parseInt(selectedTheme, 10))?.name || '', 
                     theme: theme.name 
                   })}
             </p>

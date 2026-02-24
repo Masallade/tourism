@@ -25,6 +25,12 @@ Route::get('/theme/{themeId}/services', [ServiceController::class, 'getByTheme']
 // Get all services (must be before /services/{id} to avoid route conflict)
 Route::get('/services/all', [ServiceController::class, 'all']);
 
+// Featured highlights for home page (public)
+Route::get('/featured-highlights', [ServiceController::class, 'featuredHighlights']);
+
+// Update service featured highlights (admin)
+Route::patch('/services/{id}/highlights', [ServiceController::class, 'updateHighlights'])->middleware('admin.auth');
+
 // Get single service (with translation)
 Route::get('/services/{id}', [ServiceController::class, 'show']);
 

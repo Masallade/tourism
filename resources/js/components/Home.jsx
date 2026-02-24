@@ -1,17 +1,222 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ProvidersMap from './ProvidersMap';
 import TripCalculatorModal from './TripCalculatorModal';
 
+const accentStyles = {
+  green: { input: 'border-green-300 focus:ring-green-500', btn: 'bg-green-600 hover:bg-green-700', badge: 'bg-green-100 text-green-800' },
+  blue: { input: 'border-blue-300 focus:ring-blue-500', btn: 'bg-blue-600 hover:bg-blue-700', badge: 'bg-blue-100 text-blue-800' },
+  amber: { input: 'border-amber-300 focus:ring-amber-500', btn: 'bg-amber-600 hover:bg-amber-700', badge: 'bg-amber-100 text-amber-800' },
+};
+
+function HighlightsSlider({ type, title, services, countries, onClose, accentClass }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
+  const style = accentStyles[accentClass] || accentStyles.green;
+
+  const serviceTypes = useMemo(() => {
+    const set = new Set();
+    (services || []).forEach((s) => {
+      const types = s.service_types || s.serviceTypes || [];
+      types.forEach((t) => set.add(JSON.stringify({ id: t.id, name: t.name })));
+    });
+    return Array.from(set).map((s) => JSON.parse(s));
+  }, [services]);
+
+  const filteredServices = useMemo(() => {
+    let list = services || [];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (s) =>
+          (s.name && s.name.toLowerCase().includes(q)) ||
+          (s.description && String(s.description).toLowerCase().includes(q)) ||
+          (s.country?.name && s.country.name.toLowerCase().includes(q))
+      );
+    }
+    if (countryFilter !== 'all') {
+      const cid = Number(countryFilter);
+      list = list.filter((s) => (s.country_id ?? s.country?.id) === cid);
+    }
+    if (serviceTypeFilter !== 'all') {
+      const tid = Number(serviceTypeFilter);
+      list = list.filter((s) => {
+        const types = s.service_types || s.serviceTypes || [];
+        return types.some((t) => Number(t.id) === tid);
+      });
+    }
+    return list;
+  }, [services, searchQuery, countryFilter, serviceTypeFilter]);
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/40 z-[9998] transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-[9999] flex flex-col animate-slide-in-right"
+        role="dialog"
+        aria-label={title}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="p-4 space-y-3 border-b border-gray-100">
+          <input
+            type="text"
+            placeholder="Search by name, description or country..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none ${style.input}`}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none text-sm ${style.input}`}
+            >
+              <option value="all">All countries</option>
+              {(countries || []).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <select
+              value={serviceTypeFilter}
+              onChange={(e) => setServiceTypeFilter(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none text-sm ${style.input}`}
+            >
+              <option value="all">All types</option>
+              {serviceTypes.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          {/* Active filters metadata */}
+          {(searchQuery.trim() || countryFilter !== 'all' || serviceTypeFilter !== 'all') && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active filters:</span>
+              {searchQuery.trim() && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-gray-200 text-gray-800">
+                  Search: &quot;{searchQuery.trim().length > 20 ? searchQuery.trim().slice(0, 20) + '…' : searchQuery.trim()}&quot;
+                  <button type="button" onClick={() => setSearchQuery('')} className="ml-0.5 hover:text-red-600" aria-label="Clear search">×</button>
+                </span>
+              )}
+              {countryFilter !== 'all' && (
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${style.badge}`}>
+                  {(countries || []).find((c) => String(c.id) === String(countryFilter))?.name || 'Country'}
+                  <button type="button" onClick={() => setCountryFilter('all')} className="ml-0.5 hover:opacity-80" aria-label="Clear country">×</button>
+                </span>
+              )}
+              {serviceTypeFilter !== 'all' && (
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${style.badge}`}>
+                  {serviceTypes.find((t) => String(t.id) === String(serviceTypeFilter))?.name || 'Type'}
+                  <button type="button" onClick={() => setServiceTypeFilter('all')} className="ml-0.5 hover:opacity-80" aria-label="Clear type">×</button>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setCountryFilter('all'); setServiceTypeFilter('all'); }}
+                className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+          <p className="text-sm text-gray-500">Showing {filteredServices.length} of {services?.length || 0}</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {filteredServices.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No services match your filters.</p>
+          ) : (
+            <ul className="space-y-4">
+              {filteredServices.map((s) => {
+                const durationLabel = s.duration || null;
+                const ageLabel = s.min_age != null || s.max_age != null
+                  ? (s.min_age != null && s.max_age != null ? `Ages ${s.min_age}–${s.max_age}` : s.min_age != null ? `Ages ${s.min_age}+` : `Up to ${s.max_age}`)
+                  : null;
+                const groupLabel = s.min_travelers != null && s.max_travelers != null
+                  ? `${s.min_travelers}–${s.max_travelers} travelers`
+                  : s.min_travelers != null ? `${s.min_travelers}+ travelers` : s.max_travelers != null ? `Up to ${s.max_travelers}` : null;
+                const priceLabel = s.price != null ? `$${Number(s.price).toLocaleString()}` : 'Contact';
+                return (
+                  <li key={s.id}>
+                    <Link
+                      to={`/service/${s.id}`}
+                      onClick={onClose}
+                      className="block bg-gray-50 hover:bg-gray-100 rounded-xl p-4 border border-gray-100 transition"
+                    >
+                      <div className="flex gap-3">
+                        {s.image ? (
+                          <img src={`/storage/${s.image}`} alt="" className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0 flex items-center justify-center text-gray-400 text-2xl font-bold">
+                            {(s.name || '?').charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-gray-900 truncate">{s.name}</h3>
+                          {s.provider?.name && <p className="text-xs text-gray-500 truncate">by {s.provider.name}</p>}
+                          {s.country?.name && <p className="text-sm text-gray-600 flex items-center gap-1"><span className="text-gray-400">📍</span> {s.country.name}</p>}
+                          <p className={`text-sm font-medium mt-0.5 ${accentClass === 'green' ? 'text-green-600' : accentClass === 'blue' ? 'text-blue-600' : 'text-amber-600'}`}>{priceLabel}</p>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-500">
+                            {durationLabel && <span>🕐 {durationLabel}</span>}
+                            {ageLabel && <span>👤 {ageLabel}</span>}
+                            {groupLabel && <span>👥 {groupLabel}</span>}
+                          </div>
+                          {(s.service_types?.length || s.serviceTypes?.length) ? (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {(s.service_types || s.serviceTypes).slice(0, 2).map((t) => (
+                                <span key={t.id} className={`text-xs px-2 py-0.5 rounded-full ${style.badge}`}>{t.name}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
+      `}</style>
+    </>
+  );
+}
 
 export default function Home() {
   const { t } = useTranslation();
   const [countries, setCountries] = useState([]);
   const [themes, setThemes] = useState([]);
+  const [featuredHighlights, setFeaturedHighlights] = useState({
+    top_destinations: [],
+    popular_stays: [],
+    top_experiences: [],
+  });
   const [loading, setLoading] = useState(true);
   const [showTripModal, setShowTripModal] = useState(false);
+  const [highlightsSliderOpen, setHighlightsSliderOpen] = useState(null); // 'top_destinations' | 'popular_stays' | 'top_experiences'
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,7 +240,17 @@ export default function Home() {
     }
     fetchCountries();
     fetchThemes();
+    fetchFeaturedHighlights();
   }, [location.pathname, location.state, location.hash]);
+
+  const fetchFeaturedHighlights = async () => {
+    try {
+      const response = await window.apiClient.get('/api/featured-highlights');
+      setFeaturedHighlights(response.data);
+    } catch (err) {
+      console.error('Error fetching featured highlights:', err);
+    }
+  };
 
   const fetchCountries = async () => {
     try {
@@ -196,7 +411,11 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">
+          <button
+            type="button"
+            onClick={() => setHighlightsSliderOpen('top_destinations')}
+            className="text-left bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group cursor-pointer"
+          >
             <div className="absolute inset-0 bg-gradient-to-b from-green-600/0 to-green-600/10 group-hover:opacity-80 transition-opacity duration-300"></div>
             <div className="relative z-10">
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
@@ -204,101 +423,106 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('top_destinations')}</h3>
               <ul className="space-y-3">
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-green-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Bangkok - Cultural Immersion
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-green-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Phuket - Beach Paradise
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-green-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Chiang Mai - Mountain Adventure
-                </li>
+                {(featuredHighlights.top_destinations || []).slice(0, 3).map((s) => (
+                  <li key={s.id} className="flex items-center text-gray-700">
+                    <span className="bg-green-200 rounded-full p-1 mr-2 flex-shrink-0">
+                      <svg className="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </span>
+                    <span className="truncate block">{s.country?.name ? `${s.name} - ${s.country.name}` : s.name}</span>
+                  </li>
+                ))}
+                {(!featuredHighlights.top_destinations || featuredHighlights.top_destinations.length === 0) && (
+                  <li className="text-gray-500 text-sm">Add services in Admin → Featured Highlights</li>
+                )}
               </ul>
-              <button className="mt-5 text-green-700 font-medium hover:text-green-800 flex items-center transition-colors">
+              <span className="mt-5 text-green-700 font-medium flex items-center">
                 {t('explore_destinations')}
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-              </button>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+              </span>
             </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setHighlightsSliderOpen('popular_stays')}
+            className="text-left bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group cursor-pointer"
+          >
             <div className="absolute inset-0 bg-gradient-to-b from-blue-600/0 to-blue-600/10 group-hover:opacity-80 transition-opacity duration-300"></div>
             <div className="relative z-10">
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
               </div>
               <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('popular_stays')}</h3>
               <ul className="space-y-3">
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-blue-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Eco Resort - Sustainable Luxury
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-blue-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Green Stay - Carbon Neutral
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-blue-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Adventure Lodge - Local Experience
-                </li>
+                {(featuredHighlights.popular_stays || []).slice(0, 3).map((s) => (
+                  <li key={s.id} className="flex items-center text-gray-700">
+                    <span className="bg-blue-200 rounded-full p-1 mr-2 flex-shrink-0">
+                      <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </span>
+                    <span className="truncate block">{s.country?.name ? `${s.name} - ${s.country.name}` : s.name}</span>
+                  </li>
+                ))}
+                {(!featuredHighlights.popular_stays || featuredHighlights.popular_stays.length === 0) && (
+                  <li className="text-gray-500 text-sm">Add services in Admin → Featured Highlights</li>
+                )}
               </ul>
-              <button className="mt-5 text-blue-700 font-medium hover:text-blue-800 flex items-center transition-colors">
+              <span className="mt-5 text-blue-700 font-medium flex items-center">
                 {t('find_accommodations')}
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-              </button>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+              </span>
             </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-2xl shadow-lg border border-amber-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setHighlightsSliderOpen('top_experiences')}
+            className="text-left bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-2xl shadow-lg border border-amber-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group cursor-pointer"
+          >
             <div className="absolute inset-0 bg-gradient-to-b from-amber-600/0 to-amber-600/10 group-hover:opacity-80 transition-opacity duration-300"></div>
             <div className="relative z-10">
               <div className="bg-white/80 backdrop-blur-sm w-14 h-14 rounded-full flex items-center justify-center mb-6 shadow-md">
-                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <h3 className="text-2xl font-semibold text-gray-800 mb-3">{t('top_experiences')}</h3>
               <ul className="space-y-3">
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-amber-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Guided Eco Tours with Locals
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-amber-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Authentic Cuisine Experiences
-                </li>
-                <li className="flex items-center text-gray-700">
-                  <span className="bg-amber-200 rounded-full p-1 mr-2">
-                    <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  </span>
-                  Nature Walks & Conservation
-                </li>
+                {(featuredHighlights.top_experiences || []).slice(0, 3).map((s) => (
+                  <li key={s.id} className="flex items-center text-gray-700">
+                    <span className="bg-amber-200 rounded-full p-1 mr-2 flex-shrink-0">
+                      <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </span>
+                    <span className="truncate block">{s.country?.name ? `${s.name} - ${s.country.name}` : s.name}</span>
+                  </li>
+                ))}
+                {(!featuredHighlights.top_experiences || featuredHighlights.top_experiences.length === 0) && (
+                  <li className="text-gray-500 text-sm">Add services in Admin → Featured Highlights</li>
+                )}
               </ul>
-              <button className="mt-5 text-amber-700 font-medium hover:text-amber-800 flex items-center transition-colors">
+              <span className="mt-5 text-amber-700 font-medium flex items-center">
                 Discover experiences
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-              </button>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+              </span>
             </div>
-          </div>
+          </button>
         </div>
       </section>
+
+      {/* Highlights pop slider */}
+      {highlightsSliderOpen && (
+        <HighlightsSlider
+          type={highlightsSliderOpen}
+          title={
+            highlightsSliderOpen === 'top_destinations' ? t('top_destinations') :
+            highlightsSliderOpen === 'popular_stays' ? t('popular_stays') : t('top_experiences')
+          }
+          services={featuredHighlights[highlightsSliderOpen] || []}
+          countries={countries}
+          onClose={() => setHighlightsSliderOpen(null)}
+          accentClass={
+            highlightsSliderOpen === 'top_destinations' ? 'green' :
+            highlightsSliderOpen === 'popular_stays' ? 'blue' : 'amber'
+          }
+        />
+      )}
 
   
   {/* Countries Section - Enhanced with curved separator */}

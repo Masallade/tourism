@@ -15,6 +15,7 @@ import ServicesList from './components/admin/ServicesList';
 import AppSettings from './components/admin/AppSettings';
 import AboutPageEditor from './components/admin/AboutPageEditor';
 import DestinationsList from './components/admin/DestinationsList';
+import FeaturedHighlights from './components/admin/FeaturedHighlights';
 import SubscriptionsList from './components/admin/SubscriptionsList';
 import UserLogin from './components/UserLogin';
 import UserSignup from './components/UserSignup';
@@ -110,6 +111,7 @@ function App() {
           <Route path="service-providers" element={<ServiceProvidersList />} />
           <Route path="services" element={<ServicesList />} />
           <Route path="destinations" element={<DestinationsList />} />
+          <Route path="featured-highlights" element={<FeaturedHighlights />} />
           <Route path="subscriptions" element={<SubscriptionsList />} />
           <Route path="about-page" element={<AboutPageEditor />} />
           <Route path="settings" element={<AppSettings />} />
