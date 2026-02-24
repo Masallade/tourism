@@ -12,17 +12,27 @@ class ThemeController extends Controller
     
     public function index(Request $request)
     {
-        // Set locale from request
         $locale = $request->header('Accept-Language', 'en');
         $locale = $request->query('locale', $locale);
-        
         if (in_array($locale, ['en', 'es', 'fr'])) {
             app()->setLocale($locale);
         }
-        
-        $themes = Theme::withCount('serviceProviders')->get();
-        
-        // Models now handle translations directly via getNameAttribute accessor
+
+        $perPage = $request->query('per_page');
+        $page = $request->query('page');
+        if ($perPage !== null || $page !== null) {
+            $perPage = max(1, min(50, (int) ($perPage ?: 12)));
+            $themes = Theme::withCount('serviceProviders')->orderBy('name')->paginate($perPage);
+            return response()->json([
+                'data' => $themes->items(),
+                'total' => $themes->total(),
+                'per_page' => $themes->perPage(),
+                'current_page' => $themes->currentPage(),
+                'last_page' => $themes->lastPage(),
+            ]);
+        }
+
+        $themes = Theme::withCount('serviceProviders')->orderBy('name')->get();
         return response()->json($themes);
     }
     

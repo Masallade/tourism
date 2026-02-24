@@ -12,22 +12,30 @@ class CountryController extends Controller
     
     public function index(Request $request)
     {
-        // Set locale from request
         $locale = $request->header('Accept-Language', 'en');
         $locale = $request->query('locale', $locale);
-        
         if (in_array($locale, ['en', 'es', 'fr'])) {
             app()->setLocale($locale);
         }
-        
-        $countries = Country::withCount('serviceProviders')->get();
-        
-        // Translate translatable fields
-        $translated = $this->translateCollection($countries, [
-            'name',
-            'description'
-        ]);
-        
+
+        $perPage = $request->query('per_page');
+        $page = $request->query('page');
+        if ($perPage !== null || $page !== null) {
+            $perPage = max(1, min(50, (int) ($perPage ?: 12)));
+            $countries = Country::withCount('serviceProviders')->orderBy('name')->paginate($perPage);
+            $translated = $this->translateCollection($countries->getCollection(), ['name', 'description']);
+            $countries->setCollection(collect($translated));
+            return response()->json([
+                'data' => $countries->items(),
+                'total' => $countries->total(),
+                'per_page' => $countries->perPage(),
+                'current_page' => $countries->currentPage(),
+                'last_page' => $countries->lastPage(),
+            ]);
+        }
+
+        $countries = Country::withCount('serviceProviders')->orderBy('name')->get();
+        $translated = $this->translateCollection($countries, ['name', 'description']);
         return response()->json($translated);
     }
     

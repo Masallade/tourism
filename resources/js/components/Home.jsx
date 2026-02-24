@@ -209,16 +209,22 @@ export default function Home() {
   const { t } = useTranslation();
   const [countries, setCountries] = useState([]);
   const [themes, setThemes] = useState([]);
+  const [countriesPagination, setCountriesPagination] = useState(null); // { currentPage, lastPage }
+  const [themesPagination, setThemesPagination] = useState(null);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+  const [loadingThemes, setLoadingThemes] = useState(true);
+  const [loadingMoreCountries, setLoadingMoreCountries] = useState(false);
+  const [loadingMoreThemes, setLoadingMoreThemes] = useState(false);
   const [featuredHighlights, setFeaturedHighlights] = useState({
     top_destinations: [],
     popular_stays: [],
     top_experiences: [],
   });
-  const [loading, setLoading] = useState(true);
   const [showTripModal, setShowTripModal] = useState(false);
-  const [highlightsSliderOpen, setHighlightsSliderOpen] = useState(null); // 'top_destinations' | 'popular_stays' | 'top_experiences'
+  const [highlightsSliderOpen, setHighlightsSliderOpen] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const PER_PAGE = 12;
 
   useEffect(() => {
     // Check if we need to scroll to a specific section
@@ -253,40 +259,89 @@ export default function Home() {
   };
 
   const fetchCountries = async () => {
+    setLoadingCountries(true);
     try {
-      const response = await window.apiClient.get('/api/countries');
+      const response = await window.apiClient.get('/api/countries', { params: { per_page: PER_PAGE, page: 1 } });
       const data = response.data;
-      
-      // Log countries data to check for image_url
-      console.log('Countries data received:', data);
-      
-      // Specifically check Brazil if it exists
-      const brazil = data.find(country => country.name === 'Brazil');
-      if (brazil) {
-        console.log('Brazil data:', {
-          id: brazil.id,
-          name: brazil.name,
-          image_url: brazil.image_url
-        });
+      if (Array.isArray(data)) {
+        setCountries(data);
+        setCountriesPagination(null);
+      } else if (data && Array.isArray(data.data)) {
+        setCountries(data.data);
+        setCountriesPagination({ currentPage: data.current_page, lastPage: data.last_page });
+      } else {
+        setCountries([]);
+        setCountriesPagination(null);
       }
-      
-      setCountries(data);
     } catch (error) {
       console.error('Error fetching countries:', error);
     } finally {
-      setLoading(false);
+      setLoadingCountries(false);
     }
   };
 
   const fetchThemes = async () => {
+    setLoadingThemes(true);
     try {
-      const response = await window.apiClient.get('/api/themes');
+      const response = await window.apiClient.get('/api/themes', { params: { per_page: PER_PAGE, page: 1 } });
       const data = response.data;
-      setThemes(data);
+      if (Array.isArray(data)) {
+        setThemes(data);
+        setThemesPagination(null);
+      } else if (data && Array.isArray(data.data)) {
+        setThemes(data.data);
+        setThemesPagination({ currentPage: data.current_page, lastPage: data.last_page });
+      } else {
+        setThemes([]);
+        setThemesPagination(null);
+      }
     } catch (error) {
       console.error('Error fetching themes:', error);
+    } finally {
+      setLoadingThemes(false);
     }
   };
+
+  const loadMoreCountries = async () => {
+    if (!countriesPagination || loadingMoreCountries) return;
+    const { currentPage, lastPage } = countriesPagination;
+    if (currentPage >= lastPage) return;
+    setLoadingMoreCountries(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await window.apiClient.get('/api/countries', { params: { per_page: PER_PAGE, page: nextPage } });
+      const data = response.data;
+      const newItems = data && Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      setCountries((prev) => [...prev, ...newItems]);
+      setCountriesPagination((p) => p ? { ...p, currentPage: nextPage } : null);
+    } catch (error) {
+      console.error('Error loading more countries:', error);
+    } finally {
+      setLoadingMoreCountries(false);
+    }
+  };
+
+  const loadMoreThemes = async () => {
+    if (!themesPagination || loadingMoreThemes) return;
+    const { currentPage, lastPage } = themesPagination;
+    if (currentPage >= lastPage) return;
+    setLoadingMoreThemes(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await window.apiClient.get('/api/themes', { params: { per_page: PER_PAGE, page: nextPage } });
+      const data = response.data;
+      const newItems = data && Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      setThemes((prev) => [...prev, ...newItems]);
+      setThemesPagination((p) => p ? { ...p, currentPage: nextPage } : null);
+    } catch (error) {
+      console.error('Error loading more themes:', error);
+    } finally {
+      setLoadingMoreThemes(false);
+    }
+  };
+
+  const hasMoreCountries = countriesPagination && countriesPagination.currentPage < countriesPagination.lastPage;
+  const hasMoreThemes = themesPagination && themesPagination.currentPage < themesPagination.lastPage;
 
   return (
     <>
@@ -570,7 +625,7 @@ export default function Home() {
             className="flex overflow-x-auto pb-8 pt-4 px-2 -mx-2 space-x-8 scrollbar-hide scroll-smooth mask-gradient-x"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {loading ? (
+            {loadingCountries ? (
               <div className="flex justify-center items-center w-full min-h-[300px]">
                 <ClipLoader color="#22c55e" size={60} speedMultiplier={0.9} />
               </div>
@@ -630,8 +685,20 @@ export default function Home() {
                   </div>
                 </Link>
               ))
-            ) : (
-              // No countries message
+            ) : null}
+            {!loadingCountries && countries.length > 0 && hasMoreCountries && (
+              <div className="flex-shrink-0 w-[300px] flex flex-col items-center justify-center min-h-[280px]">
+                <button
+                  type="button"
+                  onClick={loadMoreCountries}
+                  disabled={loadingMoreCountries}
+                  className="px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-600 disabled:opacity-70 transition-colors"
+                >
+                  {loadingMoreCountries ? <ClipLoader color="#fff" size={24} /> : 'Load more'}
+                </button>
+              </div>
+            )}
+            {!loadingCountries && countries.length === 0 && (
               <div className="text-center py-12 w-full bg-white bg-opacity-80 backdrop-blur-sm rounded-xl shadow-lg">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
                   <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -717,8 +784,13 @@ export default function Home() {
               className="flex overflow-x-auto pb-8 pt-4 px-2 -mx-2 space-x-8 scrollbar-hide scroll-smooth mask-gradient-x"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {themes.length > 0 ? (
-                themes.map((theme, idx) => (
+              {loadingThemes ? (
+                <div className="flex justify-center items-center w-full min-h-[300px]">
+                  <ClipLoader color="#3b82f6" size={60} speedMultiplier={0.9} />
+                </div>
+              ) : themes.length > 0 ? (
+                <>
+                {themes.map((theme, idx) => (
                   <Link
                     to={`/theme/${theme.slug || theme.id}`}
                     key={theme.id}
@@ -769,7 +841,20 @@ export default function Home() {
                       </div>
                     </div>
                   </Link>
-                ))
+                ))}
+                {hasMoreThemes && (
+                  <div className="flex-shrink-0 w-[350px] flex flex-col items-center justify-center min-h-[288px]">
+                    <button
+                      type="button"
+                      onClick={loadMoreThemes}
+                      disabled={loadingMoreThemes}
+                      className="px-6 py-3 rounded-xl bg-blue-500 text-white font-medium hover:bg-blue-600 disabled:opacity-70 transition-colors"
+                    >
+                      {loadingMoreThemes ? <ClipLoader color="#fff" size={24} /> : 'Load more'}
+                    </button>
+                  </div>
+                )}
+                </>
               ) : (
                 <div className="text-center py-16 w-full bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/40">
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100/80 rounded-full mb-6">

@@ -344,31 +344,75 @@ const ProvidersMap = () => {
   const [filteredProviders, setFilteredProviders] = useState([]);
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [countries, setCountries] = useState([]);
   const [searchedLocation, setSearchedLocation] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [searchType, setSearchType] = useState('provider'); // 'provider' or 'location'
+  const [searchType, setSearchType] = useState('provider');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
 
+  // Show map first (within ~100ms), then load data so map appears in ~1 second
   useEffect(() => {
-    fetchProviders();
-    fetchServices();
-    fetchCountries();
+    const t = setTimeout(() => setMapMounted(true), 100);
+    return () => clearTimeout(t);
   }, []);
 
-  // Defer map mount so page and controls paint first, then map loads (faster perceived load)
+  // Load countries first (for filter dropdown), then providers, then services one-by-one
   useEffect(() => {
-    if (loading) return;
-    let timeoutId = setTimeout(() => setMapMounted(true), 80);
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const countriesRes = await fetch('/api/countries');
+        if (cancelled) return;
+        const countriesData = await countriesRes.json();
+        setCountries(Array.isArray(countriesData) ? countriesData : []);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching countries:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load providers first, then services (one by one) so map appears in ~1s and markers show progressively
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingProviders(true);
+    setLoadingServices(true);
+    (async () => {
+      try {
+        const res = await fetch('/api/service-providers');
+        if (cancelled) return;
+        const data = await res.json();
+        const valid = (data || []).filter((p) => p.lat && p.lng && p.is_approved);
+        setProviders(valid);
+        setFilteredProviders(valid);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching providers:', e);
+      } finally {
+        if (!cancelled) setLoadingProviders(false);
+      }
+      try {
+        const res = await fetch('/api/services/all');
+        if (cancelled) return;
+        const data = await res.json();
+        const valid = (data || []).filter((s) => s.lat && s.lng);
+        setServices(valid);
+        setFilteredServices(valid);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching services:', e);
+      } finally {
+        if (!cancelled) setLoadingServices(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -385,52 +429,6 @@ const ProvidersMap = () => {
     filterProviders();
     filterServices();
   }, [searchQuery, selectedCountry, providers, services, searchType]);
-
-  const fetchProviders = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/service-providers');
-      if (!response.ok) throw new Error('Failed to fetch providers');
-      const data = await response.json();
-      
-      // Only include providers with valid coordinates
-      const validProviders = data.filter(p => p.lat && p.lng && p.is_approved);
-      
-      setProviders(validProviders);
-      setFilteredProviders(validProviders);
-    } catch (err) {
-      console.error('Error fetching providers:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchServices = async () => {
-    try {
-      const response = await fetch('/api/services/all');
-      if (!response.ok) throw new Error('Failed to fetch services');
-      const data = await response.json();
-      
-      // Only include services with valid coordinates
-      const validServices = data.filter(s => s.lat && s.lng);
-      
-      setServices(validServices);
-      setFilteredServices(validServices);
-    } catch (err) {
-      console.error('Error fetching services:', err);
-    }
-  };
-
-  const fetchCountries = async () => {
-    try {
-      const response = await fetch('/api/countries');
-      if (!response.ok) throw new Error('Failed to fetch countries');
-      const data = await response.json();
-      setCountries(data);
-    } catch (err) {
-      console.error('Error fetching countries:', err);
-    }
-  };
 
   const fetchLocationSuggestions = async (query) => {
     if (!query || query.length < 2) {
@@ -637,16 +635,8 @@ const ProvidersMap = () => {
     console.log('Service clicked:', service);
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-[600px] bg-gray-100 rounded-2xl flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-500 mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
+  const dataLoading = loadingProviders || loadingServices;
+  const hasData = filteredProviders.length > 0 || filteredServices.length > 0 || searchedLocation;
 
   return (
     <div className="w-full">
@@ -865,19 +855,9 @@ const ProvidersMap = () => {
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-green-100">
-        {filteredProviders.length === 0 && filteredServices.length === 0 && !searchedLocation ? (
-          <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <svg className="mx-auto w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">No providers or services found</h3>
-              <p className="text-gray-500">Try adjusting your search filters</p>
-            </div>
-          </div>
-        ) : !mapMounted ? (
+      {/* Map Container: show map first, then overlay data when loaded */}
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-green-100 relative">
+        {!mapMounted ? (
           <div className="w-full h-[600px] flex items-center justify-center bg-gray-100">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-green-500 border-t-transparent mb-3"></div>
@@ -885,6 +865,7 @@ const ProvidersMap = () => {
             </div>
           </div>
         ) : (
+          <>
           <MapContainer
             center={[25.276987, 55.296249]}
             zoom={2}
@@ -919,6 +900,28 @@ const ProvidersMap = () => {
               navigate={navigate}
             />
           </MapContainer>
+          {/* Overlay when loading data or no data */}
+          {!hasData && dataLoading && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-[10] rounded-2xl">
+              <div className="text-center px-4">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-green-500 border-t-transparent mb-3"></div>
+                <p className="text-gray-600 text-sm font-medium">Loading providers and services...</p>
+                <p className="text-gray-500 text-xs mt-1">{loadingProviders ? 'Providers…' : ''} {loadingServices ? 'Services…' : ''}</p>
+              </div>
+            </div>
+          )}
+          {!hasData && !dataLoading && (
+            <div className="absolute inset-0 bg-gray-50/95 flex items-center justify-center z-[10] rounded-2xl">
+              <div className="text-center px-4">
+                <svg className="mx-auto w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <h3 className="text-lg font-bold text-gray-700 mb-1">No providers or services found</h3>
+                <p className="text-gray-500 text-sm">Try adjusting your search filters</p>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
 
