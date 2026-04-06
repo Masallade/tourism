@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
+import RichTextEditor from '../RichTextEditor';
 
 const CountryForm = ({ country, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
-        description: ''
+        description: '',
+        image_url: ''
     });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (country) {
             setFormData({
                 name: country.name || '',
                 slug: country.slug || '',
-                description: country.description || ''
+                description: country.description || '',
+                image_url: country.image_url || ''
             });
         }
     }, [country]);
@@ -59,9 +64,9 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             setErrors(prev => ({ ...prev, image: 'Only JPG, PNG, WEBP images allowed.' }));
             return;
         }
-        // Validate size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB.' }));
+        // Validate size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB.' }));
             return;
         }
         setImageFile(file);
@@ -89,8 +94,8 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
             if (!validTypes.includes(imageFile.type)) {
                 newErrors.image = 'Only JPG, PNG, WEBP images allowed.';
             }
-            if (imageFile.size > 2 * 1024 * 1024) {
-                newErrors.image = 'Image size must be less than 2MB.';
+            if (imageFile.size > 5 * 1024 * 1024) {
+                newErrors.image = 'Image size must be less than 5MB.';
             }
         }
         setErrors(newErrors);
@@ -107,29 +112,88 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
         setIsSubmitting(true);
 
         try {
-            const url = country ? `/api/countries/${country.id}` : '/api/countries';
-            const method = country ? 'PUT' : 'POST';
             const form = new FormData();
-            form.append('name', formData.name);
-            form.append('slug', formData.slug);
-            form.append('description', formData.description);
-            if (imageFile) form.append('image', imageFile);
+            form.append('name', formData.name.trim());
+            form.append('slug', formData.slug.trim());
+            form.append('description', formData.description.trim());
+            if (imageFile) {
+                try {
+                    const compressionSettings = getCompressionSettings('country');
+                    const compressedImage = await compressImage(imageFile, compressionSettings);
+                    form.append('image', compressedImage, compressedImage.name);
+                } catch (error) {
+                    console.error('Error compressing image, using original:', error);
+                    form.append('image', imageFile);
+                }
+            } else if (formData.image_url) {
+                form.append('image_url', formData.image_url);
+            }
 
-            const response = await fetch(url, {
-                method,
-                body: form
-            });
+            let responseData;
+            if (country) {
+                // For FormData updates, use POST to /update endpoint
+                // Laravel API routes don't support method spoofing, so we use a dedicated POST route
+                responseData = await window.apiClient.upload(`/api/countries/${country.id}/update`, form);
+            } else {
+                responseData = await window.apiClient.upload('/api/countries', form);
+            }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                setErrors(errorData.errors || {});
+            // Check if image was saved
+            if (imageFile && responseData.data) {
+                const savedCountry = responseData.data.country || responseData.data;
+                if (savedCountry?.image_url) {
+                    const imagePath = savedCountry.image_url;
+                    console.log('Image saved successfully:', imagePath);
+                    setSuccessMessage(`✅ Image saved successfully to: ${imagePath}`);
+                    // Clear success message after 5 seconds
+                    setTimeout(() => setSuccessMessage(''), 5000);
+                } else {
+                    console.error('Image not in response:', responseData.data);
+                    setErrors({ 
+                        image: '❌ Image file was not saved. Please check storage permissions and try again.',
+                        general: 'Country saved but image upload failed. The image_url was not returned. Please try uploading the image again.'
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+            } else if (!imageFile && responseData.data) {
+                // Country saved without image
+                setSuccessMessage('✅ Country saved successfully');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            }
+
+            if (responseData.data?.success === false) {
+                if (responseData.data.errors) {
+                    setErrors(responseData.data.errors);
+                } else {
+                    setErrors({ general: responseData.data.message || 'An error occurred while saving the country' });
+                }
+                setIsSubmitting(false);
                 return;
             }
 
             onSuccess();
         } catch (error) {
             console.error('Error saving country:', error);
-            setErrors({ general: 'An error occurred while saving the country' });
+            
+            // Extract error messages
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else if (error.response?.data?.message) {
+                setErrors({ general: error.response.data.message });
+            } else if (error.message) {
+                setErrors({ general: error.message });
+            } else {
+                setErrors({ general: 'An error occurred while saving the country. Please try again.' });
+            }
+            
+            // Check specifically for image upload errors
+            if (imageFile && error.response?.data?.errors?.image) {
+                setErrors(prev => ({ 
+                    ...prev, 
+                    image: error.response.data.errors.image[0] || 'Image upload failed. Please try again.'
+                }));
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -196,13 +260,13 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Description
                             </label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                rows="3"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            <RichTextEditor
+                                value={formData.description || ''}
+                                onChange={(value) => {
+                                    handleInputChange({ target: { name: 'description', value } });
+                                }}
                                 placeholder="Enter country description"
+                                minHeight={150}
                             />
                         </div>
                     </div>
@@ -223,9 +287,34 @@ const CountryForm = ({ country, onClose, onSuccess }) => {
                         )}
                     </div>
 
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Or Image URL</label>
+                        <input
+                            type="url"
+                            name="image_url"
+                            value={formData.image_url}
+                            onChange={handleInputChange}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">If a file is chosen, it will be used instead of the URL.</p>
+                    </div>
+
+                    {successMessage && (
+                        <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded">
+                            {successMessage}
+                        </div>
+                    )}
+
                     {errors.general && (
                         <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
                             {errors.general}
+                        </div>
+                    )}
+                    
+                    {errors.image && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+                            {Array.isArray(errors.image) ? errors.image[0] : errors.image}
                         </div>
                     )}
 

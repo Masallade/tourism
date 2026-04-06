@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'sendgrid'),
 
     /*
     |--------------------------------------------------------------------------
@@ -45,8 +45,10 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            'timeout' => 60,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'auth_mode' => null,
         ],
 
         'ses' => [
@@ -63,6 +65,10 @@ return [
 
         'resend' => [
             'transport' => 'resend',
+        ],
+
+        'sendgrid' => [
+            'transport' => 'sendgrid',
         ],
 
         'sendmail' => [

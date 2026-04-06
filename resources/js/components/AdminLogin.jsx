@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
+import auth from '../utils/auth';
 
 const AdminLogin = () => {
     const [credentials, setCredentials] = useState({
@@ -8,6 +9,34 @@ const AdminLogin = () => {
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+    // Check if user is already authenticated
+    useEffect(() => {
+        const checkExistingAuth = async () => {
+            try {
+                // Initialize and check admin session specifically
+                const isValid = await auth.initializeAdminSession();
+                if (isValid) {
+                    // Double-check that the user is actually an admin before redirecting
+                    const user = auth.getUser();
+                    if (user && user.role === 'admin') {
+                        window.location.href = '/admin';
+                        return;
+                    } else {
+                        // User is logged in but not admin - clear their session for admin login
+                        auth.clearSession();
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+            } finally {
+                setIsCheckingAuth(false);
+            }
+        };
+
+        checkExistingAuth();
+    }, []);
 
     const handleInputChange = (e) => {
         setCredentials({
@@ -21,17 +50,38 @@ const AdminLogin = () => {
         setIsLoading(true);
         setError('');
 
-        // Simulate async login for loader effect
-        setTimeout(() => {
-            if (credentials.username === 'test' && credentials.password === 'test') {
-                localStorage.setItem('adminLoggedIn', 'true');
+        try {
+            const result = await auth.login(credentials.username, credentials.password, true);
+
+            if (result.success) {
+                if (result.user.role === 'admin') {
                 window.location.href = '/admin';
+                } else {
+                    setError('Admin access required');
+                    setIsLoading(false);
+                }
             } else {
-                setError('Invalid credentials. Please use test/test');
+                setError(result.message || 'Login failed');
                 setIsLoading(false);
             }
-        }, 800);
+        } catch (error) {
+            console.error('Login error:', error);
+            setError('Network error. Please try again.');
+            setIsLoading(false);
+        }
     };
+
+    // Show loading while checking authentication
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+                <div className="text-center">
+                    <ClipLoader color="#10b981" size={60} speedMultiplier={0.9} />
+                    <p className="mt-4 text-gray-600">Checking authentication...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -59,7 +109,7 @@ const AdminLogin = () => {
                             Admin Login
                         </h2>
                         <p className="mt-3 text-center text-sm text-gray-600">
-                            Access the EcoTravel administration panel
+                            Access the Unison Tour administration panel
                         </p>
                     </div>
                     
@@ -139,10 +189,18 @@ const AdminLogin = () => {
                         <div className="text-center">
                             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                 <p className="text-sm text-gray-600 mb-2">Demo credentials:</p>
+                                <div className="space-y-2">
+                                    <div className="flex justify-center space-x-2">
+                                        <span className="font-mono bg-white px-3 py-1 rounded border text-sm">admin@unison-tour.com</span>
+                                        <span className="text-gray-400">/</span>
+                                        <span className="font-mono bg-white px-3 py-1 rounded border text-sm">admin123</span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">or</div>
                                 <div className="flex justify-center space-x-2">
-                                    <span className="font-mono bg-white px-3 py-1 rounded border text-sm">test</span>
+                                        <span className="font-mono bg-white px-3 py-1 rounded border text-sm">test@unison-tour.com</span>
                                     <span className="text-gray-400">/</span>
-                                    <span className="font-mono bg-white px-3 py-1 rounded border text-sm">test</span>
+                                        <span className="font-mono bg-white px-3 py-1 rounded border text-sm">test123</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

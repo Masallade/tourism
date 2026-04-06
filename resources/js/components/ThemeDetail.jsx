@@ -1,63 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ServiceCard from './ServiceCard';
+import { extractThemes } from '../utils/serviceHelpers';
 
-// Mapping of theme names to representative images (network URLs)
-const themeImages = {
-  Adventure: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-  Culture: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80',
-  Nature: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80',
-  Wellness: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
-  Family: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1200&q=80',
-  Luxury: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80',
-  // Add more theme-image pairs as needed
-};
 
 const ThemeDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [theme, setTheme] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [serviceTypes, setServiceTypes] = useState([]);
-  const [selectedType, setSelectedType] = useState('all');
+  const [filterThemes, setFilterThemes] = useState([]); // themes that appear in these services (for filter by theme)
+  const [selectedTheme, setSelectedTheme] = useState('all');
 
   useEffect(() => {
     const fetchThemeAndServices = async () => {
       setLoading(true);
       try {
-        // Fetch theme details
-        const themeRes = await fetch(`/api/themes/${id}`);
-        if (!themeRes.ok) {
-          throw new Error('Failed to fetch theme');
-        }
-        const themeData = await themeRes.json();
+        // Check if id is a number (ID) or string (slug)
+        const isNumeric = /^\d+$/.test(id);
+        const endpoint = isNumeric ? `/api/themes/${id}` : `/api/themes/slug/${id}`;
+        
+        // Fetch theme details (use apiClient for locale header)
+        const themeRes = await window.apiClient.get(endpoint);
+        const themeData = themeRes.data;
         setTheme(themeData);
 
-        // Fetch services for this theme
-        const servicesRes = await fetch(`/api/theme/${id}/services`);
-        if (!servicesRes.ok) {
-          throw new Error('Failed to fetch services');
-        }
-        const servicesData = await servicesRes.json();
-        setServices(servicesData);
+        // Fetch services for this theme using the numeric theme ID
+        const themeId = themeData.id;
+        const servicesRes = await window.apiClient.get(`/api/theme/${themeId}/services`);
+        const servicesData = servicesRes.data;
+        setServices(Array.isArray(servicesData) ? servicesData : []);
 
-        // Extract unique service types
-        const types = [...new Set(servicesData.map(service => 
-          service.serviceType?.id
-        ))];
-        
-        // Fetch service type details
-        const typesRes = await fetch('/api/service-types');
-        if (!typesRes.ok) {
-          throw new Error('Failed to fetch service types');
-        }
-        const allTypes = await typesRes.json();
-        
-        // Filter for only service types we have
-        const filteredTypes = allTypes.filter(type => types.includes(type.id));
-        setServiceTypes(filteredTypes);
-        
+        // Collect unique themes from services (for filter-by-theme on this theme page)
+        const themeMap = new Map();
+        (servicesData || []).forEach((svc) => {
+          extractThemes(svc).forEach((th) => {
+            const tid = Number(th.id);
+            if (!themeMap.has(tid)) themeMap.set(tid, { id: tid, name: th.name || '' });
+          });
+        });
+        setFilterThemes(Array.from(themeMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -69,17 +55,20 @@ const ThemeDetail = () => {
     fetchThemeAndServices();
   }, [id]);
 
-  // Filter services by selected type
-  const filteredServices = selectedType === 'all' 
+  // Filter services by selected theme (services have many themes via themes array)
+  const filteredServices = selectedTheme === 'all' 
     ? services 
-    : services.filter(service => service.service_type_id === parseInt(selectedType));
+    : services.filter(service => {
+        const themesList = extractThemes(service);
+        return themesList.some(th => Number(th.id) === parseInt(selectedTheme, 10));
+      });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-purple-800 font-medium">Loading theme details...</p>
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-green-800 font-medium">{t('loading_theme_details')}</p>
         </div>
       </div>
     );
@@ -92,10 +81,10 @@ const ThemeDetail = () => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h2 className="text-2xl font-bold text-red-700 mb-2">Error Loading Data</h2>
+          <h2 className="text-2xl font-bold text-red-700 mb-2">{t('error_loading_data')}</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <Link to="/" className="inline-block bg-blue-600 text-white font-medium rounded-lg px-5 py-3 hover:bg-blue-700 transition">
-            Return to Home
+            {t('return_to_home')}
           </Link>
         </div>
       </div>
@@ -109,10 +98,10 @@ const ThemeDetail = () => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-yellow-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <h2 className="text-2xl font-bold text-yellow-700 mb-2">Theme Not Found</h2>
-          <p className="text-gray-600 mb-4">The theme you are looking for does not exist or was removed.</p>
+          <h2 className="text-2xl font-bold text-yellow-700 mb-2">{t('theme_not_found')}</h2>
+          <p className="text-gray-600 mb-4">{t('theme_not_found_description')}</p>
           <Link to="/" className="inline-block bg-blue-600 text-white font-medium rounded-lg px-5 py-3 hover:bg-blue-700 transition">
-            Return to Home
+            {t('return_to_home')}
           </Link>
         </div>
       </div>
@@ -125,56 +114,58 @@ const ThemeDetail = () => {
       <div 
         className="h-80 bg-cover bg-center relative"
         style={{
-          backgroundImage:
-            themeImages[theme.name?.replace(/\s/g, '')] 
-              ? `url(${themeImages[theme.name?.replace(/\s/g, '')]})`
-              : theme.image
-                ? `url(/storage/${theme.image})`
-                : `url(https://source.unsplash.com/1200x600/?${theme.name},travel)`
+          backgroundImage: theme.image_url
+            ? `url(${theme.image_url})`
+            : theme.image
+              ? `url(/storage/${theme.image})`
+              : `url(https://source.unsplash.com/1200x600/?${theme.name},travel)`
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/50 to-purple-900/80">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70">
           <div className="container mx-auto px-4 h-full flex flex-col justify-end pb-8">
             <div className="mb-4">
               <Link to="/" className="text-white opacity-80 hover:opacity-100 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
-                Back to Home
+                {t('back_to_home_link')}
               </Link>
             </div>
             <h1 className="text-4xl font-bold text-white">{theme.name}</h1>
-            <p className="text-white/80 mt-2 max-w-2xl">{theme.description || `Explore ${theme.name} travel experiences`}</p>
+            <p 
+              className="text-white/80 mt-2 max-w-2xl rich-text-content"
+              dangerouslySetInnerHTML={{ __html: theme.description || `Explore ${theme.name} travel experiences` }}
+            />
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Service Type Filter */}
+        {/* Theme Filter (filter by theme within this theme page) */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Available {theme.name} Experiences</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('available_experiences', { theme: theme.name })}</h2>
           <div className="flex flex-wrap gap-2">
             <button 
               className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                selectedType === 'all' 
-                  ? 'bg-purple-600 text-white' 
+                selectedTheme === 'all' 
+                  ? 'bg-green-600 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
-              onClick={() => setSelectedType('all')}
+              onClick={() => setSelectedTheme('all')}
             >
-              All Experiences
+              {t('all_experiences')}
             </button>
-            {serviceTypes.map(type => (
+            {filterThemes.map(th => (
               <button 
-                key={type.id}
+                key={th.id}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                  selectedType === type.id.toString() 
-                    ? 'bg-purple-600 text-white' 
+                  selectedTheme === th.id.toString() 
+                    ? 'bg-green-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                onClick={() => setSelectedType(type.id.toString())}
+                onClick={() => setSelectedTheme(th.id.toString())}
               >
-                {type.name}
+                {th.name}
               </button>
             ))}
           </div>
@@ -188,15 +179,18 @@ const ThemeDetail = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h3 className="text-xl font-semibold text-purple-800 mb-2">No Services Available</h3>
-            <p className="text-purple-700">
-              {selectedType === 'all' 
-                ? `There are no ${theme.name} experiences available yet.` 
-                : `There are no ${serviceTypes.find(t => t.id === parseInt(selectedType))?.name || ''} services with ${theme.name} theme yet.`}
+            <h3 className="text-xl font-semibold text-yellow-800 mb-2">{t('no_services_available')}</h3>
+            <p className="text-yellow-700">
+              {selectedTheme === 'all' 
+                ? t('no_theme_experiences', { theme: theme.name })
+                : t('no_type_services', { 
+                    type: filterThemes.find(ft => Number(ft.id) === parseInt(selectedTheme, 10))?.name || '', 
+                    theme: theme.name 
+                  })}
             </p>
           </div>
         )}

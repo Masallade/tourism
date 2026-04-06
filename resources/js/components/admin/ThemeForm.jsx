@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { compressImage, getCompressionSettings } from '../../utils/imageCompression';
 
 const ThemeForm = ({ theme, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
-        name: ''
+        name: '',
+        image_url: ''
     });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -12,7 +14,8 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
     useEffect(() => {
         if (theme) {
             setFormData({
-                name: theme.name || ''
+                name: theme.name || '',
+                image_url: theme.image_url || ''
             });
         }
     }, [theme]);
@@ -42,9 +45,9 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
             setErrors(prev => ({ ...prev, image: 'Only JPG, PNG, WEBP images allowed.' }));
             return;
         }
-        // Validate size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB.' }));
+        // Validate size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB.' }));
             return;
         }
         setImageFile(file);
@@ -68,8 +71,8 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
             if (!validTypes.includes(imageFile.type)) {
                 newErrors.image = 'Only JPG, PNG, WEBP images allowed.';
             }
-            if (imageFile.size > 2 * 1024 * 1024) {
-                newErrors.image = 'Image size must be less than 2MB.';
+            if (imageFile.size > 5 * 1024 * 1024) {
+                newErrors.image = 'Image size must be less than 5MB.';
             }
         }
         setErrors(newErrors);
@@ -86,27 +89,37 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
         setIsSubmitting(true);
 
         try {
-            const url = theme ? `/api/themes/${theme.id}` : '/api/themes';
-            const method = theme ? 'PUT' : 'POST';
-            const form = new FormData();
-            form.append('name', formData.name);
-            if (imageFile) form.append('image', imageFile);
-
-            const response = await fetch(url, {
-                method,
-                body: form
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                setErrors(errorData.errors || {});
-                return;
+        const form = new FormData();
+        form.append('name', formData.name);
+        if (imageFile) {
+            try {
+                const compressionSettings = getCompressionSettings('theme');
+                const compressedImage = await compressImage(imageFile, compressionSettings);
+                form.append('image', compressedImage, compressedImage.name);
+            } catch (error) {
+                console.error('Error compressing image, using original:', error);
+                form.append('image', imageFile);
             }
+        } else if (formData.image_url) {
+            form.append('image_url', formData.image_url);
+        }
 
-            onSuccess();
+        if (theme) {
+            await window.apiClient.upload(`/api/themes/${theme.id}/update`, form);
+        } else {
+            await window.apiClient.upload('/api/themes', form);
+        }
+
+        onSuccess();
         } catch (error) {
             console.error('Error saving theme:', error);
-            setErrors({ general: 'An error occurred while saving the theme' });
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else if (error.response?.data?.message) {
+                setErrors({ general: error.response.data.message });
+            } else {
+                setErrors({ general: 'An error occurred while saving the theme' });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -164,6 +177,19 @@ const ThemeForm = ({ theme, onClose, onSuccess }) => {
                         {imagePreview && (
                             <img src={imagePreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded shadow" />
                         )}
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Or Image URL</label>
+                        <input
+                            type="url"
+                            name="image_url"
+                            value={formData.image_url}
+                            onChange={handleInputChange}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">If a file is chosen, it will be used instead of the URL.</p>
                     </div>
 
                     {errors.general && (

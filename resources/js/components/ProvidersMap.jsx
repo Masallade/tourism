@@ -1,0 +1,956 @@
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Link, useNavigate } from 'react-router-dom';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml';
+
+// Fix for default marker icons in React-Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Function to create custom HTML div icon
+const createCustomIcon = (html) =>
+  L.divIcon({
+    className: 'custom-marker-icon',
+    html,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20],
+  });
+
+const buildMarkerHtml = ({ svg, gradient, accent }) => `
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+    <div style="
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:${accent};
+      filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    ">
+      ${svg}
+    </div>
+  </div>
+`;
+
+const createPinMarker = ({ svg, gradient, accent }) =>
+  createCustomIcon(buildMarkerHtml({ svg, gradient, accent }));
+
+const svgIcons = {
+  provider: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  compass: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  bed: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  dining: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  adventure: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  transport: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  shopping: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  wellness: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  default: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `,
+  service: `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+      <circle cx="12" cy="12" r="6" fill="white" />
+    </svg>
+  `
+};
+
+const getProviderIcon = () =>
+  createPinMarker({
+    svg: svgIcons.provider,
+    gradient: 'linear-gradient(135deg, #0f766e, #34d399)',
+    accent: '#0f766e',
+  });
+
+// Function to get icon for service based on service type
+const getServiceIcon = (serviceTypes) => {
+  return createPinMarker({
+    svg: svgIcons.service,
+    gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+    accent: '#1d4ed8',
+  });
+};
+
+// Component to fit bounds when providers/services change or zoom to searched location
+function MapBounds({ providers, services, searchedLocation }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (searchedLocation) {
+      // Zoom to searched location with higher zoom level
+      const zoomLevel = searchedLocation.type === 'country' ? 6 : 
+                        searchedLocation.type === 'city' ? 12 : 15;
+      
+      map.setView([searchedLocation.lat, searchedLocation.lng], zoomLevel, {
+        animate: true,
+        duration: 1.5
+      });
+    } else {
+      // Combine providers and services for bounds calculation
+      const allLocations = [
+        ...providers.filter(p => p.lat && p.lng).map(p => [parseFloat(p.lat), parseFloat(p.lng)]),
+        ...services.filter(s => s.lat && s.lng).map(s => [parseFloat(s.lat), parseFloat(s.lng)])
+      ];
+      
+      if (allLocations.length > 0) {
+        map.fitBounds(allLocations, { padding: [50, 50], maxZoom: 12 });
+      }
+    }
+  }, [providers, services, searchedLocation, map]);
+  
+  return null;
+}
+
+// Only render markers in current viewport (with padding) to keep DOM light and map responsive
+const VIEWPORT_CULL_PADDING = 0.15; // extend bounds by 15% so markers don't pop at edges
+const MAX_MARKERS_WITHOUT_CULL = 80; // below this, render all markers for simplicity
+
+function VisibleMarkers({
+  providers,
+  services,
+  getProviderIcon,
+  getServiceIcon,
+  onProviderClick,
+  onServiceClick,
+  navigate,
+}) {
+  const map = useMap();
+  const [inView, setInView] = useState(() => ({ providers, services }));
+
+  useEffect(() => {
+    const update = () => {
+      const total = providers.length + services.length;
+      if (total <= MAX_MARKERS_WITHOUT_CULL) {
+        setInView({ providers, services });
+        return;
+      }
+      const b = map.getBounds();
+      const pad = VIEWPORT_CULL_PADDING;
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      const latSpan = (ne.lat - sw.lat) * pad;
+      const lngSpan = (ne.lng - sw.lng) * pad;
+      const padded = L.latLngBounds(
+        [sw.lat - latSpan, sw.lng - lngSpan],
+        [ne.lat + latSpan, ne.lng + lngSpan]
+      );
+      setInView({
+        providers: providers.filter((p) => p.lat && p.lng && padded.contains([parseFloat(p.lat), parseFloat(p.lng)])),
+        services: services.filter((s) => s.lat && s.lng && padded.contains([parseFloat(s.lat), parseFloat(s.lng)])),
+      });
+    };
+    update();
+    map.on('moveend', update);
+    map.on('zoomend', update);
+    return () => {
+      map.off('moveend', update);
+      map.off('zoomend', update);
+    };
+  }, [map, providers, services]);
+
+  return (
+    <>
+      {inView.providers.map((provider) => (
+        <Marker
+          key={provider.id}
+          position={[parseFloat(provider.lat), parseFloat(provider.lng)]}
+          icon={getProviderIcon(provider)}
+          eventHandlers={{ click: () => onProviderClick(provider) }}
+        >
+          <Popup>
+            <div className="p-2 min-w-[250px]">
+              {provider.image && (
+                <img
+                  src={`/storage/${provider.image}`}
+                  alt={provider.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <h3 className="font-bold text-lg text-gray-800 mb-2">{provider.name}</h3>
+              {provider.country && (
+                <div className="flex items-center text-gray-600 mb-2">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm">{provider.country.name}</span>
+                </div>
+              )}
+              {provider.service_types && provider.service_types.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {provider.service_types.slice(0, 3).map((type) => (
+                      <span key={type.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {type.name}
+                      </span>
+                    ))}
+                    {provider.service_types.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        +{provider.service_types.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {provider.description && (
+                <div
+                  className="text-sm text-gray-600 mb-3 line-clamp-2 [&_strong]:font-bold [&_br]:block"
+                  dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(provider.description) }}
+                />
+              )}
+              {provider.price_range && (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    Price: <span className="text-green-600">{provider.price_range}</span>
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); navigate(`/service-provider/${provider.id}`); }}
+                className="block w-full text-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition cursor-pointer"
+              >
+                View Details
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+      {inView.services.map((service) => (
+        <Marker
+          key={`service-${service.id}`}
+          position={[parseFloat(service.lat), parseFloat(service.lng)]}
+          icon={getServiceIcon(service.service_types)}
+          eventHandlers={{ click: () => onServiceClick(service) }}
+        >
+          <Popup>
+            <div className="p-2 min-w-[250px]">
+              {service.image && (
+                <img
+                  src={`/storage/${service.image}`}
+                  alt={service.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <h3 className="font-bold text-lg text-gray-800 mb-2">{service.name}</h3>
+              {service.country && (
+                <div className="flex items-center text-gray-600 mb-2">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm">{service.country.name}</span>
+                </div>
+              )}
+              {service.service_types && service.service_types.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {service.service_types.slice(0, 3).map((type) => (
+                      <span key={type.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {type.name}
+                      </span>
+                    ))}
+                    {service.service_types.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        +{service.service_types.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {service.description && (
+                <div
+                  className="text-sm text-gray-600 mb-3 line-clamp-2 [&_strong]:font-bold [&_br]:block"
+                  dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(service.description) }}
+                />
+              )}
+              {service.price && (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    Price: <span className="text-blue-600">${service.price}</span>
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); navigate(`/service/${service.id}`); }}
+                className="block w-full text-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition cursor-pointer"
+              >
+                View Service Details
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+}
+
+const ProvidersMap = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [providers, setProviders] = useState([]);
+  const [filteredProviders, setFilteredProviders] = useState([]);
+  const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('all');
+  const [countries, setCountries] = useState([]);
+  const [searchedLocation, setSearchedLocation] = useState(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [searchType, setSearchType] = useState('provider');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false);
+
+  // Show map first (within ~100ms), then load data so map appears in ~1 second
+  useEffect(() => {
+    const t = setTimeout(() => setMapMounted(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Load countries first (for filter dropdown), then providers, then services one-by-one
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const countriesRes = await fetch('/api/countries');
+        if (cancelled) return;
+        const countriesData = await countriesRes.json();
+        setCountries(Array.isArray(countriesData) ? countriesData : []);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching countries:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load providers first, then services (one by one) so map appears in ~1s and markers show progressively
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingProviders(true);
+    setLoadingServices(true);
+    (async () => {
+      try {
+        const res = await fetch('/api/service-providers');
+        if (cancelled) return;
+        const data = await res.json();
+        const valid = (data || []).filter((p) => p.lat && p.lng && p.is_approved);
+        setProviders(valid);
+        setFilteredProviders(valid);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching providers:', e);
+      } finally {
+        if (!cancelled) setLoadingProviders(false);
+      }
+      try {
+        const res = await fetch('/api/services/all');
+        if (cancelled) return;
+        const data = await res.json();
+        const valid = (data || []).filter((s) => s.lat && s.lng);
+        setServices(valid);
+        setFilteredServices(valid);
+      } catch (e) {
+        if (!cancelled) console.error('Error fetching services:', e);
+      } finally {
+        if (!cancelled) setLoadingServices(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.search-input-container')) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    filterProviders();
+    filterServices();
+  }, [searchQuery, selectedCountry, providers, services, searchType]);
+
+  const fetchLocationSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setLocationSuggestions([]);
+      setIsFetchingSuggestions(false);
+      return;
+    }
+
+    try {
+      setIsFetchingSuggestions(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+      );
+      const data = await response.json();
+      setLocationSuggestions(data || []);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setLocationSuggestions([]);
+    } finally {
+      setIsFetchingSuggestions(false);
+    }
+  };
+
+  const geocodeLocation = async (locationData) => {
+    setIsGeocoding(true);
+    setShowSuggestions(false);
+    
+    try {
+      let location;
+      
+      // If locationData is already an object (from suggestion click)
+      if (typeof locationData === 'object' && locationData.lat) {
+        location = {
+          lat: parseFloat(locationData.lat),
+          lng: parseFloat(locationData.lon),
+          name: locationData.display_name,
+          type: locationData.type || 'location',
+          address: locationData.address || {}
+        };
+      } else {
+        // If it's a string (from enter key or direct search)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationData)}&limit=1&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const bestResult = data[0];
+          location = {
+            lat: parseFloat(bestResult.lat),
+            lng: parseFloat(bestResult.lon),
+            name: bestResult.display_name,
+            type: bestResult.type || 'location',
+            address: bestResult.address || {}
+          };
+        }
+      }
+      
+      if (location) {
+        setSearchedLocation(location);
+        console.log('Selected location:', location);
+      } else {
+        console.log('No results found');
+        setSearchedLocation(null);
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      setSearchedLocation(null);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const filterProviders = async () => {
+    let filtered = providers;
+
+    console.log('Starting filter. Total providers:', providers.length);
+    console.log('Search query:', searchQuery);
+    console.log('Search type:', searchType);
+    console.log('Selected country:', selectedCountry);
+
+    // Reset searched location when changing filters
+    setSearchedLocation(null);
+
+    // Filter by country
+    if (selectedCountry !== 'all') {
+      filtered = filtered.filter(p => {
+        const countryId = p.country_id || p.country?.id;
+        return Number(countryId) === Number(selectedCountry);
+      });
+      console.log('After country filter:', filtered.length);
+    }
+
+    // Handle search based on search type
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      console.log('Searching for:', query);
+      
+      if (searchType === 'location') {
+        // Location search: geocode and show all providers
+        console.log('Location search - geocoding:', searchQuery);
+        await geocodeLocation(searchQuery);
+        filtered = providers; // Show all providers with location zoom
+      } else {
+        // Provider search: filter providers
+        filtered = filtered.filter(p => {
+          // Search in provider name
+          const nameMatch = p.name?.toLowerCase().includes(query);
+          
+          // Search in description
+          const descriptionMatch = p.description?.toLowerCase().includes(query);
+          
+          // Search in country name
+          const countryMatch = p.country?.name?.toLowerCase().includes(query);
+          
+          // Search in service types
+          const serviceTypeMatch = p.service_types?.some(st => 
+            st.name?.toLowerCase().includes(query)
+          ) || false;
+          
+          // Search in themes
+          const themeMatch = p.themes?.some(theme => 
+            theme.name?.toLowerCase().includes(query)
+          ) || false;
+
+          const matches = nameMatch || descriptionMatch || countryMatch || serviceTypeMatch || themeMatch;
+          
+          if (matches) {
+            console.log(`Provider "${p.name}" matched:`, {
+              nameMatch,
+              descriptionMatch,
+              countryMatch,
+              countryName: p.country?.name,
+              serviceTypeMatch,
+              themeMatch
+            });
+          }
+
+          return matches;
+        });
+        
+        console.log('After provider search filter:', filtered.length);
+      }
+    }
+
+    console.log('Final filtered providers:', filtered.length);
+    setFilteredProviders(filtered);
+  };
+
+  const filterServices = async () => {
+    let filtered = services;
+
+    // Reset searched location when changing filters
+    setSearchedLocation(null);
+
+    // Filter by country
+    if (selectedCountry !== 'all') {
+      filtered = filtered.filter(s => {
+        const countryId = s.country_id || s.country?.id;
+        return Number(countryId) === Number(selectedCountry);
+      });
+    }
+
+    // Handle search based on search type
+    if (searchQuery.trim() && searchType === 'provider') {
+      const query = searchQuery.toLowerCase();
+      
+      // Service search: filter services
+      filtered = filtered.filter(s => {
+        // Search in service name
+        const nameMatch = s.name?.toLowerCase().includes(query);
+        
+        // Search in description
+        const descriptionMatch = s.description?.toLowerCase().includes(query);
+        
+        // Search in country name
+        const countryMatch = s.country?.name?.toLowerCase().includes(query);
+        
+        // Search in service types
+        const serviceTypeMatch = s.service_types?.some(st => 
+          st.name?.toLowerCase().includes(query)
+        ) || false;
+        
+        // Search in themes
+        const themeMatch = s.themes?.some(theme => 
+          theme.name?.toLowerCase().includes(query)
+        ) || false;
+
+        return nameMatch || descriptionMatch || countryMatch || serviceTypeMatch || themeMatch;
+      });
+    }
+
+    setFilteredServices(filtered);
+  };
+
+  const handleMarkerClick = (provider) => {
+    // Optional: Could open a modal or navigate to provider detail
+    console.log('Provider clicked:', provider);
+  };
+
+  const handleServiceClick = (service) => {
+    // Optional: Could open a modal or navigate to service detail
+    console.log('Service clicked:', service);
+  };
+
+  const dataLoading = loadingProviders || loadingServices;
+  const hasData = filteredProviders.length > 0 || filteredServices.length > 0 || searchedLocation;
+
+  return (
+    <div className="w-full">
+      <style>{`
+        .leaflet-container .leaflet-control-attribution {
+          display: none !important;
+        }
+        .leaflet-tile-pane {
+          z-index: 1;
+        }
+        .leaflet-tile-pane::before,
+        .leaflet-tile-pane::after {
+          display: none !important;
+        }
+        .leaflet-container::before,
+        .leaflet-container::after {
+          display: none !important;
+        }
+        .custom-marker-icon {
+          background: transparent !important;
+          border: none !important;
+        }
+        .custom-marker-icon > div {
+          transition: transform 0.2s;
+        }
+        .custom-marker-icon:hover > div {
+          transform: scale(1.2);
+        }
+      `}</style>
+      {/* Search and Filter Controls */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        {/* Search Type Toggle */}
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <span className="text-sm text-gray-600 font-medium">{t('search_for')}</span>
+          <div className="inline-flex rounded-lg border border-gray-300 bg-gray-50 p-1">
+            <button
+              onClick={() => setSearchType('provider')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                searchType === 'provider'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'text-gray-700 hover:text-gray-900'
+              }`}
+            >
+              🏢 {t('service_provider')}
+            </button>
+            <button
+              onClick={() => setSearchType('location')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                searchType === 'location'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 hover:text-gray-900'
+              }`}
+            >
+              📍 {t('location')}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {searchType === 'provider' ? t('search_service_providers') : t('search_location')}
+            </label>
+            <div className="relative search-input-container">
+              <input
+                type="text"
+                placeholder={
+                  searchType === 'provider'
+                    ? t('search_providers_placeholder')
+                    : t('search_location_placeholder')
+                }
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  
+                  // Clear previous timeout
+                  if (debounceTimeout) clearTimeout(debounceTimeout);
+                  
+                  if (searchType === 'location' && e.target.value.length >= 2) {
+                    // Debounce: wait 500ms after user stops typing
+                    const timeout = setTimeout(() => {
+                      fetchLocationSuggestions(e.target.value);
+                    }, 500);
+                    setDebounceTimeout(timeout);
+                  } else {
+                    setShowSuggestions(false);
+                    setLocationSuggestions([]);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchType === 'location' && searchQuery.trim()) {
+                    geocodeLocation(searchQuery);
+                  }
+                }}
+                onFocus={() => {
+                  if (searchType === 'location' && locationSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+              />
+              <svg className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              
+              {/* Location Suggestions Dropdown */}
+              {searchType === 'location' && (isFetchingSuggestions || (showSuggestions && locationSuggestions.length > 0)) && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+                  {isFetchingSuggestions ? (
+                    <div className="px-4 py-3 text-center text-gray-500">
+                      <svg className="animate-spin h-5 w-5 mx-auto mb-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p className="text-xs">{t('loading_suggestions')}</p>
+                    </div>
+                  ) : (
+                    locationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSearchQuery(suggestion.display_name);
+                          geocodeLocation(suggestion);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition"
+                      >
+                        <div className="flex items-start gap-2">
+                          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {suggestion.display_name.split(',')[0]}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {suggestion.display_name}
+                            </p>
+                            <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                              {suggestion.type || 'location'}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Country Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('filter_by_country')}
+            </label>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+            >
+              <option value="all">{t('all_countries')}</option>
+              {countries.map(country => (
+                <option key={country.id} value={country.id}>{country.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Results Counter */}
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">
+              {filteredServices.length > 0 ? (
+                <>
+                  {t('showing')} <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} {t('providers')} and <span className="font-bold text-blue-600">{filteredServices.length}</span> of {services.length} {t('services')}
+                </>
+              ) : (
+                <>
+                  {t('showing')} <span className="font-bold text-green-600">{filteredProviders.length}</span> of {providers.length} {t('providers')}
+                </>
+              )}
+            </p>
+            {searchedLocation && (
+              <p className="text-sm text-blue-600 mt-1">
+                {t('map_zoomed_to')} <span className="font-medium">{searchedLocation.name}</span>
+              </p>
+            )}
+            {isGeocoding && (
+              <p className="text-sm text-gray-500 mt-1">
+                {t('searching_for_location')}
+              </p>
+            )}
+            {searchType === 'location' && searchQuery && !searchedLocation && !isGeocoding && (
+              <p className="text-sm text-orange-600 mt-1">
+                {t('location_not_found')}
+              </p>
+            )}
+          </div>
+          {(searchQuery || selectedCountry !== 'all' || searchType !== 'provider') && (
+            <button
+              onClick={() => { 
+                setSearchQuery(''); 
+                setSelectedCountry('all'); 
+                setSearchedLocation(null); 
+                setSearchType('provider');
+                setShowSuggestions(false);
+                setLocationSuggestions([]);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Map Container: show map first, then overlay data when loaded */}
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-green-100 relative">
+        {!mapMounted ? (
+          <div className="w-full h-[600px] flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-green-500 border-t-transparent mb-3"></div>
+              <p className="text-gray-600 text-sm">Loading map...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+          <MapContainer
+            center={[25.276987, 55.296249]}
+            zoom={2}
+            style={{ height: '600px', width: '100%' }}
+            className="z-10"
+            maxBounds={[[-90, -180], [90, 180]]}
+            maxBoundsViscosity={1.0}
+            minZoom={2}
+            attributionControl={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              subdomains={['a', 'b', 'c']}
+              maxZoom={19}
+              minZoom={2}
+              noWrap={true}
+              updateWhenIdle={false}
+              keepBuffer={2}
+            />
+            
+            {/* Fit bounds to show all markers or zoom to searched location */}
+            <MapBounds providers={filteredProviders} services={filteredServices} searchedLocation={searchedLocation} />
+            
+            {/* Markers (viewport-culled for performance when many markers) */}
+            <VisibleMarkers
+              providers={filteredProviders}
+              services={filteredServices}
+              getProviderIcon={getProviderIcon}
+              getServiceIcon={getServiceIcon}
+              onProviderClick={handleMarkerClick}
+              onServiceClick={handleServiceClick}
+              navigate={navigate}
+            />
+          </MapContainer>
+          {/* Overlay when loading data or no data */}
+          {!hasData && dataLoading && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-[10] rounded-2xl">
+              <div className="text-center px-4">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-green-500 border-t-transparent mb-3"></div>
+                <p className="text-gray-600 text-sm font-medium">Loading providers and services...</p>
+                <p className="text-gray-500 text-xs mt-1">{loadingProviders ? 'Providers…' : ''} {loadingServices ? 'Services…' : ''}</p>
+              </div>
+            </div>
+          )}
+          {!hasData && !dataLoading && (
+            <div className="absolute inset-0 bg-gray-50/95 flex items-center justify-center z-[10] rounded-2xl">
+              <div className="text-center px-4">
+                <svg className="mx-auto w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <h3 className="text-lg font-bold text-gray-700 mb-1">No providers or services found</h3>
+                <p className="text-gray-500 text-sm">Try adjusting your search filters</p>
+              </div>
+            </div>
+          )}
+          </>
+        )}
+      </div>
+
+      {/* Map Legend */}
+      <div className="mt-6 bg-white rounded-xl shadow-md p-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 mr-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              <div className="w-5 h-5 rounded-full bg-white"></div>
+            </div>
+            <span className="text-sm text-gray-700">Service Provider</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 mr-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              <div className="w-5 h-5 rounded-full bg-white"></div>
+            </div>
+            <span className="text-sm text-gray-700">Service</span>
+          </div>
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-sm text-gray-700">Click markers for details</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProvidersMap;
+

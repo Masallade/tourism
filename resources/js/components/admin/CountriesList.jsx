@@ -15,9 +15,8 @@ const CountriesList = () => {
 
     const fetchCountries = async () => {
         try {
-            const response = await fetch('/api/countries');
-            const data = await response.json();
-            setCountries(data);
+            const response = await window.apiClient.get('/api/countries');
+            setCountries(response.data);
         } catch (error) {
             console.error('Error fetching countries:', error);
         } finally {
@@ -31,13 +30,23 @@ const CountriesList = () => {
         }
 
         try {
-            await fetch(`/api/countries/${country.id}`, {
-                method: 'DELETE',
-            });
+            await window.apiClient.delete(`/api/countries/${country.id}`);
             setSuccessMessage('Country deleted successfully');
             fetchCountries();
         } catch (error) {
             console.error('Error deleting country:', error);
+            
+            // Handle authentication errors
+            if (error.response?.status === 401) {
+                alert('Your session has expired. Please log in again.');
+                window.location.href = '/admin/login';
+            } else if (error.response?.status === 422) {
+                // Handle validation errors (e.g., country has service providers)
+                const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Cannot delete country';
+                alert(errorMessage);
+            } else {
+                alert('Failed to delete country. Please try again.');
+            }
         }
     };
 
@@ -103,15 +112,29 @@ const CountriesList = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {countries.map((country) => (
                         <div key={country.id} className="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                            {country.image_url && (
+                                <div className="w-full h-48 overflow-hidden">
+                                    <img 
+                                        src={country.image_url} 
+                                        alt={country.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                        }}
+                                    />
+                                </div>
+                            )}
                             <div className="p-6">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                        <div className="ml-4">
+                                        {!country.image_url && (
+                                            <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div className={country.image_url ? "" : "ml-4"}>
                                             <h3 className="text-lg font-bold text-gray-900">{country.name}</h3>
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 {country.slug}
